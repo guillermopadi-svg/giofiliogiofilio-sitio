@@ -122,7 +122,6 @@ def header(path, active=""):
     )
     return f'''
 <a class="skip-link" href="#main">Saltar al contenido principal</a>
-<div class="demo-bar"><strong>Demo</strong> <span class="demo-long">· Sitio de demostración de Gio Filio. El inventario mostrado es un conjunto de datos de ejemplo, no propiedades reales.</span><span class="demo-short">· Inventario de ejemplo, no propiedades reales.</span></div>
 <header class="site-header">
   <div class="header-inner">
     <a class="brand" href="{R("index.html")}" aria-label="Gio Filio — Tu espacio ideal, inicio">
