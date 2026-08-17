@@ -206,10 +206,6 @@ def footer(path, colonias, alcaldias):
         </ul>
       </div>
     </div>
-    <div class="footer-demo">
-      <strong>Aviso:</strong> este sitio es una demostración. Las {36} propiedades publicadas son ficticias y están marcadas como DEMO;
-      no representan inventario real ni constituyen una oferta. Todas las ubicaciones utilizadas corresponden exclusivamente a la Ciudad de México.
-    </div>
     <div class="footer-bottom">
       <span>© {2026} {e(MARCA["nombre"])} · {e(MARCA["descriptor"])} · Ciudad de México</span>
       <nav aria-label="Enlaces legales">
