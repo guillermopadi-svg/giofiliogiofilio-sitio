@@ -125,7 +125,7 @@ def header(path, active=""):
 <header class="site-header">
   <div class="header-inner">
     <a class="brand" href="{R("index.html")}" aria-label="Gio Filio — Tu espacio ideal, inicio">
-      <img src="{R("assets/img/brand/logo-principal.png")}" alt="Gio Filio — Tu espacio ideal" width="200" height="76">
+      <img src="{R("assets/img/brand/isotipo-gf.png")}" alt="Gio Filio — Tu espacio ideal" width="66" height="66">
     </a>
     <nav class="nav-main" aria-label="Navegación principal">{nav}</nav>
     <div class="header-actions">
@@ -139,7 +139,7 @@ def header(path, active=""):
 </header>
 <div class="mobile-nav" id="mobileNav" aria-hidden="true" role="dialog" aria-label="Menú de navegación">
   <div class="mobile-nav-head">
-    <img src="{R("assets/img/brand/logo-principal.png")}" alt="Gio Filio" style="height:34px;width:auto">
+    <img src="{R("assets/img/brand/isotipo-gf.png")}" alt="Gio Filio" style="height:34px;width:auto">
     <button type="button" class="icon-btn" id="mobileNavClose" aria-label="Cerrar menú">{icon("close")}</button>
   </div>
   <div class="mobile-nav-body">
@@ -166,7 +166,7 @@ def footer(path, colonias, alcaldias):
   <div class="wrap">
     <div class="footer-grid">
       <div>
-        <div class="footer-logo"><img src="{R("assets/img/brand/logo-blanco.png")}" alt="Gio Filio — Tu espacio ideal" width="230" height="88"></div>
+        <div class="footer-logo"><img src="{R("assets/img/brand/isotipo-blanco.png")}" alt="Gio Filio — Tu espacio ideal" width="64" height="64"></div>
         <p style="max-width:34ch">Asesoría inmobiliaria personal en las 16 alcaldías de la Ciudad de México. Comprar, rentar, vender e invertir con alguien que primero entiende cómo quieres vivir.</p>
         <div class="footer-social">
           <a href="{MARCA["instagram"]}" target="_blank" rel="noopener" aria-label="Instagram de Gio Filio">{icon("ig")}</a>
