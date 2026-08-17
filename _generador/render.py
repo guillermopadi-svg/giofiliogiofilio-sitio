@@ -140,7 +140,7 @@ def header(path, active=""):
 </header>
 <div class="mobile-nav" id="mobileNav" aria-hidden="true" role="dialog" aria-label="Menú de navegación">
   <div class="mobile-nav-head">
-    <img src="{R("assets/img/brand/isotipo-gf.png")}" alt="Gio Filio" style="height:34px;width:auto">
+    <img src="{R("assets/img/brand/isotipo-gf.png")}" alt="Gio Filio" style="height:34px;width:auto;background:transparent">
     <button type="button" class="icon-btn" id="mobileNavClose" aria-label="Cerrar menú">{icon("close")}</button>
   </div>
   <div class="mobile-nav-body">

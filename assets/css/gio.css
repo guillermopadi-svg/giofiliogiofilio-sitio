@@ -240,8 +240,8 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 }
 @media (max-width:640px){ .header-inner{ width:calc(100% - 2rem); gap:var(--sp-3); } }
 .brand{ display:flex; align-items:center; gap:14px; flex:0 0 auto; }
-.brand-icon{ height:52px; width:auto; }
-.brand-word{ height:54px; width:auto; }
+.brand-icon{ height:52px; width:auto; background:transparent; }
+.brand-word{ height:54px; width:auto; background:transparent; }
 @media (max-width:900px){ .brand-icon{ height:44px; } .brand-word{ display:none; } }
 .nav-main{ display:flex; align-items:center; gap:.15rem; margin-left:auto; }
 .nav-main a{
@@ -860,7 +860,7 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .site-footer a{ color:rgba(255,255,255,.72); }
 .site-footer a:hover{ color:var(--gold-soft); }
 .site-footer ul{ list-style:none; padding:0; margin:0; display:grid; gap:.5rem; }
-.footer-logo img{ height:64px; width:auto; margin-bottom:var(--sp-4); }
+.footer-logo img{ height:64px; width:auto; margin-bottom:var(--sp-4); background:transparent; }
 .footer-social{ display:flex; gap:.5rem; margin-top:var(--sp-4); }
 .footer-social a{ width:38px; height:38px; border-radius:var(--r-full); border:1px solid rgba(255,255,255,.2); display:grid; place-items:center; transition:all var(--t-fast); }
 .footer-social a:hover{ background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.4); }
