@@ -13,9 +13,8 @@ MARCA = {
     "email": "gio@giofilio.com",
     "whatsapp": "5215562255840",
     "whatsapp_display": "+52 1 55 6225 5840",
-    "instagram": "https://instagram.com/gio.filio",
-    "facebook": "https://facebook.com/giofilio",
-    "linkedin": "https://linkedin.com/in/giofilio",
+    "instagram": "https://www.instagram.com/gio.filio/",
+    "facebook": "https://www.facebook.com/Giofiliorealestate",
 }
 
 # ---------------------------------------------------------------- alcaldías

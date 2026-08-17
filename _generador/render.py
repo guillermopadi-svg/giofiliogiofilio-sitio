@@ -172,7 +172,6 @@ def footer(path, colonias, alcaldias):
         <div class="footer-social">
           <a href="{MARCA["instagram"]}" target="_blank" rel="noopener" aria-label="Instagram de Gio Filio">{icon("ig")}</a>
           <a href="{MARCA["facebook"]}" target="_blank" rel="noopener" aria-label="Facebook de Gio Filio">{icon("fb")}</a>
-          <a href="{MARCA["linkedin"]}" target="_blank" rel="noopener" aria-label="LinkedIn de Gio Filio">{icon("li")}</a>
           <a href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" aria-label="WhatsApp de Gio Filio" data-wa-global="footer">{icon("wa")}</a>
         </div>
       </div>
@@ -473,7 +472,7 @@ def person_schema():
         },
         "address": {"@type": "PostalAddress", "addressLocality": "Ciudad de México",
                     "addressRegion": "CDMX", "addressCountry": "MX"},
-        "sameAs": [MARCA["instagram"], MARCA["facebook"], MARCA["linkedin"]],
+        "sameAs": [MARCA["instagram"], MARCA["facebook"]],
         "employee": {
             "@type": "Person", "name": "Gio Filio", "jobTitle": "Asesora Inmobiliaria",
             "image": SITE + "/assets/img/gio/perfil-1200.jpg", "worksFor": {"@id": SITE + "/#gio-filio"},

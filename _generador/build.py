@@ -1643,7 +1643,6 @@ def build_contacto():
         <div class="flex flex-wrap" style="margin-top:2.5rem">
           <a class="chip" href="{MARCA["instagram"]}" target="_blank" rel="noopener">{icon("ig")} Instagram</a>
           <a class="chip" href="{MARCA["facebook"]}" target="_blank" rel="noopener">{icon("fb")} Facebook</a>
-          <a class="chip" href="{MARCA["linkedin"]}" target="_blank" rel="noopener">{icon("li")} LinkedIn</a>
         </div>
       </div>
       <div>
