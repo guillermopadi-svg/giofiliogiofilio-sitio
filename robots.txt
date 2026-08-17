@@ -1,0 +1,17 @@
+# Gio Filio — Tu espacio ideal
+# https://giofilio.com
+
+User-agent: *
+Allow: /
+
+# Páginas personales sin valor de indexación
+Disallow: /favoritos/
+Disallow: /comparador/
+Disallow: /*?orden=
+Disallow: /*?view=
+
+# Bots de scraping agresivo
+User-agent: SemrushBot
+Crawl-delay: 10
+
+Sitemap: https://giofilio.com/sitemap.xml
