@@ -125,7 +125,8 @@ def header(path, active=""):
 <header class="site-header">
   <div class="header-inner">
     <a class="brand" href="{R("index.html")}" aria-label="Gio Filio — Tu espacio ideal, inicio">
-      <img src="{R("assets/img/brand/isotipo-gf.png")}" alt="Gio Filio — Tu espacio ideal" width="66" height="66">
+      <img class="brand-icon" src="{R("assets/img/brand/isotipo-gf.png")}" alt="Gio Filio" width="66" height="66">
+      <img class="brand-word" src="{R("assets/img/brand/wordmark.png")}" alt="Tu espacio ideal">
     </a>
     <nav class="nav-main" aria-label="Navegación principal">{nav}</nav>
     <div class="header-actions">
