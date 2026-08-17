@@ -267,7 +267,7 @@
     } else {
       t = 'Hola Gio, me gustaría recibir asesoría para encontrar mi espacio ideal en CDMX.';
     }
-    return 'https://wa.me/' + (CFG.whatsapp || '525512345678') + '?text=' + encodeURIComponent(t);
+    return 'https://wa.me/' + (CFG.whatsapp || '5215562255840') + '?text=' + encodeURIComponent(t);
   }
   window.gfWaLink = waLink;
 
