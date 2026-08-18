@@ -4,7 +4,7 @@ import os, json, random, hashlib
 from data_zonas import ALCALDIAS, COLONIAS, COLONIA_BY_SLUG, ALCALDIA_SLUG_BY_NOMBRE, MARCA
 from data_props import (PROPIEDADES, TIPOS, TIPO_LABEL, TIPO_PLURAL, AMENIDADES,
                         AMENIDAD_LABEL, ESTADOS_INMUEBLE, P_SALA, P_COCINA, P_RECAMARA,
-                        P_BANO, P_EXT, P_DET, P_CIUDAD)
+                        P_BANO, P_EXT, P_DET, P_CIUDAD, DATASET_ES_DEMO)
 from render import slugify
 
 OUT = "giofilio-sitio"
@@ -116,13 +116,16 @@ def normalize(images):
         p["colonia_nombre"] = col["nombre"]
         p["alcaldia_nombre"] = col["alcaldia"]
         p["alcaldia"] = ALCALDIA_SLUG_BY_NOMBRE[col["alcaldia"]]
-        p["cp"] = col["cp"][n % len(col["cp"])]
+        if not p.get("cp"):
+            p["cp"] = col["cp"][n % len(col["cp"])]
         p["tipo_label"] = TIPO_LABEL[p["tipo"]]
 
-        # coordenadas con dispersión determinista alrededor del centro de la colonia
+        # coordenadas: usar las reales si vienen del inventario (EasyBroker),
+        # y solo fabricar una dispersión determinista para el dataset demo
         h = int(hashlib.md5(p["id"].encode()).hexdigest()[:8], 16)
-        p["lat"] = round(col["lat"] + ((h % 1000) / 1000 - 0.5) * 0.016, 6)
-        p["lng"] = round(col["lng"] + (((h >> 10) % 1000) / 1000 - 0.5) * 0.020, 6)
+        if not (p.get("lat") and p.get("lng")):
+            p["lat"] = round(col["lat"] + ((h % 1000) / 1000 - 0.5) * 0.016, 6)
+            p["lng"] = round(col["lng"] + (((h >> 10) % 1000) / 1000 - 0.5) * 0.020, 6)
 
         # slug y URL amigable
         base = slugify(f'{p["tipo_label"]} {p["colonia_nombre"]} {p["titulo"].split(" con ")[-1] if " con " in p["titulo"] else ""}')
@@ -131,32 +134,43 @@ def normalize(images):
         p["url"] = f'propiedad/{p["slug"]}/'
         p["url_file"] = f'propiedad/{p["slug"]}/index.html'
 
-        # fotografías
-        es_casa = p["tipo"] in ("casa", "casa-en-condominio")
-        es_terreno = p["tipo"] == "terreno"
-        es_comercial = p["tipo"] in ("oficina", "local-comercial")
-        seed = p["id"]
-        if es_terreno:
-            gal = pick(P_EXT, seed + "a", 3) + pick(P_DET, seed + "b", 1) + pick(P_SALA, seed + "c", 2)
-        elif es_casa:
-            gal = pick(P_EXT, seed + "a", 2) + pick(P_SALA, seed + "b", 2) + pick(P_COCINA, seed + "c", 1) + \
-                  pick(P_RECAMARA, seed + "d", 1) + pick(P_BANO, seed + "e", 1) + pick(P_DET, seed + "f", 1)
-        elif es_comercial:
-            gal = pick(P_SALA, seed + "a", 4) + pick(P_DET, seed + "b", 1) + pick(P_BANO, seed + "c", 1)
+        # fotografías: si el inventario ya trae fotos reales (EasyBroker), úsalas;
+        # si no (dataset demo), elige del pool curado de Unsplash.
+        fotos_real = p.get("fotos_real")
+        if fotos_real:
+            p["fotos_idx"] = []
+            p["fotos"] = [f["hero"] + ".jpg" for f in fotos_real]
+            p["fotos_webp"] = [f["hero"] + ".webp" for f in fotos_real]
+            p["fotos_thumb"] = [f["thumb"] + ".jpg" for f in fotos_real]
+            p["foto_card"] = fotos_real[0]["card"] + ".jpg"
+            p["foto_card_webp"] = fotos_real[0]["card"] + ".webp"
         else:
-            gal = pick(P_SALA, seed + "a", 3) + pick(P_COCINA, seed + "b", 1) + \
-                  pick(P_RECAMARA, seed + "c", 1) + pick(P_BANO, seed + "d", 1) + pick(P_DET, seed + "e", 1)
-        gal = [g for g in dict.fromkeys(gal) if g in images]
-        p["fotos_idx"] = gal
-        p["fotos"] = [images[i]["hero"] + ".jpg" for i in gal]
-        p["fotos_webp"] = [images[i]["hero"] + ".webp" for i in gal]
-        p["fotos_thumb"] = [images[i]["thumb"] + ".jpg" for i in gal]
-        p["foto_card"] = images[gal[0]]["card"] + ".jpg"
-        p["foto_card_webp"] = images[gal[0]]["card"] + ".webp"
+            es_casa = p["tipo"] in ("casa", "casa-en-condominio")
+            es_terreno = p["tipo"] == "terreno"
+            es_comercial = p["tipo"] in ("oficina", "local-comercial")
+            seed = p["id"]
+            if es_terreno:
+                gal = pick(P_EXT, seed + "a", 3) + pick(P_DET, seed + "b", 1) + pick(P_SALA, seed + "c", 2)
+            elif es_casa:
+                gal = pick(P_EXT, seed + "a", 2) + pick(P_SALA, seed + "b", 2) + pick(P_COCINA, seed + "c", 1) + \
+                      pick(P_RECAMARA, seed + "d", 1) + pick(P_BANO, seed + "e", 1) + pick(P_DET, seed + "f", 1)
+            elif es_comercial:
+                gal = pick(P_SALA, seed + "a", 4) + pick(P_DET, seed + "b", 1) + pick(P_BANO, seed + "c", 1)
+            else:
+                gal = pick(P_SALA, seed + "a", 3) + pick(P_COCINA, seed + "b", 1) + \
+                      pick(P_RECAMARA, seed + "c", 1) + pick(P_BANO, seed + "d", 1) + pick(P_DET, seed + "e", 1)
+            gal = [g for g in dict.fromkeys(gal) if g in images]
+            p["fotos_idx"] = gal
+            p["fotos"] = [images[i]["hero"] + ".jpg" for i in gal]
+            p["fotos_webp"] = [images[i]["hero"] + ".webp" for i in gal]
+            p["fotos_thumb"] = [images[i]["thumb"] + ".jpg" for i in gal]
+            p["foto_card"] = images[gal[0]]["card"] + ".jpg"
+            p["foto_card_webp"] = images[gal[0]]["card"] + ".webp"
 
         # texto para WhatsApp
-        art = "el" if p["tipo"] in ("departamento", "penthouse", "loft", "terreno", "desarrollo", "local-comercial") else "la"
-        p["titulo_wa"] = f'{art} {p["tipo_label"].lower()} en {p["colonia_nombre"]}'
+        if not p.get("titulo_wa"):
+            art = "el" if p["tipo"] in ("departamento", "penthouse", "loft", "terreno", "desarrollo", "local-comercial") else "la"
+            p["titulo_wa"] = f'{art} {p["tipo_label"].lower()} en {p["colonia_nombre"]}'
 
         # badges derivados
         badges = list(p.get("badges", []))
@@ -164,13 +178,14 @@ def normalize(images):
             badges.append("exclusiva")
         p["badges"] = badges
 
-        # fechas
-        dias = 3 + (h % 220)
-        from datetime import date, timedelta
-        pub = date(2026, 8, 16) - timedelta(days=dias)
-        upd = date(2026, 8, 16) - timedelta(days=max(1, dias // 6))
-        p["publicado"] = pub.isoformat()
-        p["actualizado"] = upd.isoformat()
+        # fechas: si el inventario real ya trae publicado/actualizado, se respetan
+        if not p.get("publicado") or not p.get("actualizado"):
+            dias = 3 + (h % 220)
+            from datetime import date, timedelta
+            pub = date(2026, 8, 16) - timedelta(days=dias)
+            upd = date(2026, 8, 16) - timedelta(days=max(1, dias // 6))
+            p.setdefault("publicado", pub.isoformat())
+            p.setdefault("actualizado", upd.isoformat())
         p["estado"] = "disponible"
 
         # métricas
@@ -182,7 +197,7 @@ def normalize(images):
         car = []
         if p["piso"]:
             car.append(f'Piso {p["piso"]}')
-        if p["niveles"]:
+        if p.get("niveles"):
             car.append(f'{p["niveles"]} niveles en el inmueble' if p["tipo"] not in ("casa", "casa-en-condominio") else f'{p["niveles"]} niveles')
         car.append("Nueva construcción" if p["antig"] == 0 else f'{p["antig"]} años de antigüedad')
         car.append(dict(ESTADOS_INMUEBLE)[p["estado_inm"]])
@@ -216,7 +231,7 @@ def emit_data_js(props, colonias, alcaldias, path="giofilio-sitio/assets/data/gi
         })
     calles = sorted({(p["calle"], p["colonia_nombre"]) for p in props})
     data = {
-        "meta": {"demo": True, "ciudad": "Ciudad de México", "generado": "2026-08-16", "total": len(slim)},
+        "meta": {"demo": DATASET_ES_DEMO, "ciudad": "Ciudad de México", "generado": "2026-08-16", "total": len(slim)},
         "propiedades": slim,
         "colonias": [
             {"slug": c["slug"], "nombre": c["nombre"], "alcaldia": c["alcaldia"],
@@ -233,8 +248,9 @@ def emit_data_js(props, colonias, alcaldias, path="giofilio-sitio/assets/data/gi
         "amenidades_label": AMENIDAD_LABEL,
         "estados_label": dict(ESTADOS_INMUEBLE),
     }
-    js = ("/* Gio Filio — dataset DEMO generado automáticamente. No editar a mano.\n"
-          "   Fuente: _build/data_props.py + data_zonas.py  ·  Todas las propiedades son ficticias. */\n"
+    fuente_txt = "Todas las propiedades son ficticias." if DATASET_ES_DEMO else "Inventario real sincronizado desde EasyBroker."
+    js = (f"/* Gio Filio — dataset generado automáticamente. No editar a mano.\n"
+          f"   Fuente: _build/data_props.py + data_zonas.py  ·  {fuente_txt} */\n"
           "window.GF_DATA = " + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n")
     with open(path, "w", encoding="utf-8") as f:
         f.write(js)
