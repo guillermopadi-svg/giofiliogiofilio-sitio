@@ -264,7 +264,7 @@ def page(path, title, description, body, *, colonias, alcaldias, active="",
 <link rel="apple-touch-icon" href="{R("assets/img/brand/favicon-180.png")}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="{R("assets/css/gio.css")}">
 {schema_html}{extra_head}
 <script>window.GF_BASE = "{B}";</script>
