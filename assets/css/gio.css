@@ -19,6 +19,7 @@
   --gold:        #B88E3E;
   --gold-soft:   #D9BE86;
   --gold-050:    #FAF5EA;
+  --gold-ink:    #8C6A2F;
 
   --ink:         #0E1626;
   --ink-70:      #4A5468;
@@ -137,7 +138,7 @@ hr{ border:0; border-top:1px solid var(--line); margin:var(--sp-6) 0; }
 /* ------------------------------------------------- 4. TIPOGRAFÍA UTILIDAD */
 .eyebrow{
   font-family:var(--font-display); font-size:var(--step--1); font-weight:500;
-  letter-spacing:.22em; text-transform:uppercase; color:var(--gold); margin:0 0 var(--sp-3);
+  letter-spacing:.22em; text-transform:uppercase; color:var(--gold-ink); margin:0 0 var(--sp-3);
   display:flex; align-items:center; gap:.75rem;
 }
 .eyebrow::after{ content:""; flex:0 0 34px; height:1px; background:var(--gold-soft); }
@@ -152,7 +153,7 @@ hr{ border:0; border-top:1px solid var(--line); margin:var(--sp-6) 0; }
 .rule-gold{ width:52px; height:2px; background:var(--gold); border:0; margin:var(--sp-4) 0; }
 .rule-gold--center{ margin-inline:auto; }
 .headline-serifless{ font-family:var(--font-display); font-weight:400; }
-.text-navy{ color:var(--navy); } .text-gold{ color:var(--gold); }
+.text-navy{ color:var(--navy); } .text-gold{ color:var(--gold-ink); }
 
 /* ------------------------------------------------------------ 5. BOTONES */
 .btn{
@@ -168,7 +169,7 @@ hr{ border:0; border-top:1px solid var(--line); margin:var(--sp-6) 0; }
 .btn:active{ transform:translateY(0); }
 .btn svg{ width:1.05em; height:1.05em; }
 .btn--wa svg,.wa-fab svg{ width:1.25em; height:1.25em; }
-.btn--gold{ --btn-bg:transparent; --btn-fg:var(--gold); --btn-bd:var(--gold); }
+.btn--gold{ --btn-bg:transparent; --btn-fg:var(--gold-ink); --btn-bd:var(--gold); }
 .btn--gold:hover{ --btn-bg:var(--gold); --btn-fg:#fff; --btn-bd:var(--gold); color:#fff; }
 .btn--ghost{ --btn-bg:transparent; --btn-fg:var(--navy); --btn-bd:var(--navy-100); }
 .btn--ghost:hover{ --btn-bg:var(--navy-050); --btn-fg:var(--navy); --btn-bd:var(--navy-300); color:var(--navy); }
@@ -256,7 +257,7 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .nav-main a[aria-current="page"]{ font-weight:500; }
 .header-actions{ display:flex; align-items:center; gap:var(--sp-3); flex:0 0 auto; }
 .icon-btn{
-  position:relative; width:42px; height:42px; border-radius:var(--r-full);
+  position:relative; width:44px; height:44px; border-radius:var(--r-full);
   display:grid; place-items:center; border:1px solid var(--line); color:var(--navy);
   transition:border-color var(--t-fast), background var(--t-fast);
 }
@@ -269,7 +270,7 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
   border:2px solid #fff;
 }
 .icon-btn .count[data-count="0"]{ display:none; }
-.burger{ display:none; width:42px; height:42px; border-radius:var(--r-full); border:1px solid var(--line); place-items:center; color:var(--navy); }
+.burger{ display:none; width:44px; height:44px; border-radius:var(--r-full); border:1px solid var(--line); place-items:center; color:var(--navy); }
 .burger svg{ width:20px; height:20px; }
 @media (max-width:1080px){
   .nav-main{ display:none; }
@@ -613,7 +614,7 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .lightbox{ position:fixed; inset:0; z-index:400; background:rgba(7,31,74,.96); display:none; flex-direction:column; }
 .lightbox.is-open{ display:flex; }
 .lb-head{ display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; color:#fff; }
-.lb-head button{ color:#fff; width:42px; height:42px; border-radius:var(--r-full); display:grid; place-items:center; }
+.lb-head button{ color:#fff; width:44px; height:44px; border-radius:var(--r-full); display:grid; place-items:center; }
 .lb-head button:hover{ background:rgba(255,255,255,.12); }
 .lb-stage{ flex:1; display:grid; place-items:center; padding:0 1rem 1rem; position:relative; min-height:0; }
 .lb-stage img{ max-height:100%; max-width:100%; object-fit:contain; border-radius:var(--r-sm); }
@@ -805,7 +806,7 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .post-card h3{ font-size:var(--step-1); margin:0; line-height:1.3; }
 .post-card p{ font-size:var(--step--1); color:var(--ink-50); margin:0; flex:1; }
 .post-meta{ display:flex; gap:.6rem; align-items:center; font-size:var(--step--2); color:var(--ink-50); letter-spacing:.05em; text-transform:uppercase; }
-.post-meta .cat{ color:var(--gold); }
+.post-meta .cat{ color:var(--gold-ink); }
 .article{ font-size:var(--step-1); line-height:1.78; color:var(--ink-70); }
 .article h2{ font-size:var(--step-2); margin-top:var(--sp-7); color:var(--navy); }
 .article h2:first-child{ margin-top:0; }
