@@ -22,10 +22,21 @@ window.GF_CONFIG = {
   metaPixelId: "",    // ej. "1234567890"
   googleAdsId: "",    // ej. "AW-XXXXXXXXX"
 
-  /* --- CRM ---------------------------------------------------------------
-     Define window.gfSendToCRM(lead) para enviar cada lead a HubSpot u otro
-     sistema. Ejemplo en README.md § Integración con CRM.                    */
-  crmEndpoint: "",
+  /* --- CRM / n8n -----------------------------------------------------------
+     Cada lead capturado en el sitio (formularios de contacto, valuación,
+     vender, ficha de propiedad) se envía aquí. api/leads.js lo recibe,
+     valida y lo reenvía al webhook de n8n (variable de entorno
+     N8N_LEADS_WEBHOOK_URL en Vercel) para guardarlo en Google Sheets,
+     avisarle a Gio por WhatsApp y mandar un correo de confirmación.        */
+  crmEndpoint: "/api/leads",
 
   debug: false
+};
+
+window.gfSendToCRM = async function (lead) {
+  await fetch(window.GF_CONFIG.crmEndpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(lead),
+  });
 };
