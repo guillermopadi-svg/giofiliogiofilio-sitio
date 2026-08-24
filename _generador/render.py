@@ -399,10 +399,6 @@ def searchbox(path, compact=False, preset_op="venta"):
         <select id="sb-pmax" name="precioMax" aria-label="Precio máximo"><option value="">Máximo</option>{op_max}</select>
       </div>
     </div>
-    <div class="field">
-      <label for="sb-rec">Recámaras</label>
-      <select id="sb-rec" name="rec"><option value="">Todas</option><option value="1">1+</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option><option value="5">5+</option></select>
-    </div>
     <div class="field search-actions">
       <button type="submit" class="btn">{icon("search")} Buscar propiedades</button>
     </div>
