@@ -942,6 +942,13 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .footer-newsletter-success{ margin-top:.6rem; padding:.5rem .8rem; font-size:var(--step--2); text-align:left; max-width:280px; }
 .footer-bottom{ margin-top:var(--sp-7); padding-top:var(--sp-5); border-top:1px solid rgba(255,255,255,.14); display:flex; justify-content:space-between; gap:var(--sp-4); flex-wrap:wrap; font-size:var(--step--2); }
 .footer-bottom nav{ display:flex; gap:1.2rem; flex-wrap:wrap; }
+.powered-by{
+  display:inline-flex; align-items:center; gap:.5rem; background:#fff; padding:.35rem .75rem;
+  border-radius:var(--r-full); opacity:.9; transition:opacity var(--t-fast), transform var(--t-fast);
+}
+.powered-by:hover{ opacity:1; transform:translateY(-1px); }
+.powered-by span{ font-size:var(--step--2); color:var(--ink-50); }
+.powered-by img{ height:14px; width:auto; display:block; }
 .footer-demo{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:var(--r-md); padding:.85rem 1rem; margin-top:var(--sp-5); font-size:var(--step--2); line-height:1.6; }
 
 /* -------------------------------------------------------- 17. UTILIDADES */

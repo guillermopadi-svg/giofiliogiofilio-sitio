@@ -250,6 +250,10 @@ def footer(path, colonias, alcaldias):
     </div>
     <div class="footer-bottom">
       <span>© {2026} {e(MARCA["nombre"])} · {e(MARCA["descriptor"])} · Ciudad de México</span>
+      <a class="powered-by" href="https://www.instagram.com/ignitersystems?igsi=MThkcmt1MW5kcWhlbw==" target="_blank" rel="noopener" aria-label="Powered by Igniter AI Systems">
+        <span>Powered by</span>
+        <img src="{R("assets/img/brand/powered-by-igniter.png")}" alt="Igniter AI Systems" height="14">
+      </a>
       <nav aria-label="Enlaces legales">
         <a href="{R("aviso-de-privacidad/")}">Aviso de privacidad</a>
         <a href="{R("terminos-y-condiciones/")}">Términos y condiciones</a>
