@@ -11,8 +11,8 @@ MARCA = {
     "ciudad": "Ciudad de México",
     "dominio": "https://giofilio.com",
     "email": "gio@giofilio.com",
-    "whatsapp": "5215562255840",
-    "whatsapp_display": "+52 1 55 6225 5840",
+    "whatsapp": "5215544876074",
+    "whatsapp_display": "+52 1 55 4487 6074",
     "instagram": "https://www.instagram.com/gio.filio/",
     "facebook": "https://www.facebook.com/Giofiliorealestate",
 }

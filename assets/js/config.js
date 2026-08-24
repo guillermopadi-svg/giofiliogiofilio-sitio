@@ -12,7 +12,7 @@ window.GF_CONFIG = {
   googleMapsKey: "",
 
   /* --- WhatsApp ---------------------------------------------------------- */
-  whatsapp: "5215562255840",
+  whatsapp: "5215544876074",
 
   /* --- Analítica ---------------------------------------------------------
      Al declarar estos IDs, agrega los snippets de GTM/GA4 en el <head>.
