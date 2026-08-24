@@ -140,16 +140,16 @@ def build_home():
     zonas_home = ["polanco", "roma-norte", "condesa", "del-valle", "san-angel", "santa-fe"]
 
     objetivos = [
-        ("Comprar", "comprar/", "home", "Encontrar el lugar correcto para tu momento de vida, no solo una propiedad disponible."),
-        ("Rentar", "rentar/", "key", "Opciones verificadas que sí aceptan tus condiciones, sin perder semanas en visitas inútiles."),
-        ("Invertir", "invertir/", "chart", "Números reales de rendimiento y vacancia antes de comprar, no promesas de plusvalía."),
-        ("Vender", "vender/", "tag", "Precio correcto desde el primer día y material profesional que sí genera visitas."),
+        ("Comprar", "comprar/", "home", "Encontrar el lugar correcto para tu momento de vida, no solo una propiedad disponible.", "Quiero comprar"),
+        ("Rentar", "rentar/", "key", "Opciones verificadas que sí aceptan tus condiciones, sin perder semanas en visitas inútiles.", "Quiero rentar"),
+        ("Invertir", "invertir/", "chart", "Números reales de rendimiento y vacancia antes de comprar, no promesas de plusvalía.", "Quiero invertir"),
+        ("Vender", "vender/", "tag", "Precio correcto desde el primer día y material profesional que sí genera visitas.", "Quiero vender"),
     ]
     obj_html = "".join(f'''<a class="objetivo-card" href="{R(u)}">
       <div class="oc-icon">{icon(ic)}</div>
       <h3>{e(t)}</h3><p>{e(d)}</p>
-      <span class="link-arrow">Ver cómo trabajo{icon("arrow")}</span>
-    </a>''' for t, u, ic, d in objetivos)
+      <span class="link-arrow">{e(cta)}{icon("arrow")}</span>
+    </a>''' for t, u, ic, d, cta in objetivos)
 
     zonas_html = "".join(f'''<a class="zona-card" href="{R("propiedades/" + s + "/")}">
       <img src="{R(ZONE_IMG[s] + "-card.jpg")}" alt="Propiedades en {e(COLONIA_BY_SLUG[s]["nombre"])}, Ciudad de México" loading="lazy" width="640" height="853">
@@ -200,11 +200,11 @@ def build_home():
   </div>
 </section>
 
-<section class="section section--ivory">
+<section class="section section--ivory" style="padding-block:var(--sp-7)">
   <div class="wrap">
     <p class="eyebrow eyebrow--center center">Por dónde empezamos</p>
     <h2 class="center" style="margin-bottom:.5rem">Encuentra según tu objetivo</h2>
-    <p class="lead center" style="max-width:56ch;margin:0 auto 3rem">Cada objetivo tiene un proceso distinto. Elige el tuyo y te explico exactamente cómo trabajo.</p>
+    <p class="lead center" style="max-width:56ch;margin:0 auto var(--sp-6)">Cada objetivo tiene un proceso distinto. Elige el tuyo y te explico exactamente cómo trabajo.</p>
     <div class="grid grid-4">{obj_html}</div>
   </div>
 </section>
