@@ -369,11 +369,13 @@ def pcard(path, p, no_cmp=False):
     for b in p.get("badges", []):
         badges += f'<span class="badge badge--{b}">{e(BADGE_LABEL.get(b,b))}</span>'
     specs = []
-    if p["rec"]: specs.append(f'<span>{p["rec"]} rec</span>')
-    if p["ban"]: specs.append(f'<span>{p["ban"]}{("."+str(p["medios"])) if p["medios"] else ""} baños</span>')
-    if p["est"]: specs.append(f'<span>{p["est"]} est</span>')
-    if p["m2c"]: specs.append(f'<span>{num(p["m2c"])} m²</span>')
-    elif p["m2t"]: specs.append(f'<span>{num(p["m2t"])} m² terreno</span>')
+    if p["rec"]: specs.append(f'<span aria-label="{p["rec"]} recámaras">{icon("bed")}{p["rec"]}</span>')
+    if p["ban"]:
+        ban_val = f'{p["ban"]}{("."+str(p["medios"])) if p["medios"] else ""}'
+        specs.append(f'<span aria-label="{ban_val} baños">{icon("bath")}{ban_val}</span>')
+    if p["est"]: specs.append(f'<span aria-label="{p["est"]} estacionamientos">{icon("car")}{p["est"]}</span>')
+    if p["m2c"]: specs.append(f'<span aria-label="{num(p["m2c"])} metros cuadrados de construcción">{icon("area")}{num(p["m2c"])} m²</span>')
+    elif p["m2t"]: specs.append(f'<span aria-label="{num(p["m2t"])} metros cuadrados de terreno">{icon("area")}{num(p["m2t"])} m² terreno</span>')
     precio = money(p["precio"]).replace(" MXN", "")
     per = ' <span class="per">/mes</span>' if p["operacion"] == "renta" else ""
     cmp_html = "" if no_cmp else f'<label class="pcard-cmp"><input type="checkbox" data-id="{e(p["id"])}"> Comparar</label>'

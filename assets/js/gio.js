@@ -221,11 +221,14 @@
       badges += '<span class="badge badge--' + b + '">' + esc(BADGE_LABEL[b] || b) + '</span>';
     });
     var specs = [];
-    if (p.rec) specs.push('<span>' + p.rec + ' rec</span>');
-    if (p.ban) specs.push('<span>' + p.ban + (p.medios ? '.' + p.medios : '') + ' baños</span>');
-    if (p.est) specs.push('<span>' + p.est + ' est</span>');
-    if (p.m2c) specs.push('<span>' + num(p.m2c) + ' m²</span>');
-    else if (p.m2t) specs.push('<span>' + num(p.m2t) + ' m² terreno</span>');
+    if (p.rec) specs.push('<span aria-label="' + p.rec + ' recámaras">' + ICON.bed + p.rec + '</span>');
+    if (p.ban) {
+      var banVal = p.ban + (p.medios ? '.' + p.medios : '');
+      specs.push('<span aria-label="' + banVal + ' baños">' + ICON.bath + banVal + '</span>');
+    }
+    if (p.est) specs.push('<span aria-label="' + p.est + ' estacionamientos">' + ICON.car + p.est + '</span>');
+    if (p.m2c) specs.push('<span aria-label="' + num(p.m2c) + ' metros cuadrados de construcción">' + ICON.area + num(p.m2c) + ' m²</span>');
+    else if (p.m2t) specs.push('<span aria-label="' + num(p.m2t) + ' metros cuadrados de terreno">' + ICON.area + num(p.m2t) + ' m² terreno</span>');
 
     var precio = p.operacion === 'renta'
       ? money(p.precio) + '<span class="per"> /mes</span>'

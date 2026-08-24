@@ -455,6 +455,7 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
   padding-top:.6rem; border-top:1px solid var(--line-soft); margin-top:auto;
 }
 .pcard-specs span{ display:inline-flex; align-items:center; gap:.28rem; }
+.pcard-specs svg{ width:15px; height:15px; flex:0 0 auto; color:var(--ink-40); }
 .pcard-specs span + span::before{ content:"·"; color:var(--ink-30); margin-right:.28rem; }
 .pcard-actions{ display:flex; gap:.45rem; padding:0 1.15rem 1.15rem; }
 .pcard-actions .btn{ flex:1; }
