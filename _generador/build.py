@@ -296,10 +296,6 @@ def build_home():
     <div class="grid grid-3">{posts_html}</div>
   </div>
 </section>
-
-{cta_band(path, "Tu espacio ideal empieza aquí.",
-          "Cuéntame cómo quieres vivir y te muestro las opciones que realmente tienen sentido para ti en la Ciudad de México.",
-          ("Hablar con Gio", "contacto/"), ("Ver propiedades", "propiedades/"))}
 '''
     schema = [
         person_schema(),
