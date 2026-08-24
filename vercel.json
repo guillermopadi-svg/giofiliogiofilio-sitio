@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "trailingSlash": true,
-  "cleanUrls": false,
+  "cleanUrls": true,
   "headers": [
     {
       "source": "/assets/(.*)",
