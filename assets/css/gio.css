@@ -948,7 +948,7 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 }
 .powered-by:hover{ opacity:1; transform:translateY(-1px); }
 .powered-by span{ font-size:var(--step--2); color:var(--ink-50); }
-.powered-by img{ height:14px; width:auto; display:block; }
+.powered-by img{ height:14px; width:auto; display:block; background:transparent; }
 .footer-demo{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:var(--r-md); padding:.85rem 1rem; margin-top:var(--sp-5); font-size:var(--step--2); line-height:1.6; }
 
 /* -------------------------------------------------------- 17. UTILIDADES */
