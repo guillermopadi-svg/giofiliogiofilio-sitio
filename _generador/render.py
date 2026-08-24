@@ -98,28 +98,64 @@ def icon(name, cls=""):
     return s
 
 # ------------------------------------------------------------------ NAV
+# Cada item: (etiqueta, url, hijos). "hijos" es None o una lista de
+# (etiqueta, url) para desglosar en un submenú. Un hijo con url que empieza
+# con "#" es un ancla dentro de Inicio (index.html).
 NAV = [
-    ("Zonas", "zonas/"),
-    ("Propiedades", "propiedades/"),
-    ("Invertir", "invertir/"),
-    ("Comprar", "comprar/"),
-    ("Vender", "vender/"),
-    ("Rentar", "rentar/"),
-    ("Conoce a Gio", "conoce-a-gio/"),
+    ("Inicio", "index.html", [
+        ("Ir a Inicio", ""),
+        ("Propiedades destacadas", "#destacadas"),
+        ("Zonas destacadas", "#zonas-home"),
+        ("Nuevas y en preventa", "#nuevas"),
+        ("Testimonios", "#testimonios"),
+        ("Vender tu propiedad", "#vender-home"),
+    ]),
+    ("Zonas", "zonas/", None),
+    ("Propiedades", "propiedades/", [
+        ("Todas las propiedades", "propiedades/"),
+        ("Casas", "casas/"),
+        ("Departamentos", "departamentos/"),
+        ("Desarrollos", "desarrollos/"),
+        ("Propiedades para inversión", "inversion/"),
+    ]),
+    ("Invertir", "invertir/", None),
+    ("Comprar", "comprar/", None),
+    ("Vender", "vender/", None),
+    ("Rentar", "rentar/", None),
+    ("Conoce a Gio", "conoce-a-gio/", None),
 ]
 
 CUR = ' aria-current="page"'
 
 def header(path, active=""):
     R = lambda t: rel(path, t)
-    nav = "".join(
-        f'<a href="{R(u)}"{CUR if active == u else ""}>{e(t)}</a>'
-        for t, u in NAV
-    )
-    mnav = "".join(
-        f'<a href="{R(u)}"{CUR if active == u else ""}>{e(t)}{icon("chev")}</a>'
-        for t, u in NAV
-    )
+
+    def child_href(u):
+        return R("") + u if u.startswith("#") else R(u)
+
+    def nav_item(t, u, children):
+        cur = CUR if active == u else ""
+        if not children:
+            return f'<a href="{R(u)}"{cur}>{e(t)}</a>'
+        kids = "".join(f'<a href="{child_href(cu)}">{e(ct)}</a>' for ct, cu in children)
+        return f'''<div class="nav-item">
+      <a href="{R(u)}"{cur}>{e(t)}</a>
+      <span class="nav-caret" aria-hidden="true">{icon("chev")}</span>
+      <div class="nav-dropdown" role="menu">{kids}</div>
+    </div>'''
+
+    def mnav_item(t, u, children):
+        cur = CUR if active == u else ""
+        if not children:
+            return f'<a href="{R(u)}"{cur}>{e(t)}{icon("chev")}</a>'
+        kids = "".join(f'<a href="{child_href(cu)}">{e(ct)}</a>' for ct, cu in children)
+        return f'''<details class="mnav-acc">
+      <summary><span>{e(t)}</span></summary>
+      <div class="mnav-acc-body">{kids}</div>
+    </details>'''
+
+    nav = "".join(nav_item(t, u, c) for t, u, c in NAV)
+    mnav = "".join(mnav_item(t, u, c) for t, u, c in NAV)
     return f'''
 <a class="skip-link" href="#main">Saltar al contenido principal</a>
 <header class="site-header">

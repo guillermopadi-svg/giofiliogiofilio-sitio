@@ -255,6 +255,31 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 }
 .nav-main a:hover::after,.nav-main a[aria-current="page"]::after{ transform:scaleX(1); }
 .nav-main a[aria-current="page"]{ font-weight:500; }
+.nav-item{ position:relative; display:flex; align-items:center; }
+.nav-item > a{ padding-right:1.5rem; }
+.nav-caret{
+  position:absolute; right:.2rem; top:50%; transform:translateY(-50%) rotate(90deg);
+  width:16px; height:16px; display:grid; place-items:center; color:var(--ink-30);
+  pointer-events:none; transition:transform var(--t-fast);
+}
+.nav-caret svg{ width:11px; height:11px; }
+.nav-item:hover .nav-caret,.nav-item:focus-within .nav-caret{ transform:translateY(-50%) rotate(270deg); }
+.nav-dropdown{
+  position:absolute; top:100%; left:0; padding:.85rem .4rem .4rem; min-width:230px;
+  background:#fff; border:1px solid var(--line-soft); border-radius:var(--r-md); box-shadow:var(--sh-3);
+  opacity:0; visibility:hidden; transform:translateY(4px); pointer-events:none;
+  transition:opacity var(--t-fast), transform var(--t-fast), visibility var(--t-fast); z-index:210;
+}
+.nav-item:hover .nav-dropdown,.nav-item:focus-within .nav-dropdown{
+  opacity:1; visibility:visible; transform:translateY(0); pointer-events:auto;
+}
+.nav-dropdown a{
+  display:block; padding:.6rem .75rem; border-radius:var(--r-sm);
+  font-family:var(--font-body); font-size:var(--step--1); font-weight:400;
+  color:var(--ink-70); white-space:nowrap;
+}
+.nav-dropdown a::after{ content:none; }
+.nav-dropdown a:hover{ background:var(--navy-050); color:var(--navy); }
 .header-actions{ display:flex; align-items:center; gap:var(--sp-3); flex:0 0 auto; }
 .icon-btn{
   position:relative; width:44px; height:44px; border-radius:var(--r-full);
@@ -292,6 +317,23 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
   padding:.85rem 0; border-bottom:1px solid var(--line-soft);
 }
 .mobile-nav-body a svg{ width:16px; height:16px; color:var(--ink-30); }
+.mnav-acc{ border-bottom:1px solid var(--line-soft); }
+.mnav-acc summary{
+  display:flex; align-items:center; justify-content:space-between; list-style:none; cursor:pointer;
+  font-family:var(--font-display); font-size:var(--step-2); color:var(--navy); padding:.85rem 0;
+}
+.mnav-acc summary::-webkit-details-marker{ display:none; }
+.mnav-acc summary::after{
+  content:""; width:9px; height:9px; border-right:1.6px solid var(--ink-30); border-bottom:1.6px solid var(--ink-30);
+  transform:rotate(45deg); transition:transform var(--t-fast); margin-right:2px; flex:0 0 auto;
+}
+.mnav-acc[open] summary::after{ transform:rotate(225deg); margin-top:4px; }
+.mnav-acc-body{ display:flex; flex-direction:column; padding:0 0 1rem; }
+.mnav-acc-body a{
+  border-bottom:none; padding:.6rem .75rem; font-family:var(--font-body); font-size:var(--step-0);
+  color:var(--ink-70); background:var(--navy-050); border-radius:var(--r-sm); margin-bottom:.4rem;
+}
+.mnav-acc-body a:last-child{ margin-bottom:0; }
 .mobile-nav-foot{ padding:1.25rem; border-top:1px solid var(--line-soft); display:grid; gap:.6rem; background:var(--ivory); }
 
 /* -------------------------------------------------------------- 9. HERO */

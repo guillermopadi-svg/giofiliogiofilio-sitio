@@ -186,7 +186,7 @@ def build_home():
   </div>
 </section>
 
-<section class="section">
+<section class="section" id="destacadas">
   <div class="wrap">
     <div class="carousel-head">
       <div>
@@ -209,7 +209,7 @@ def build_home():
   </div>
 </section>
 
-<section class="section">
+<section class="section" id="zonas-home">
   <div class="wrap">
     <div class="carousel-head">
       <div>
@@ -223,7 +223,7 @@ def build_home():
   </div>
 </section>
 
-<section class="section section--ivory" data-carousel>
+<section class="section section--ivory" data-carousel id="nuevas">
   <div class="wrap">
     <div class="carousel-head">
       <div>
@@ -276,7 +276,7 @@ def build_home():
   </div>
 </section>
 
-<section class="section">
+<section class="section" id="testimonios">
   <div class="wrap">
     <p class="eyebrow eyebrow--center center">Clientes</p>
     <h2 class="center" style="margin-bottom:3rem">Lo que dicen quienes ya encontraron su espacio</h2>
@@ -285,7 +285,7 @@ def build_home():
   </div>
 </section>
 
-<section class="section section--beige">
+<section class="section section--beige" id="vender-home">
   <div class="wrap">
     <div class="gio-split" style="grid-template-columns:1.15fr .85fr">
       <div>
@@ -337,7 +337,7 @@ def build_home():
     write(path, page(path,
         "Gio Filio | Asesoría inmobiliaria en Ciudad de México — Tu espacio ideal",
         "Encuentra tu espacio ideal en CDMX. Propiedades seleccionadas en venta y renta en Polanco, Roma, Condesa, Del Valle, Santa Fe y más, con la asesoría personal de Gio Filio.",
-        body, active="", schema=schema, page_type="home", **K()))
+        body, active="index.html", schema=schema, page_type="home", **K()))
 
 
 # =========================================================== RESULTADOS
