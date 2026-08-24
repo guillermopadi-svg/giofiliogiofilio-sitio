@@ -739,13 +739,6 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .form-success svg{ width:38px; height:38px; color:var(--gold); margin:0 auto .6rem; }
 .form-grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:0 .7rem; }
 @media (max-width:520px){ .form-grid-2{ grid-template-columns:1fr; } }
-.newsletter-inline{ margin-top:2.25rem; padding-top:2rem; border-top:1px solid rgba(255,255,255,.14); max-width:460px; }
-.newsletter-form{ display:flex; align-items:flex-start; gap:.6rem; }
-.newsletter-form .form-row{ flex:1; margin-bottom:0; }
-.newsletter-form .btn{ flex:0 0 auto; }
-@media (max-width:480px){ .newsletter-form{ flex-direction:column; } .newsletter-form .btn{ width:100%; } }
-.newsletter-inline .form-success{ margin-top:.7rem; padding:.9rem 1rem; text-align:left; }
-
 /* ------------------------------------------------------- 14. WHATSAPP FAB */
 .wa-fab{
   position:fixed; right:1.15rem; bottom:1.15rem; z-index:190;
@@ -929,6 +922,24 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .footer-social a{ width:38px; height:38px; border-radius:var(--r-full); border:1px solid rgba(255,255,255,.2); display:grid; place-items:center; transition:all var(--t-fast); }
 .footer-social a:hover{ background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.4); }
 .footer-social svg{ width:17px; height:17px; fill:currentColor; }
+.footer-newsletter{
+  display:flex; margin-top:var(--sp-4); max-width:280px;
+  border:1px solid rgba(255,255,255,.22); border-radius:var(--r-full); transition:border-color var(--t-fast);
+}
+.footer-newsletter.is-error{ border-color:#D68579; }
+.footer-newsletter input{
+  flex:1; min-width:0; background:transparent; border:none; color:#fff;
+  padding:.55rem 0 .55rem .95rem; font-size:var(--step--2); font-family:var(--font-body);
+}
+.footer-newsletter input::placeholder{ color:rgba(255,255,255,.45); }
+.footer-newsletter input:focus{ outline:none; }
+.footer-newsletter button{
+  flex:0 0 auto; width:32px; height:32px; margin:3px; border-radius:var(--r-full);
+  display:grid; place-items:center; background:var(--gold); color:#fff; transition:background var(--t-fast);
+}
+.footer-newsletter button:hover{ background:var(--gold-ink); }
+.footer-newsletter button svg{ width:13px; height:13px; }
+.footer-newsletter-success{ margin-top:.6rem; padding:.5rem .8rem; font-size:var(--step--2); text-align:left; max-width:280px; }
 .footer-bottom{ margin-top:var(--sp-7); padding-top:var(--sp-5); border-top:1px solid rgba(255,255,255,.14); display:flex; justify-content:space-between; gap:var(--sp-4); flex-wrap:wrap; font-size:var(--step--2); }
 .footer-bottom nav{ display:flex; gap:1.2rem; flex-wrap:wrap; }
 .footer-demo{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:var(--r-md); padding:.85rem 1rem; margin-top:var(--sp-5); font-size:var(--step--2); line-height:1.6; }

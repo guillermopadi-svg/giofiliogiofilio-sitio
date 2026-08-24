@@ -207,6 +207,12 @@ def footer(path, colonias, alcaldias):
           <a href="{MARCA["facebook"]}" target="_blank" rel="noopener" aria-label="Facebook de Gio Filio">{icon("fb")}</a>
           <a href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" aria-label="WhatsApp de Gio Filio" data-wa-global="footer">{icon("wa")}</a>
         </div>
+        <form data-lead-form data-form-name="newsletter_footer" data-source="sitio_web" data-event="newsletter_signup" class="footer-newsletter" novalidate>
+          <label for="fn-email" class="sr-only">Correo electrónico</label>
+          <input type="email" id="fn-email" name="email" required autocomplete="email" placeholder="Análisis de inversión por correo">
+          <button type="submit" aria-label="Suscribirme">{icon("arrow")}</button>
+        </form>
+        <div class="form-success footer-newsletter-success" data-form-success role="status">Listo, ya estás suscrito.</div>
       </div>
       <div>
         <h4>Explorar</h4>
