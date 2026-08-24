@@ -841,7 +841,7 @@
       [[22, 0, 100, 1.6], [41, 0, 100, 2.2], [58, 0, 100, 1.6], [78, 0, 100, 1.4]].forEach(function (r) {
         h += '<i class="mf-road" style="left:' + r[0] + '%;top:' + r[1] + '%;height:' + r[2] + '%;width:' + r[3] + 'px"></i>';
       });
-      h += '<i class="mf-road" style="left:10%;top:12%;width:82%;height:2.6px;transform:rotate(19deg);transform-origin:left"></i>';
+      h += '<i class="mf-road mf-road--main" style="left:10%;top:12%;width:82%;height:3px;transform:rotate(19deg);transform-origin:left"></i>';
       return h;
     }
     function greens() {
@@ -871,37 +871,85 @@
     if (MAP.impl === 'google' && MAP.gmap) return drawGoogle(list);
     if (MAP.impl !== 'fallback') return;
     var canvas = $('.map-canvas', host) || host;
-    $$('.map-pin', canvas).forEach(function (n) { n.remove(); });
+    $$('.map-pin,.map-cluster', canvas).forEach(function (n) { n.remove(); });
     var fav = favs();
     fitBounds(list);
-    var occupied = [];
-    // ordenar de norte a sur para que el desplazamiento anti-solape sea coherente
-    var ordered = list.slice().sort(function (a, b) { return b.lat - a.lat; });
-    ordered.forEach(function (p) {
+
+    // agrupar propiedades cercanas entre sí en un mismo cluster para no amontonar precios
+    var CX = 11, CY = 9;
+    var clusters = [];
+    list.forEach(function (p) {
       var pt = project(p.lat, p.lng);
+      var c = clusters.filter(function (c) {
+        return Math.abs(c.x - pt.x) < CX && Math.abs(c.y - pt.y) < CY;
+      })[0];
+      if (c) {
+        c.items.push(p);
+        c.x = (c.x * (c.items.length - 1) + pt.x) / c.items.length;
+        c.y = (c.y * (c.items.length - 1) + pt.y) / c.items.length;
+      } else {
+        clusters.push({ x: pt.x, y: pt.y, items: [p] });
+      }
+    });
+
+    // separar clusters/pines que aun queden demasiado próximos entre sí
+    var placed = [];
+    clusters.sort(function (a, b) { return b.y - a.y; }).forEach(function (c) {
       var tries = 0;
-      while (occupied.some(function (o) { return Math.abs(o.x - pt.x) < 8 && Math.abs(o.y - pt.y) < 3.2; }) && tries < 16) {
-        pt.y += 3.4; pt.x += (tries % 3 === 0 ? 4.5 : (tries % 3 === 1 ? -4.5 : 0));
-        pt.x = Math.max(4, Math.min(96, pt.x)); pt.y = Math.max(5, Math.min(95, pt.y));
+      while (placed.some(function (o) { return Math.abs(o.x - c.x) < CX && Math.abs(o.y - c.y) < CY; }) && tries < 10) {
+        c.y -= 5; c.x += (tries % 2 === 0 ? 6 : -6);
+        c.x = Math.max(5, Math.min(95, c.x)); c.y = Math.max(6, Math.min(94, c.y));
         tries++;
       }
-      occupied.push(pt);
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'map-pin' + (fav.indexOf(p.id) > -1 ? ' is-fav' : '');
-      b.style.left = pt.x + '%'; b.style.top = pt.y + '%';
-      b.textContent = moneyShort(p.precio);
-      b.dataset.id = p.id;
-      b.setAttribute('aria-label', p.titulo + ' — ' + money(p.precio));
-      on(b, 'mouseenter', function () { showPreview(p, pt); b.classList.add('is-active'); });
-      on(b, 'mouseleave', function () { hidePreview(); b.classList.remove('is-active'); });
-      on(b, 'focus', function () { showPreview(p, pt); });
-      on(b, 'blur', hidePreview);
-      on(b, 'click', function () { showMini(p); });
-      canvas.appendChild(b);
+      placed.push(c);
+
+      if (c.items.length === 1) {
+        var p = c.items[0];
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'map-pin' + (fav.indexOf(p.id) > -1 ? ' is-fav' : '');
+        b.style.left = c.x + '%'; b.style.top = c.y + '%';
+        b.textContent = moneyShort(p.precio);
+        b.dataset.id = p.id;
+        b.setAttribute('aria-label', p.titulo + ' — ' + money(p.precio));
+        on(b, 'mouseenter', function () { showPreview(p, c); b.classList.add('is-active'); });
+        on(b, 'mouseleave', function () { hidePreview(); b.classList.remove('is-active'); });
+        on(b, 'focus', function () { showPreview(p, c); });
+        on(b, 'blur', hidePreview);
+        on(b, 'click', function () { showMini(p); });
+        canvas.appendChild(b);
+      } else {
+        var items = c.items;
+        var cb = document.createElement('button');
+        cb.type = 'button';
+        cb.className = 'map-cluster';
+        cb.style.left = c.x + '%'; cb.style.top = c.y + '%';
+        cb.textContent = items.length;
+        cb.setAttribute('aria-label', items.length + ' propiedades en esta zona');
+        on(cb, 'click', function () { showClusterList(items); });
+        canvas.appendChild(cb);
+      }
     });
+
     var note = $('.map-note', canvas);
     if (note) note.innerHTML = list.length + ' propiedades en el mapa · vista esquemática. Agrega tu llave de Google Maps en <code>assets/js/config.js</code>.';
+  }
+
+  function showClusterList(items) {
+    var mc = $('#mapMiniCard'); if (!mc) return;
+    var rows = items.slice(0, 8).map(function (p) {
+      return '<a class="mcl-row" href="' + url(p.url) + '">' +
+        '<span class="mcl-price">' + moneyShort(p.precio) + '</span>' +
+        '<span class="mcl-t">' + esc(p.titulo) + '</span></a>';
+    }).join('');
+    var more = items.length > 8
+      ? '<p class="small muted" style="padding:.5rem 1rem 0">+' + (items.length - 8) + ' propiedades más en esta zona</p>'
+      : '';
+    mc.innerHTML = '<button type="button" class="mc-close" aria-label="Cerrar">' + ICON.close + '</button>' +
+      '<div class="mcl-head">' + items.length + ' propiedades en esta zona</div>' +
+      '<div class="mcl-list">' + rows + '</div>' + more;
+    mc.classList.add('is-on');
+    on($('.mc-close', mc), 'click', function () { mc.classList.remove('is-on'); });
   }
 
   function showPreview(p, pt) {
