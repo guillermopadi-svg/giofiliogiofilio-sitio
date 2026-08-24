@@ -99,12 +99,12 @@ def icon(name, cls=""):
 
 # ------------------------------------------------------------------ NAV
 NAV = [
-    ("Comprar", "comprar/"),
-    ("Rentar", "rentar/"),
-    ("Propiedades", "propiedades/"),
     ("Zonas", "zonas/"),
+    ("Propiedades", "propiedades/"),
     ("Invertir", "invertir/"),
+    ("Comprar", "comprar/"),
     ("Vender", "vender/"),
+    ("Rentar", "rentar/"),
     ("Conoce a Gio", "conoce-a-gio/"),
 ]
 
@@ -130,9 +130,6 @@ def header(path, active=""):
     </a>
     <nav class="nav-main" aria-label="Navegación principal">{nav}</nav>
     <div class="header-actions">
-      <a class="icon-btn" href="{R("favoritos/")}" aria-label="Mis propiedades favoritas">
-        {icon("heart")}<span class="count" data-fav-count data-count="0">0</span>
-      </a>
       <a class="btn btn--sm" href="{R("contacto/")}">Hablar con Gio</a>
       <button type="button" class="burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileNav">{icon("menu")}</button>
     </div>
