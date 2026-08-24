@@ -154,8 +154,11 @@ def header(path, active=""):
       <div class="mnav-acc-body">{kids}</div>
     </details>'''
 
-    nav = "".join(nav_item(t, u, c) for t, u, c in NAV)
-    mnav = "".join(mnav_item(t, u, c) for t, u, c in NAV)
+    # En conoce-a-gio/ el link a esa misma pagina en el menu es redundante (ya se
+    # ofrece en el footer); se omite solo ahi, en escritorio y movil.
+    nav_visible = [(t, u, c) for t, u, c in NAV if not (active == "conoce-a-gio/" and u == "conoce-a-gio/")]
+    nav = "".join(nav_item(t, u, c) for t, u, c in nav_visible)
+    mnav = "".join(mnav_item(t, u, c) for t, u, c in nav_visible)
     return f'''
 <a class="skip-link" href="#main">Saltar al contenido principal</a>
 <header class="site-header">

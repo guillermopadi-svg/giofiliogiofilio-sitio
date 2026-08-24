@@ -950,11 +950,11 @@ def build_gio():
       </div>
       <div>
         <p class="eyebrow">Conoce a Gio</p>
-        <h1 style="font-weight:300;font-size:var(--step-4)">No se trata solo de metros cuadrados. Se trata de encontrar el lugar correcto para tu momento de vida.</h1>
+        <h1 style="font-weight:300;font-size:var(--step-4)">No busco venderte metros cuadrados. Busco el lugar correcto para tu momento de vida.</h1>
         <hr class="rule-gold">
         <p class="lead">Soy Gio Filio, asesora inmobiliaria en la Ciudad de México. Trabajo exclusivamente aquí, en las 16 alcaldías, porque conocer bien un mercado vale más que cubrir muchos de forma superficial.</p>
         <div class="cta-actions" style="justify-content:flex-start;margin-top:2rem">
-          <a class="btn" href="{R("contacto/")}">Hablemos de tu próximo espacio</a>
+          <a class="btn" href="{R("contacto/")}">Hablemos de tu espacio ideal</a>
           <a class="btn btn--wa" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-global="conoce_gio">{icon("wa")} WhatsApp</a>
         </div>
       </div>
@@ -968,7 +968,7 @@ def build_gio():
     <h2>Empecé al revés que casi todos</h2>
     <div class="article">
       <p>La mayoría de las búsquedas inmobiliarias fracasan por la misma razón: empiezan por el catálogo. Alguien abre un portal, filtra por presupuesto y zona, y termina viendo cuarenta propiedades que se parecen entre sí sin saber cuál le conviene.</p>
-      <p>Yo trabajo al revés. Antes de mostrarte una sola propiedad quiero saber a qué hora sales de casa, cuánto tardas en llegar al trabajo, si cocinas o pides, si tienes perro, si trabajas desde casa, cuánto tiempo piensas quedarte y qué te haría sentir que llegaste. Con eso, esas cuarenta opciones se convierten en seis. Y de esas seis, normalmente una es la correcta.</p>
+      <p>Yo trabajo al revés. Antes de mostrarte una propiedad, quiero conocerte: saber a qué hora sales de casa, si haces home office, si tienes mascotas, qué te haría sentir que es tu espacio favorito. Con eso, esas cuarenta opciones se convierten en seis. Y de esas seis, normalmente una es la correcta.</p>
       <p>Me especializo en la Ciudad de México porque es una ciudad donde cuatro cuadras cambian todo: el ruido, la luz, el tráfico, la seguridad, el precio y la reventa. Esa diferencia no se ve en una foto ni en una ficha técnica. Se ve caminando la calle un martes por la mañana y un sábado por la noche.</p>
       <p>Acompaño operaciones de compra, renta, venta e inversión, de principio a fin: desde la primera conversación hasta la firma en notaría y la entrega de llaves. No delego el proceso. Si trabajas conmigo, tratas conmigo.</p>
     </div>
@@ -1021,7 +1021,7 @@ def build_gio():
           <img src="{R("assets/img/gio/editorial-800.jpg")}" alt="Gio Filio, asesora inmobiliaria" loading="lazy" width="800" height="1200">
         </picture>
       </div>
-      <div>{gio_card(path, titulo="Hablemos de tu próximo espacio", sub="Cuéntame qué buscas y en cuánto tiempo lo necesitas.")}</div>
+      <div>{gio_card(path, titulo="Hablemos de tu espacio ideal", sub="Cuéntame qué buscas y en cuánto tiempo lo necesitas.")}</div>
     </div>
   </div>
 </section>
