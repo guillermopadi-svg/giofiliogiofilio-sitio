@@ -383,7 +383,7 @@ def build_search_pages():
 </script>'''
         body = (breadcrumb(path, crumbs) +
                 f'<div class="wrap" style="padding-top:1rem"></div>' +
-                results_block(path, titulo, intro))
+                results_block(path, titulo, intro, incluir_mascotas=(urlp in ("renta/", "desarrollos/"))))
         write(path, page(path, titulo + " | Gio Filio", desc, body,
                          active=("propiedades/" if urlp == "propiedades/" else ""),
                          schema=[breadcrumb_schema(crumbs), person_schema()],

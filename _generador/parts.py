@@ -6,7 +6,7 @@ from data_zonas import ALCALDIAS, COLONIAS, MARCA
 
 
 # --------------------------------------------------------------- FILTROS
-def filters_html(idsuf=""):
+def filters_html(idsuf="", incluir_mascotas=True):
     tipos = "".join(
         f'<button type="button" class="pill" data-v="{t[0]}" aria-pressed="false">{e(t[1])}</button>'
         for t in TIPOS
@@ -29,9 +29,10 @@ def filters_html(idsuf=""):
         <button type="button" class="pill" data-v="" aria-pressed="true">Todas</button>{btns}
       </div></div>'''
 
+    amen_list = AMENIDADES if incluir_mascotas else [a for a in AMENIDADES if a[0] != "pet-friendly"]
     amen = "".join(
         f'<label class="check"><input type="checkbox" data-f-check="amenidades" data-v="{a[0]}"> {e(a[1])} <span class="cnt"></span></label>'
-        for a in AMENIDADES
+        for a in amen_list
     )
     estatus = "".join(
         f'<label class="check"><input type="checkbox" data-f-check="badges" data-v="{k}"> {e(v)} <span class="cnt"></span></label>'
@@ -120,7 +121,7 @@ SORT_OPTS = [
 ]
 
 
-def results_block(path, titulo, intro=""):
+def results_block(path, titulo, intro="", incluir_mascotas=True):
     R = lambda t: rel(path, t)
     sorts = "".join(f'<option value="{k}">{e(v)}</option>' for k, v in SORT_OPTS)
     return f'''
@@ -134,7 +135,7 @@ def results_block(path, titulo, intro=""):
               <h3 style="font-size:var(--step-1);margin:0">Filtros</h3>
               <button type="button" class="link-arrow small" onclick="window.gfClearFilters&&window.gfClearFilters()">Limpiar</button>
             </div>
-            {filters_html()}
+            {filters_html(incluir_mascotas=incluir_mascotas)}
           </div>
         </aside>
         <div style="min-width:0">
@@ -185,7 +186,7 @@ def results_block(path, titulo, intro=""):
     <h3>Filtros</h3>
     <button type="button" class="icon-btn" data-close-drawer aria-label="Cerrar filtros">{icon("close")}</button>
   </div>
-  <div class="drawer-body">{filters_html("-m")}</div>
+  <div class="drawer-body">{filters_html("-m", incluir_mascotas=incluir_mascotas)}</div>
   <div class="drawer-foot">
     <button type="button" class="btn btn--ghost" onclick="window.gfClearFilters&&window.gfClearFilters()">Limpiar todo</button>
     <button type="button" class="btn" data-close-drawer>Ver resultados</button>
