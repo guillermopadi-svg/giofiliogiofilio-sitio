@@ -295,7 +295,7 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
   border:2px solid #fff;
 }
 .icon-btn .count[data-count="0"]{ display:none; }
-.burger{ display:none; width:44px; height:44px; border-radius:var(--r-full); border:1px solid var(--line); place-items:center; color:var(--navy); }
+.burger{ display:none; width:44px; height:44px; border-radius:var(--r-full); border:1px solid var(--navy-100); background:var(--navy-050); place-items:center; color:var(--navy); }
 .burger svg{ width:20px; height:20px; }
 @media (max-width:1080px){
   .nav-main{ display:none; }
