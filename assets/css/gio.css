@@ -739,6 +739,12 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .form-success svg{ width:38px; height:38px; color:var(--gold); margin:0 auto .6rem; }
 .form-grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:0 .7rem; }
 @media (max-width:520px){ .form-grid-2{ grid-template-columns:1fr; } }
+.newsletter-inline{ margin-top:2.25rem; padding-top:2rem; border-top:1px solid rgba(255,255,255,.14); max-width:460px; }
+.newsletter-form{ display:flex; align-items:flex-start; gap:.6rem; }
+.newsletter-form .form-row{ flex:1; margin-bottom:0; }
+.newsletter-form .btn{ flex:0 0 auto; }
+@media (max-width:480px){ .newsletter-form{ flex-direction:column; } .newsletter-form .btn{ width:100%; } }
+.newsletter-inline .form-success{ margin-top:.7rem; padding:.9rem 1rem; text-align:left; }
 
 /* ------------------------------------------------------- 14. WHATSAPP FAB */
 .wa-fab{

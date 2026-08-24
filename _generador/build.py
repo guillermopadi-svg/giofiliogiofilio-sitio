@@ -271,6 +271,19 @@ def build_home():
           <a class="btn btn--light" href="{R("conoce-a-gio/")}">Conoce a Gio</a>
           <a class="btn btn--outline-light" href="{R("contacto/")}">Hablemos de tu próximo espacio</a>
         </div>
+        <div class="newsletter-inline">
+          <p class="small" style="color:rgba(255,255,255,.75);margin-bottom:.7rem;max-width:42ch">Suscríbete y recibe análisis de inversión y tendencias del mercado inmobiliario de CDMX antes que nadie.</p>
+          <form data-lead-form data-form-name="newsletter_home" data-source="sitio_web" data-event="newsletter_signup" class="newsletter-form" novalidate>
+            <div class="form-row">
+              <label for="nl-email" class="sr-only">Correo electrónico</label>
+              <input type="email" id="nl-email" name="email" required autocomplete="email" placeholder="tu@correo.com">
+              <span class="err">Escribe un correo válido</span>
+            </div>
+            <button type="submit" class="btn btn--light">Suscribirme</button>
+          </form>
+          <div class="form-success" data-form-success role="status">¡Listo! Te avisamos por correo con análisis de inversión y oportunidades nuevas.</div>
+          <p class="tiny" style="color:rgba(255,255,255,.5);margin-top:.6rem">Sin spam. Acepto el <a href="{R("aviso-de-privacidad/")}" style="color:inherit;text-decoration:underline">aviso de privacidad</a>.</p>
+        </div>
       </div>
     </div>
   </div>
