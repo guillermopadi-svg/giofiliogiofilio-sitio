@@ -9,7 +9,7 @@ window.GF_CONFIG = {
      Mientras esté vacío, el sitio usa un mapa esquemático de respaldo que
      muestra todos los pines con precio, sin costo ni dependencias.
      Consola: https://console.cloud.google.com/google/maps-apis            */
-  googleMapsKey: "",
+  googleMapsKey: "AIzaSyC4QYbTXnHFZ6jj4Ns3y2y3_uwUnn7TNSI",
 
   /* --- WhatsApp ---------------------------------------------------------- */
   whatsapp: "5215544876074",
