@@ -582,8 +582,9 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
   background:#fff; color:var(--navy); border:1.5px solid var(--navy);
   padding:.3rem .6rem; border-radius:var(--r-full); box-shadow:var(--sh-2); cursor:pointer;
   transition:background var(--t-fast), color var(--t-fast), transform var(--t-fast), z-index 0s;
-  white-space:nowrap;
+  white-space:nowrap; display:inline-flex; align-items:center; gap:.28rem;
 }
+.map-pin svg{ width:11px; height:11px; flex:0 0 auto; }
 .map-pin::after{
   content:""; position:absolute; left:50%; bottom:-5px; width:8px; height:8px;
   background:#fff; border-right:1.5px solid var(--navy); border-bottom:1.5px solid var(--navy);
