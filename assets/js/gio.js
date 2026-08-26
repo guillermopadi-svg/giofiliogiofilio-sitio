@@ -115,7 +115,8 @@
     arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
     building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/></svg>',
-    map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M9 4L3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4zM9 4v13M15 6.5v13"/></svg>'
+    map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M9 4L3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4zM9 4v13M15 6.5v13"/></svg>',
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19v-8z"/><path d="M9.5 20.5v-6h5v6"/></svg>'
   };
   window.GF_ICON = ICON;
 
@@ -912,7 +913,7 @@
         b.type = 'button';
         b.className = 'map-pin' + (fav.indexOf(p.id) > -1 ? ' is-fav' : '');
         b.style.left = c.x + '%'; b.style.top = c.y + '%';
-        b.textContent = moneyShort(p.precio);
+        b.innerHTML = ICON.home + '<span>' + moneyShort(p.precio) + '</span>';
         b.dataset.id = p.id;
         b.setAttribute('aria-label', p.titulo + ' — ' + money(p.precio));
         on(b, 'mouseenter', function () { showPreview(p, c); b.classList.add('is-active'); });
@@ -985,10 +986,11 @@
       bounds.extend(pos);
       var mk = new google.maps.Marker({
         position: pos, map: MAP.gmap, title: p.titulo,
-        label: { text: moneyShort(p.precio), fontFamily: 'Jost, sans-serif', fontSize: '12px', fontWeight: '600', color: '#071F4A' },
+        label: { text: moneyShort(p.precio), fontFamily: 'Jost, sans-serif', fontSize: '10px', fontWeight: '600', color: '#ffffff' },
         icon: {
-          path: 'M -34,-13 h 68 a 10,10 0 0 1 10,10 v 6 a 10,10 0 0 1 -10,10 h -68 a 10,10 0 0 1 -10,-10 v -6 a 10,10 0 0 1 10,-10 z',
-          fillColor: '#ffffff', fillOpacity: 1, strokeColor: '#071F4A', strokeWeight: 1.5, scale: 1, labelOrigin: new google.maps.Point(0, 0)
+          path: 'M -13,0 L -13,-12 L 0,-24 L 13,-12 L 13,0 Z',
+          fillColor: '#071F4A', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 1.5, scale: 1,
+          anchor: new google.maps.Point(0, 0), labelOrigin: new google.maps.Point(0, -7)
         }
       });
       mk.addListener('click', function () {
@@ -1096,6 +1098,12 @@
       formulario: form.dataset.formName || 'contacto',
       propiedad_id: pid || null,
       propiedad_titulo: p ? p.titulo : null,
+      propiedad_precio: p ? money(p.precio) + (p.operacion === 'renta' ? ' /mes' : '') : null,
+      propiedad_recamaras: p ? (p.rec || null) : null,
+      propiedad_banos: p ? (p.ban ? (p.ban + (p.medios ? '.' + p.medios : '')) : null) : null,
+      propiedad_estacionamientos: p ? (p.est || null) : null,
+      propiedad_m2: p ? (p.m2c ? num(p.m2c) + ' m² construcción' : (p.m2t ? num(p.m2t) + ' m² terreno' : null)) : null,
+      propiedad_foto: p ? url(p.foto_card) : null,
       operacion: p ? p.operacion : (lead.operacion || null),
       colonia: p ? p.colonia_nombre : (lead.colonia || null),
       alcaldia: p ? p.alcaldia_nombre : (lead.alcaldia || null),
