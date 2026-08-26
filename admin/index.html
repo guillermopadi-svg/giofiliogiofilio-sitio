@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel de asesores — Gio Filio</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="../assets/img/brand/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+<body>
+
+<!-- ---------------------------------------------------------- LOGIN ---------------------------------------------------------- -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-logo">
+      <img src="../assets/img/brand/isotipo-gf.png" alt="Gio Filio">
+      <span>Panel de asesores</span>
+    </div>
+    <p class="gate-sub">Sube y administra tus propiedades</p>
+    <div class="error-msg" id="loginError"></div>
+    <form id="loginForm" novalidate>
+      <div class="field">
+        <label for="loginEmail">Correo</label>
+        <input type="email" id="loginEmail" autocomplete="username" placeholder="tu@correo.com" required>
+      </div>
+      <div class="field">
+        <label for="loginPass">Contraseña</label>
+        <input type="password" id="loginPass" autocomplete="current-password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn--block">Iniciar sesión</button>
+    </form>
+  </div>
+</div>
+
+<!-- ---------------------------------------------------------- APP ---------------------------------------------------------- -->
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <img src="../assets/img/brand/isotipo-gf.png" alt="Gio Filio">
+      <span>Panel de asesores</span>
+    </div>
+    <div class="topbar-user">
+      <div class="avatar" id="userAvatar">G</div>
+      <span id="userName">Asesor</span>
+      <button class="btn btn--ghost btn--sm" id="logoutBtn">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div class="shell-head">
+      <div>
+        <h1>Mis propiedades</h1>
+        <p>Agrega, edita y publica tus fichas — se reflejan en giofilio.com en cuanto las publicas.</p>
+      </div>
+      <button class="btn btn--gold" id="addPropBtn">+ Nueva propiedad</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card"><div class="num" id="statTotal">0</div><div class="lbl">Propiedades</div></div>
+      <div class="stat-card"><div class="num" id="statDisponibles">0</div><div class="lbl">Disponibles</div></div>
+      <div class="stat-card"><div class="num" id="statVenta">0</div><div class="lbl">En venta</div></div>
+      <div class="stat-card"><div class="num" id="statDestacadas">0</div><div class="lbl">Destacadas</div></div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="empty" id="emptyState" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 9l9-6 9 6v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/><path d="M9 21V12h6v9"/></svg>
+      <p>Todavía no tienes propiedades cargadas.</p>
+      <button class="btn btn--gold" id="emptyAddBtn">Agregar la primera</button>
+    </div>
+  </main>
+
+  <button class="btn btn--gold fab" id="addPropBtnFab" style="display:none">+ Nueva propiedad</button>
+</div>
+
+<!-- ---------------------------------------------------------- MODAL: PROPIEDAD ---------------------------------------------------------- -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">Nueva propiedad</h2>
+      <button class="modal-close" id="modalClose" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="section-label">Operación</div>
+      <div class="op-toggle">
+        <button type="button" data-op="venta" class="is-active">Venta</button>
+        <button type="button" data-op="renta">Renta</button>
+      </div>
+      <input type="hidden" id="f_operacion" value="venta">
+
+      <div class="section-label">Datos generales</div>
+      <div class="field">
+        <label for="f_titulo">Título de la propiedad</label>
+        <input type="text" id="f_titulo" placeholder="Ej. Departamento con terraza en Polanco">
+      </div>
+      <div class="field-grid">
+        <div class="field">
+          <label for="f_tipo">Tipo</label>
+          <select id="f_tipo">
+            <option value="departamento">Departamento</option>
+            <option value="casa">Casa</option>
+            <option value="penthouse">Penthouse</option>
+            <option value="loft">Loft</option>
+            <option value="terreno">Terreno</option>
+            <option value="oficina">Oficina</option>
+            <option value="local-comercial">Local comercial</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f_precio">Precio (MXN)</label>
+          <input type="number" id="f_precio" placeholder="8500000">
+        </div>
+      </div>
+      <div class="field-grid">
+        <div class="field">
+          <label for="f_colonia">Colonia</label>
+          <input type="text" id="f_colonia" placeholder="Polanco">
+        </div>
+        <div class="field">
+          <label for="f_alcaldia">Alcaldía</label>
+          <input type="text" id="f_alcaldia" placeholder="Miguel Hidalgo">
+        </div>
+      </div>
+
+      <div class="section-label">Características</div>
+      <div class="field-grid-3">
+        <div class="field"><label for="f_rec">Recámaras</label><input type="number" id="f_rec" min="0"></div>
+        <div class="field"><label for="f_ban">Baños</label><input type="number" id="f_ban" min="0"></div>
+        <div class="field"><label for="f_est">Estacionamientos</label><input type="number" id="f_est" min="0"></div>
+      </div>
+      <div class="field">
+        <label for="f_m2c">Metros de construcción</label>
+        <input type="number" id="f_m2c" min="0">
+      </div>
+
+      <div class="section-label">Amenidades</div>
+      <div class="chips" id="amenidadesGrid"></div>
+
+      <div class="section-label">Fotos</div>
+      <div class="dropzone" id="dropzone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+        <div>Arrastra tus fotos aquí o haz clic para elegirlas</div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" multiple hidden>
+      <div class="photo-strip" id="photoStrip"></div>
+
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn--ghost" id="saveDraftBtn">Guardar borrador</button>
+      <div class="modal-foot-right">
+        <button class="btn btn--ghost btn--sm" id="modalCancelBtn" onclick="document.getElementById('modalBackdrop').classList.remove('is-open')">Cancelar</button>
+        <button class="btn btn--gold" id="publishBtn">Publicar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="../assets/js/admin-config.js"></script>
+<script src="../assets/js/admin.js"></script>
+</body>
+</html>
