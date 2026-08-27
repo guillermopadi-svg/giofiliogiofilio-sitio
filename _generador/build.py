@@ -13,7 +13,7 @@ from data_props import TIPOS, TIPO_LABEL, TIPO_PLURAL, AMENIDAD_LABEL, ESTADOS_I
 from data_content import TESTIMONIOS, PROCESO, FAQS_GENERALES, BLOG, BLOG_CATEGORIAS
 import prep
 
-OUT = "giofilio-sitio"
+OUT = ".."  # el sitio real es el directorio padre de _generador
 PAGES = []          # rutas generadas para sitemap
 TODAY = "2026-08-16"
 
@@ -258,7 +258,7 @@ def build_home():
     <p class="eyebrow eyebrow--center center">Clientes</p>
     <h2 class="center" style="margin-bottom:3rem">Lo que dicen quienes ya encontraron su espacio</h2>
     {testimonial_block(TESTIMONIOS, 3)}
-    <p class="center small muted" style="margin-top:2rem">Testimonios ilustrativos incluidos en la versión de demostración del sitio.</p>
+    {'<p class="center small muted" style="margin-top:2rem">Testimonios ilustrativos incluidos en la versión de demostración del sitio.</p>' if prep.DATASET_ES_DEMO else ''}
   </div>
 </section>
 
@@ -462,7 +462,7 @@ def build_property(p):
             <div class="flex flex-wrap" style="margin-bottom:.75rem">
               <span class="badge badge--{p["operacion"]}">{"Venta" if p["operacion"]=="venta" else "Renta"}</span>
               {"".join(f'<span class="badge badge--{b}">{e({"nueva":"Nueva","exclusiva":"Exclusiva","oportunidad":"Oportunidad","preventa":"Preventa","entrega-inmediata":"Entrega inmediata"}.get(b,b))}</span>' for b in p["badges"])}
-              <span class="badge badge--demo">Demo</span>
+              {'<span class="badge badge--demo">Demo</span>' if prep.DATASET_ES_DEMO else ''}
             </div>
             <h1 style="font-size:var(--step-3);max-width:22ch">{e(p["titulo"])}</h1>
             <p class="pcard-loc" style="font-size:var(--step-0)">{icon("pin")}{e(p["calle"])}, {e(p["colonia_nombre"])}, {e(p["alcaldia_nombre"])}, Ciudad de México · CP {e(p["cp"])}</p>
@@ -645,7 +645,7 @@ def build_alcaldia(a):
 
     faqs = [
         (f'¿Cuántas propiedades hay disponibles en {a["nombre"]}?',
-         f'En este momento hay {len(props)} propiedades publicadas en {a["nombre"]} dentro del catálogo de demostración. El inventario se actualiza conforme se integran nuevas propiedades a la plataforma.'
+         f'En este momento hay {len(props)} propiedades publicadas en {a["nombre"]}. El inventario se actualiza conforme se integran nuevas propiedades a la plataforma.'
          if props else
          f'Por ahora no hay inventario publicado en {a["nombre"]}. Trabajo con profundidad un número acotado de zonas, pero puedo buscar en {a["nombre"]} a través de mi red de colegas.'),
         (f'¿Cómo es vivir en {a["nombre"]}?', a["vive"]),
@@ -1004,7 +1004,7 @@ def build_gio():
     <p class="eyebrow eyebrow--center center">Testimonios</p>
     <h2 class="center" style="margin-bottom:3rem">Clientes que ya encontraron su espacio</h2>
     {testimonial_block(TESTIMONIOS, len(TESTIMONIOS))}
-    <p class="center small muted" style="margin-top:2rem">Testimonios ilustrativos incluidos en la versión de demostración del sitio.</p>
+    {'<p class="center small muted" style="margin-top:2rem">Testimonios ilustrativos incluidos en la versión de demostración del sitio.</p>' if prep.DATASET_ES_DEMO else ''}
   </div>
 </section>
 

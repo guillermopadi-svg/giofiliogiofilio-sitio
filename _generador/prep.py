@@ -2,12 +2,13 @@
 """Gio Filio — Normalización del dataset + pipeline de imágenes + data JS."""
 import os, json, random, hashlib
 from data_zonas import ALCALDIAS, COLONIAS, COLONIA_BY_SLUG, ALCALDIA_SLUG_BY_NOMBRE, MARCA
-from data_props import (PROPIEDADES, TIPOS, TIPO_LABEL, TIPO_PLURAL, AMENIDADES,
+from data_props import (TIPOS, TIPO_LABEL, TIPO_PLURAL, AMENIDADES,
                         AMENIDAD_LABEL, ESTADOS_INMUEBLE, P_SALA, P_COCINA, P_RECAMARA,
-                        P_BANO, P_EXT, P_DET, P_CIUDAD, DATASET_ES_DEMO)
+                        P_BANO, P_EXT, P_DET, P_CIUDAD)
+from data_props_live import PROPIEDADES, DATASET_ES_DEMO
 from render import slugify
 
-OUT = "giofilio-sitio"
+OUT = ".."  # el sitio real es el directorio padre de _generador
 IMG_PROP = "assets/img/properties"
 IMG_ZONA = "assets/img/zonas"
 IMG_BLOG = "assets/img/blog"
@@ -52,6 +53,10 @@ def build_zone_images(mapping, raw_dir="raw/unsplash", pool_ids=None):
     os.makedirs(os.path.join(OUT, IMG_ZONA), exist_ok=True)
     out = {}
     for slug, idx in mapping.items():
+        base = f"{IMG_ZONA}/{slug}"
+        if os.path.exists(os.path.join(OUT, base + "-hero.jpg")):
+            out[slug] = base
+            continue
         pid = pool_ids[idx]
         src = os.path.join(raw_dir, pid + ".jpg")
         if not os.path.exists(src):
@@ -81,6 +86,10 @@ def build_blog_images(mapping, raw_dir="raw/unsplash", pool_ids=None):
     os.makedirs(os.path.join(OUT, IMG_BLOG), exist_ok=True)
     out = {}
     for slug, idx in mapping.items():
+        base = f"{IMG_BLOG}/{slug}"
+        if os.path.exists(os.path.join(OUT, base + "-hero.jpg")):
+            out[slug] = base
+            continue
         pid = pool_ids[idx]
         src = os.path.join(raw_dir, pid + ".jpg")
         if not os.path.exists(src):
@@ -211,7 +220,7 @@ def normalize(images):
 
 
 # --------------------------------------------------------------- DATA PARA JS
-def emit_data_js(props, colonias, alcaldias, path="giofilio-sitio/assets/data/gio-data.js"):
+def emit_data_js(props, colonias, alcaldias, path=os.path.join(OUT, "assets/data/gio-data.js")):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     slim = []
     for p in props:
@@ -255,12 +264,18 @@ def emit_data_js(props, colonias, alcaldias, path="giofilio-sitio/assets/data/gi
     with open(path, "w", encoding="utf-8") as f:
         f.write(js)
     # copia JSON legible para integraciones / import a base de datos
-    with open("giofilio-sitio/assets/data/propiedades.json", "w", encoding="utf-8") as f:
+    with open(os.path.join(OUT, "assets/data/propiedades.json"), "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     return data
 
 
-def emit_config_js(path="giofilio-sitio/assets/js/config.js"):
+def emit_config_js(path=None):
+    path = path or os.path.join(OUT, "assets/js/config.js")
+    if os.path.exists(path):
+        # config.js es un archivo de configuración operativa (llaves reales de
+        # Google Maps, WhatsApp, GTM, CRM/n8n): nunca se sobreescribe con la
+        # plantilla en blanco una vez que el sitio ya está configurado.
+        return
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         f.write(f'''/* ==========================================================================

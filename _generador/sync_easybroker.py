@@ -26,7 +26,7 @@ from urllib.error import HTTPError
 from data_zonas import COLONIAS, ALCALDIA_SLUG_BY_NOMBRE
 
 API_BASE = "https://api.easybroker.com/v1"
-OUT = "giofilio-sitio"
+OUT = ".."  # el sitio real es el directorio padre de _generador
 IMG_DIR = os.path.join(OUT, "assets/img/properties")
 
 API_KEY = os.environ.get("EASYBROKER_API_KEY", "").strip()
@@ -35,18 +35,26 @@ if not API_KEY:
 
 
 # --------------------------------------------------------------- HTTP helper
-def eb_get(path, params=None):
+def eb_get(path, params=None, _retries=12):
+    import time
     url = f"{API_BASE}{path}"
     if params:
         from urllib.parse import urlencode
         url += "?" + urlencode(params, doseq=True)
     req = Request(url, headers={"X-Authorization": API_KEY, "Accept": "application/json"})
-    try:
-        with urlopen(req, timeout=30) as r:
-            return json.loads(r.read().decode("utf-8"))
-    except HTTPError as e:
-        body = e.read().decode("utf-8", "ignore")
-        sys.exit(f"EasyBroker respondió {e.code} en {path}: {body[:300]}")
+    for attempt in range(1, _retries + 1):
+        try:
+            with urlopen(req, timeout=30) as r:
+                return json.loads(r.read().decode("utf-8"))
+        except HTTPError as e:
+            body = e.read().decode("utf-8", "ignore")
+            sys.exit(f"EasyBroker respondió {e.code} en {path}: {body[:300]}")
+        except OSError as e:
+            if attempt == _retries:
+                sys.exit(f"Red no disponible tras {_retries} intentos en {path}: {e}")
+            wait = min(2 ** attempt, 45)
+            print(f"  ! red no disponible ({e}), reintentando en {wait}s ({attempt}/{_retries})...")
+            time.sleep(wait)
 
 
 def eb_list_published():
@@ -263,6 +271,26 @@ def main():
             _colonia_exacta=exact,
         ))
         print(f"  ✓ {public_id} — {titulo[:60]}")
+
+    # Propiedades fuera de la zona de cobertura (CDMX): RE/MAX Blue también
+    # opera fuera de la ciudad, pero Gio Filio solo publica las 16 alcaldías.
+    EXCLUDE_FUERA_CDMX = {
+        "EB-KG7144", "EB-KC0599",  # Tulum, Quintana Roo
+        "EB-VW7046",               # Otumba, Edomex
+        "EB-UZ8084", "EB-SG4806", "EB-WA8334",
+        "EB-VT0576",               # Cuernavaca, Morelos
+        "EB-VX6637",               # Texcoco, Edomex
+        "EB-UZ7895",               # Tepoztlán, Morelos
+        "EB-LI5307",               # Ocoyoacac, Edomex
+    }
+    FIX_TIPO_TERRENO = {"EB-RI6822", "EB-VQ9738"}
+    before = len(props)
+    props = [p for p in props if p["id"] not in EXCLUDE_FUERA_CDMX]
+    for p in props:
+        if p["id"] in FIX_TIPO_TERRENO:
+            p["tipo"] = "terreno"
+    if before != len(props):
+        print(f"\n{before - len(props)} propiedades fuera de CDMX excluidas del sitio.")
 
     write_data_props_live(props)
 

@@ -989,7 +989,7 @@
         label: { text: moneyShort(p.precio), fontFamily: 'Jost, sans-serif', fontSize: '10px', fontWeight: '600', color: '#ffffff' },
         icon: {
           path: 'M -13,0 L -13,-12 L 0,-24 L 13,-12 L 13,0 Z',
-          fillColor: '#071F4A', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 1.5, scale: 1,
+          fillColor: '#D0021B', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 1.5, scale: 1,
           anchor: new google.maps.Point(0, 0), labelOrigin: new google.maps.Point(0, -7)
         }
       });
