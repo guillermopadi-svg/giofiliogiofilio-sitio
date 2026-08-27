@@ -17,7 +17,7 @@ window.GF_CONFIG = {
   /* --- Analítica ---------------------------------------------------------
      Al declarar estos IDs, agrega los snippets de GTM/GA4 en el <head>.
      Todos los eventos ya se envían a window.dataLayer.                      */
-  gtmId: "",          // ej. "GTM-XXXXXXX"
+  gtmId: "GTM-PSM7N783",
   ga4Id: "",          // ej. "G-XXXXXXXXXX"
   metaPixelId: "",    // ej. "1234567890"
   googleAdsId: "",    // ej. "AW-XXXXXXXXX"
