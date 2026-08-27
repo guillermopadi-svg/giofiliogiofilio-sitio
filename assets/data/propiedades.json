@@ -3,7 +3,7 @@
     "demo": false,
     "ciudad": "Ciudad de México",
     "generado": "2026-08-16",
-    "total": 39
+    "total": 37
   },
   "propiedades": [
     {
@@ -262,49 +262,6 @@
       "actualizado": "2026-06-03",
       "foto_card": "assets/img/properties/eb-eb-ug5455-00-card.jpg",
       "precio_m2": 86707,
-      "estado": "disponible"
-    },
-    {
-      "id": "EB-UH3270",
-      "titulo": "Casa en Venta en Recepcionistas, San José Aculco",
-      "titulo_wa": "la propiedad en Portales",
-      "url": "propiedad/casa-portales-ebuh3270/",
-      "operacion": "venta",
-      "tipo": "casa",
-      "tipo_label": "Casa",
-      "precio": 4700000.0,
-      "mantenimiento": 0,
-      "colonia": "portales",
-      "colonia_nombre": "Portales",
-      "alcaldia": "benito-juarez",
-      "alcaldia_nombre": "Benito Juárez",
-      "calle": "Recepcionistas",
-      "cp": "09410",
-      "lat": 19.3780214,
-      "lng": -99.099302,
-      "rec": 3,
-      "ban": 2,
-      "medios": 1,
-      "est": 2,
-      "m2c": 216.0,
-      "m2t": 97.0,
-      "antig": 1987,
-      "piso": "",
-      "estado_inm": "excelente",
-      "amenidades": [
-        "terraza",
-        "cuarto-servicio",
-        "home-office"
-      ],
-      "badges": [
-        "exclusiva"
-      ],
-      "destacada": true,
-      "exclusiva": true,
-      "publicado": "2026-03-02",
-      "actualizado": "2026-06-03",
-      "foto_card": "assets/img/properties/eb-eb-uh3270-00-card.jpg",
-      "precio_m2": 21759,
       "estado": "disponible"
     },
     {
@@ -583,45 +540,6 @@
       "actualizado": "2026-06-03",
       "foto_card": "assets/img/properties/eb-eb-tl4088-00-card.jpg",
       "precio_m2": 33857,
-      "estado": "disponible"
-    },
-    {
-      "id": "EB-QE4758",
-      "titulo": "BODEGA en VENTA,  San Nicolas Tolentino, Iztapalapa !!!",
-      "titulo_wa": "la propiedad en Portales",
-      "url": "propiedad/local-comercial-portales-ebqe4758/",
-      "operacion": "venta",
-      "tipo": "local-comercial",
-      "tipo_label": "Local comercial",
-      "precio": 33000000.0,
-      "mantenimiento": 0,
-      "colonia": "portales",
-      "colonia_nombre": "Portales",
-      "alcaldia": "benito-juarez",
-      "alcaldia_nombre": "Benito Juárez",
-      "calle": "San Luis",
-      "cp": "09880",
-      "lat": 19.3141429,
-      "lng": -99.0882132,
-      "rec": 0,
-      "ban": 0,
-      "medios": 0,
-      "est": 6,
-      "m2c": 1303.0,
-      "m2t": 2050.0,
-      "antig": 1981,
-      "piso": "",
-      "estado_inm": "excelente",
-      "amenidades": [
-        "cisterna"
-      ],
-      "badges": [],
-      "destacada": false,
-      "exclusiva": false,
-      "publicado": "2026-03-02",
-      "actualizado": "2026-06-03",
-      "foto_card": "assets/img/properties/eb-eb-qe4758-00-card.jpg",
-      "precio_m2": 25326,
       "estado": "disponible"
     },
     {
@@ -2143,16 +2061,8 @@
       "colonia": "Santa Fe"
     },
     {
-      "calle": "Recepcionistas",
-      "colonia": "Portales"
-    },
-    {
       "calle": "Rubén Darío",
       "colonia": "Anzures"
-    },
-    {
-      "calle": "San Luis",
-      "colonia": "Portales"
     },
     {
       "calle": "Álvaro Obregón",
