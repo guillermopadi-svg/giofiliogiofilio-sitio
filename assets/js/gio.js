@@ -12,6 +12,15 @@
   var BASE = window.GF_BASE || './';
   var D = window.GF_DATA || { propiedades: [], colonias: [], alcaldias: [] };
 
+  // Isotipo de la marca (casita "GF"), blanco, para los pines del mapa.
+  var ISOTIPO_B64 = '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';
+  var PIN_ICON_SVG_URL = 'data:image/svg+xml;base64,' + btoa(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42">' +
+    '<path d="M17 41C17 41 2 24 2 15A15 15 0 1 1 32 15C32 24 17 41 17 41Z" fill="#D0021B" stroke="#ffffff" stroke-width="1.6"/>' +
+    '<image x="9" y="6" width="16" height="16" href="data:image/png;base64,' + ISOTIPO_B64 + '"/>' +
+    '</svg>'
+  );
+
   var LS = {
     fav: 'gf_favoritos_v1',
     cmp: 'gf_comparador_v1',
@@ -913,7 +922,7 @@
         b.type = 'button';
         b.className = 'map-pin' + (fav.indexOf(p.id) > -1 ? ' is-fav' : '');
         b.style.left = c.x + '%'; b.style.top = c.y + '%';
-        b.innerHTML = ICON.home + '<span>' + moneyShort(p.precio) + '</span>';
+        b.innerHTML = '<img src="data:image/png;base64,' + ISOTIPO_B64 + '" alt="" width="13" height="13">' + '<span>' + moneyShort(p.precio) + '</span>';
         b.dataset.id = p.id;
         b.setAttribute('aria-label', p.titulo + ' — ' + money(p.precio));
         on(b, 'mouseenter', function () { showPreview(p, c); b.classList.add('is-active'); });
@@ -986,11 +995,12 @@
       bounds.extend(pos);
       var mk = new google.maps.Marker({
         position: pos, map: MAP.gmap, title: p.titulo,
-        label: { text: moneyShort(p.precio), fontFamily: 'Jost, sans-serif', fontSize: '10px', fontWeight: '600', color: '#ffffff' },
+        label: { text: moneyShort(p.precio), fontFamily: 'Jost, sans-serif', fontSize: '11px', fontWeight: '600', color: '#071F4A' },
         icon: {
-          path: 'M -13,0 L -13,-12 L 0,-24 L 13,-12 L 13,0 Z',
-          fillColor: '#D0021B', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 1.5, scale: 1,
-          anchor: new google.maps.Point(0, 0), labelOrigin: new google.maps.Point(0, -7)
+          url: PIN_ICON_SVG_URL,
+          scaledSize: new google.maps.Size(34, 42),
+          anchor: new google.maps.Point(17, 41),
+          labelOrigin: new google.maps.Point(17, -8)
         }
       });
       mk.addListener('click', function () {
