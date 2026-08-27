@@ -336,9 +336,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 {footer(path, colonias, alcaldias)}
 {wa_fab(path)}
 <div class="drawer-backdrop" id="drawerBackdrop"></div>
-<script src="{R("assets/js/config.js")}"></script>
-<script src="{R("assets/data/gio-data.js")}"></script>
-<script src="{R("assets/js/gio.js")}"></script>
+<script src="{R("assets/js/config.js")}?v=2"></script>
+<script src="{R("assets/data/gio-data.js")}?v=2"></script>
+<script src="{R("assets/js/gio.js")}?v=2"></script>
 {extra_js}
 </body>
 </html>'''
