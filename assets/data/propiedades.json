@@ -3,7 +3,7 @@
     "demo": false,
     "ciudad": "Ciudad de México",
     "generado": "2026-08-16",
-    "total": 40
+    "total": 39
   },
   "propiedades": [
     {
@@ -996,43 +996,6 @@
       "actualizado": "2026-07-14",
       "foto_card": "assets/img/properties/eb-eb-ri6822-00-card.jpg",
       "precio_m2": 583,
-      "estado": "disponible"
-    },
-    {
-      "id": "EB-UN9692",
-      "titulo": "En VENTA Terreno COMERCIAL 1,950M2 en el Fracci. Valle Ceylán Tlalnepantla",
-      "titulo_wa": "la propiedad en Polanco",
-      "url": "propiedad/terreno-polanco-ebun9692/",
-      "operacion": "venta",
-      "tipo": "terreno",
-      "tipo_label": "Terreno",
-      "precio": 32000000.0,
-      "mantenimiento": 0,
-      "colonia": "polanco",
-      "colonia_nombre": "Polanco",
-      "alcaldia": "miguel-hidalgo",
-      "alcaldia_nombre": "Miguel Hidalgo",
-      "calle": "Av. Jesús  Reyes Heroles",
-      "cp": "54150",
-      "lat": 19.5448458,
-      "lng": -99.1827015,
-      "rec": 0,
-      "ban": 0,
-      "medios": 0,
-      "est": 0,
-      "m2c": 0,
-      "m2t": 1950.0,
-      "antig": 0,
-      "piso": "",
-      "estado_inm": "excelente",
-      "amenidades": [],
-      "badges": [],
-      "destacada": false,
-      "exclusiva": false,
-      "publicado": "2026-03-02",
-      "actualizado": "2026-07-14",
-      "foto_card": "assets/img/properties/eb-eb-un9692-00-card.jpg",
-      "precio_m2": 16410,
       "estado": "disponible"
     },
     {
@@ -2086,10 +2049,6 @@
     {
       "calle": "Av. Insurgentes Sur",
       "colonia": "Nápoles"
-    },
-    {
-      "calle": "Av. Jesús  Reyes Heroles",
-      "colonia": "Polanco"
     },
     {
       "calle": "Av. Jesús del Monte",
