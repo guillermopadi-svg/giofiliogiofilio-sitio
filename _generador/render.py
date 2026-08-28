@@ -397,7 +397,7 @@ def pcard(path, p, no_cmp=False):
   <div class="pcard-media">
     <picture>
       <source type="image/webp" srcset="{R(p["foto_card_webp"])}">
-      <img src="{R(p["foto_card"])}" alt="{e(p["titulo"])} — {e(p["colonia_nombre"])}, {e(p["alcaldia_nombre"])}, Ciudad de México" loading="lazy" decoding="async" width="640" height="480">
+      <img src="{R(p["foto_card"])}" alt="{e(p["titulo"])} — {e(p["colonia_nombre"])}, {e(p["alcaldia_nombre"])}, {e(p.get("estado_nombre","Ciudad de México"))}" loading="lazy" decoding="async" width="640" height="480">
     </picture>
     <div class="pcard-badges">{badges}</div>
     <button type="button" class="pcard-fav" data-id="{e(p["id"])}" aria-pressed="false" aria-label="Guardar en favoritos">{icon("heart")}</button>
@@ -405,7 +405,7 @@ def pcard(path, p, no_cmp=False):
   <div class="pcard-body">
     <div class="pcard-price">{precio}{per} <span class="cur">MXN</span></div>
     <h3 class="pcard-title">{e(p["titulo"])}</h3>
-    <p class="pcard-loc">{icon("pin")}{e(p["colonia_nombre"])}, {e(p["alcaldia_nombre"])}, CDMX</p>
+    <p class="pcard-loc">{icon("pin")}{e(p["colonia_nombre"])}, {e(p["alcaldia_nombre"])}, {e(p.get("estado_nombre","CDMX") if p.get("estado_nombre","Ciudad de México") != "Ciudad de México" else "CDMX")}</p>
     <div class="pcard-specs">{"".join(specs)}</div>
   </div>
   {cmp_html}

@@ -248,14 +248,14 @@
       '<article class="pcard" data-id="' + esc(p.id) + '">' +
         '<a class="pcard-link" href="' + href + '" data-track-select="' + esc(p.id) + '" aria-label="Ver ' + esc(p.titulo) + '"></a>' +
         '<div class="pcard-media">' +
-          '<img src="' + url(p.foto_card) + '" alt="' + esc(p.titulo) + ' — ' + esc(p.colonia_nombre) + ', ' + esc(p.alcaldia_nombre) + ', Ciudad de México" loading="lazy" decoding="async" width="640" height="480">' +
+          '<img src="' + url(p.foto_card) + '" alt="' + esc(p.titulo) + ' — ' + esc(p.colonia_nombre) + ', ' + esc(p.alcaldia_nombre) + ', ' + esc(p.estado_nombre || 'Ciudad de México') + '" loading="lazy" decoding="async" width="640" height="480">' +
           '<div class="pcard-badges">' + badges + '</div>' +
           '<button type="button" class="pcard-fav" data-id="' + esc(p.id) + '" aria-pressed="false" aria-label="Guardar en favoritos">' + ICON.heart + '</button>' +
         '</div>' +
         '<div class="pcard-body">' +
           '<div class="pcard-price">' + precio + ' <span class="cur">MXN</span></div>' +
           '<h3 class="pcard-title">' + esc(p.titulo) + '</h3>' +
-          '<p class="pcard-loc">' + ICON.pin + esc(p.colonia_nombre) + ', ' + esc(p.alcaldia_nombre) + ', CDMX</p>' +
+          '<p class="pcard-loc">' + ICON.pin + esc(p.colonia_nombre) + ', ' + esc(p.alcaldia_nombre) + ', ' + esc((p.estado_nombre && p.estado_nombre !== 'Ciudad de México') ? p.estado_nombre : 'CDMX') + '</p>' +
           '<div class="pcard-specs">' + specs.join('') + '</div>' +
         '</div>' +
         (opts.noCmp ? '' :

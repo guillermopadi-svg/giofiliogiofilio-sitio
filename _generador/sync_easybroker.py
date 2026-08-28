@@ -23,7 +23,7 @@ import os, re, sys, json, math, unicodedata
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
-from data_zonas import COLONIAS, ALCALDIA_SLUG_BY_NOMBRE
+from data_zonas import COLONIAS, ALCALDIA_SLUG_BY_NOMBRE, ALCALDIAS
 
 API_BASE = "https://api.easybroker.com/v1"
 OUT = ".."  # el sitio real es el directorio padre de _generador
@@ -48,6 +48,11 @@ def eb_get(path, params=None, _retries=12):
                 return json.loads(r.read().decode("utf-8"))
         except HTTPError as e:
             body = e.read().decode("utf-8", "ignore")
+            if e.code in (429, 500, 502, 503, 504) and attempt < _retries:
+                wait = min(2 ** attempt, 45)
+                print(f"  ! EasyBroker {e.code} (sobrecarga temporal), reintentando en {wait}s ({attempt}/{_retries})...")
+                time.sleep(wait)
+                continue
             sys.exit(f"EasyBroker respondió {e.code} en {path}: {body[:300]}")
         except OSError as e:
             if attempt == _retries:
@@ -96,19 +101,60 @@ def haversine(lat1, lng1, lat2, lng2):
     return 2 * r * math.asin(math.sqrt(a))
 
 
+ALCALDIA_SLUG_BY_SLUGNOMBRE = {_slug(a["nombre"]): a["slug"] for a in ALCALDIAS}
+CDMX_ALIASES = {"ciudad de mexico", "cdmx", "distrito federal"}
+
+
 def match_colonia(location, warnings, public_id):
     cp = (location or {}).get("postal_code") or ""
     if cp in CP_TO_COLONIA:
         return CP_TO_COLONIA[cp], True
+
     lat, lng = (location or {}).get("latitude"), (location or {}).get("longitude")
+    name = (location or {}).get("name") or ""
+    partes = [x.strip() for x in name.split(",") if x.strip()]
+    colonia_real = partes[0] if partes else ""
+    ciudad_real = partes[1] if len(partes) >= 2 else ""
+    estado_real = partes[-1] if partes else ""
+    es_cdmx = _slug(estado_real) in CDMX_ALIASES or _slug(estado_real).replace("-", "") == "ciudaddemexico"
+
+    if name and es_cdmx and _slug(ciudad_real) in ALCALDIA_SLUG_BY_SLUGNOMBRE:
+        # Colonia sin ficha propia en el catálogo, pero dentro de una alcaldía
+        # real de CDMX (ej. Iztapalapa) — se publica con su alcaldía real,
+        # sin página de colonia dedicada.
+        warnings.append(
+            f"{public_id}: CP '{cp}' no está en el catálogo — colonia '{colonia_real}' sin página "
+            f"propia, se usa su alcaldía real '{ciudad_real}' (sin forzar a otra colonia)."
+        )
+        return {
+            "slug": _slug(f"{colonia_real}-{public_id}") or _slug(public_id),
+            "nombre": colonia_real or ciudad_real, "alcaldia": ciudad_real,
+            "lat": lat, "lng": lng, "cp": [cp] if cp else [],
+            "_sin_pagina": True,
+        }, False
+
+    if name and estado_real and not es_cdmx:
+        # Propiedad fuera de la Ciudad de México: Gio también vende en el
+        # resto del país, se publica con su ubicación real tal cual.
+        warnings.append(
+            f"{public_id}: fuera de CDMX — se publica con su ubicación real "
+            f"({colonia_real}, {ciudad_real}, {estado_real})."
+        )
+        return {
+            "slug": _slug(f"{colonia_real}-{ciudad_real}-{public_id}") or _slug(public_id),
+            "nombre": colonia_real or ciudad_real, "alcaldia": ciudad_real or estado_real,
+            "estado": estado_real, "lat": lat, "lng": lng, "cp": [cp] if cp else [],
+            "_sin_pagina": True, "_fuera_cdmx": True,
+        }, False
+
     if lat is None or lng is None:
         warnings.append(f"{public_id}: sin CP conocido ni coordenadas — revisar colonia manualmente ({location!r})")
         return COLONIAS[0], False
     nearest = min(COLONIAS, key=lambda c: haversine(lat, lng, c["lat"], c["lng"]))
     dist = haversine(lat, lng, nearest["lat"], nearest["lng"])
     warnings.append(
-        f"{public_id}: CP '{cp}' no está en el catálogo de colonias — asignado por cercanía a "
-        f"'{nearest['nombre']}' ({dist:.1f} km). Verifica que sea correcto."
+        f"{public_id}: CP '{cp}' no está en el catálogo de colonias y sin location.name utilizable "
+        f"— asignado por cercanía a '{nearest['nombre']}' ({dist:.1f} km). Verifica que sea correcto."
     )
     return nearest, False
 
@@ -241,6 +287,11 @@ def main():
             operacion=OPERACION_MAP[op["type"]],
             tipo=tipo,
             colonia=colonia["slug"],
+            colonia_nombre_real=colonia["nombre"],
+            alcaldia_real=colonia.get("alcaldia") or "",
+            estado_real=colonia.get("estado") or "",
+            sin_pagina=bool(colonia.get("_sin_pagina")),
+            fuera_cdmx=bool(colonia.get("_fuera_cdmx")),
             precio=op.get("amount") or 0,
             moneda=op.get("currency", "MXN"),
             mantenimiento=0,
@@ -272,25 +323,16 @@ def main():
         ))
         print(f"  ✓ {public_id} — {titulo[:60]}")
 
-    # Propiedades fuera de la zona de cobertura (CDMX): RE/MAX Blue también
-    # opera fuera de la ciudad, pero Gio Filio solo publica las 16 alcaldías.
-    EXCLUDE_FUERA_CDMX = {
-        "EB-KG7144", "EB-KC0599",  # Tulum, Quintana Roo
-        "EB-VW7046",               # Otumba, Edomex
-        "EB-UZ8084", "EB-SG4806", "EB-WA8334",
-        "EB-VT0576",               # Cuernavaca, Morelos
-        "EB-VX6637",               # Texcoco, Edomex
-        "EB-UZ7895",               # Tepoztlán, Morelos
-        "EB-LI5307",               # Ocoyoacac, Edomex
-    }
     FIX_TIPO_TERRENO = {"EB-RI6822", "EB-VQ9738"}
-    before = len(props)
-    props = [p for p in props if p["id"] not in EXCLUDE_FUERA_CDMX]
     for p in props:
         if p["id"] in FIX_TIPO_TERRENO:
             p["tipo"] = "terreno"
-    if before != len(props):
-        print(f"\n{before - len(props)} propiedades fuera de CDMX excluidas del sitio.")
+
+    fuera = [p for p in props if p.get("fuera_cdmx")]
+    if fuera:
+        print(f"\n{len(fuera)} propiedades fuera de CDMX se publican con su ubicación real:")
+        for p in fuera:
+            print(f"  - {p['id']}: {p['colonia_nombre_real']}, {p['alcaldia_real']}, {p['estado_real']}")
 
     write_data_props_live(props)
 

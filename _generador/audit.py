@@ -59,8 +59,11 @@ def check_file(path):
             if not os.path.exists(full):
                 errors.append(f"[404] {page} → {candidate}  (esperado: {full})")
 
-    # 2. ubicaciones fuera de CDMX
-    for bad in FUERA_CDMX:
+    # 2. ubicaciones fuera de CDMX (las fichas individuales de propiedad SÍ
+    # pueden ser de otros estados desde que Gio vende en toda la república;
+    # solo interesa que las páginas de zona/colonia sigan siendo 100% CDMX)
+    es_ficha_propiedad = page.startswith("propiedad" + os.sep)
+    for bad in ([] if es_ficha_propiedad else FUERA_CDMX):
         if re.search(r"\b" + re.escape(bad), html):
             # Excepción: menciones explicativas en términos/blog que aclaran exclusión
             ctx = html[max(0, html.find(bad) - 120): html.find(bad) + 120]

@@ -53,12 +53,16 @@ BLOG_IMG_MAP = {b["slug"]: idx for b, idx in zip(BLOG, [24, 19, 0, 32, 38, 50, 3
 BLOG_IMG = prep.build_blog_images(BLOG_IMG_MAP, pool_ids=POOL)
 
 print("→ Normalizando dataset…")
-PROPS = prep.normalize(IMAGES)
+PROPS_ALL = prep.normalize(IMAGES)
+# El buscador, el mapa y las páginas de zona/colonia siguen siendo solo CDMX;
+# las propiedades fuera de la ciudad reciben su propia ficha (más abajo) pero
+# no entran al inventario que arma el buscador ni al dataset del mapa.
+PROPS = [p for p in PROPS_ALL if p.get("estado_nombre", "Ciudad de México") == "Ciudad de México"]
 prep.emit_data_js(PROPS, COLONIAS, ALCALDIAS)
 prep.emit_config_js()
-print(f"   {len(PROPS)} propiedades · {len(COLONIAS)} colonias · {len(ALCALDIAS)} alcaldías")
+print(f"   {len(PROPS)} propiedades CDMX · {len(PROPS_ALL) - len(PROPS)} fuera de CDMX con ficha propia · {len(COLONIAS)} colonias · {len(ALCALDIAS)} alcaldías")
 
-BY_ID = {p["id"]: p for p in PROPS}
+BY_ID = {p["id"]: p for p in PROPS_ALL}
 def by(**kw):
     out = PROPS
     for k, v in kw.items():
@@ -101,7 +105,7 @@ def listing_schema(p):
                 "@type": "PostalAddress",
                 "streetAddress": p["calle"],
                 "addressLocality": p["alcaldia_nombre"],
-                "addressRegion": "Ciudad de México",
+                "addressRegion": p.get("estado_nombre", "Ciudad de México"),
                 "postalCode": p["cp"],
                 "addressCountry": "MX",
             },
@@ -369,10 +373,22 @@ def build_property(p):
     path = p["url_file"]
     R = lambda t: rel(path, t)
     op_label = "en venta" if p["operacion"] == "venta" else "en renta"
-    crumbs = [("CDMX", "propiedades/"),
-              (p["alcaldia_nombre"], f'zonas/{p["alcaldia"]}/'),
-              (p["colonia_nombre"], f'propiedades/{p["colonia_slug"]}/'),
-              (f'{p["tipo_label"]} {op_label}', None)]
+    if not p.get("sin_pagina"):
+        crumbs = [("CDMX", "propiedades/"),
+                  (p["alcaldia_nombre"], f'zonas/{p["alcaldia"]}/'),
+                  (p["colonia_nombre"], f'propiedades/{p["colonia_slug"]}/'),
+                  (f'{p["tipo_label"]} {op_label}', None)]
+    elif p.get("alcaldia_tiene_pagina"):
+        crumbs = [("CDMX", "propiedades/"),
+                  (p["alcaldia_nombre"], f'zonas/{p["alcaldia"]}/'),
+                  (p["colonia_nombre"], None),
+                  (f'{p["tipo_label"]} {op_label}', None)]
+    else:
+        crumbs = [(p.get("estado_nombre", "México"), None)]
+        if p["alcaldia_nombre"] != p.get("estado_nombre"):
+            crumbs.append((p["alcaldia_nombre"], None))
+        crumbs.append((p["colonia_nombre"], None))
+        crumbs.append((f'{p["tipo_label"]} {op_label}', None))
 
     # galería
     thumbs = ""
@@ -425,14 +441,15 @@ def build_property(p):
         fin_note = "El desembolso inicial considera primer mes más depósito. La póliza jurídica sustituye al aval y la contrata el inquilino; su costo varía entre 30 y 50 por ciento de un mes de renta."
 
     # similares
-    sim = [q for q in PROPS if q["id"] != p["id"] and q["colonia_slug"] == p["colonia_slug"] and q["operacion"] == p["operacion"]]
+    pool = PROPS_ALL if p.get("sin_pagina") else PROPS
+    sim = [q for q in pool if q["id"] != p["id"] and q["colonia_slug"] == p["colonia_slug"] and q["operacion"] == p["operacion"]]
     if len(sim) < 3:
-        sim += [q for q in PROPS if q["id"] != p["id"] and q["alcaldia"] == p["alcaldia"] and q not in sim]
+        sim += [q for q in pool if q["id"] != p["id"] and q["alcaldia"] == p["alcaldia"] and q not in sim]
     if len(sim) < 3:
-        sim += [q for q in PROPS if q["id"] != p["id"] and q["tipo"] == p["tipo"] and q not in sim]
+        sim += [q for q in pool if q["id"] != p["id"] and q["tipo"] == p["tipo"] and q not in sim]
     sim = sim[:3]
 
-    col = COLONIA_BY_SLUG[p["colonia_slug"]]
+    col = COLONIA_BY_SLUG.get(p["colonia_slug"])
     gallery_json = json.dumps([p["fotos"][i] for i in range(len(p["fotos"]))], ensure_ascii=False)
 
     body = f'''
@@ -465,7 +482,7 @@ def build_property(p):
               {'<span class="badge badge--demo">Demo</span>' if prep.DATASET_ES_DEMO else ''}
             </div>
             <h1 style="font-size:var(--step-3);max-width:22ch">{e(p["titulo"])}</h1>
-            <p class="pcard-loc" style="font-size:var(--step-0)">{icon("pin")}{e(p["calle"])}, {e(p["colonia_nombre"])}, {e(p["alcaldia_nombre"])}, Ciudad de México · CP {e(p["cp"])}</p>
+            <p class="pcard-loc" style="font-size:var(--step-0)">{icon("pin")}{e(p["calle"])}, {e(p["colonia_nombre"])}, {e(p["alcaldia_nombre"])}, {e(p.get("estado_nombre","Ciudad de México"))} · CP {e(p["cp"])}</p>
           </div>
           <div style="text-align:right">
             <div class="prop-price">{money(p["precio"]).replace(" MXN","")} <span class="cur">MXN{" /mes" if p["operacion"]=="renta" else ""}</span></div>
@@ -493,14 +510,14 @@ def build_property(p):
 
         <div class="prop-section">
           <h3>Ubicación</h3>
-          <p class="lead" style="font-size:var(--step-0)">{e(col["tagline"])} {e(col["movilidad"])}</p>
+          <p class="lead" style="font-size:var(--step-0)">{e(col["tagline"]) + " " + e(col["movilidad"]) if col else f'{e(p["colonia_nombre"])}, {e(p["alcaldia_nombre"])}, {e(p.get("estado_nombre","México"))}.'}</p>
           <div class="prop-map" style="margin-top:1.25rem">
             <div id="map" style="height:100%"><div class="map-canvas"></div></div>
           </div>
           <p class="small muted" style="margin-top:.75rem">Ubicación aproximada dentro de {e(p["colonia_nombre"])}. La dirección exacta se comparte al agendar la visita.</p>
           <div class="flex flex-wrap" style="margin-top:1rem">
-            <a class="chip" href="{R("propiedades/" + p["colonia_slug"] + "/")}">Ver todo en {e(p["colonia_nombre"])}</a>
-            <a class="chip" href="{R("zonas/" + p["alcaldia"] + "/")}">Ver {e(p["alcaldia_nombre"])}</a>
+            {f'<a class="chip" href="{R("propiedades/" + p["colonia_slug"] + "/")}">Ver todo en {e(p["colonia_nombre"])}</a>' if not p.get("sin_pagina") else ''}
+            {f'<a class="chip" href="{R("zonas/" + p["alcaldia"] + "/")}">Ver {e(p["alcaldia_nombre"])}</a>' if p.get("alcaldia_tiene_pagina", not p.get("sin_pagina")) else ''}
           </div>
         </div>
 
@@ -537,7 +554,7 @@ def build_property(p):
     if len(seo_title) > 68:
         seo_title = f'{p["tipo_label"]} {op_label} en {p["colonia_nombre"]} | {money_short(p["precio"])}'
     write(path, page(path, seo_title,
-        f'{p["tipo_label"]} {op_label} en {p["colonia_nombre"]}, {p["alcaldia_nombre"]}, CDMX. '
+        f'{p["tipo_label"]} {op_label} en {p["colonia_nombre"]}, {p["alcaldia_nombre"]}, {p.get("estado_nombre","CDMX")}. '
         f'{p["rec"] or "—"} recámaras, {p["ban"] or "—"} baños, {num(p["m2_ref"])} m². {money(p["precio"])}. Asesoría de Gio Filio.',
         body, schema=[listing_schema(p), breadcrumb_schema(crumbs), person_schema()],
         og_image=p["fotos"][0], body_attrs=f'data-property-id="{e(p["id"])}"',
@@ -1800,7 +1817,7 @@ def main():
     print("→ Generando páginas…")
     build_home()
     build_search_pages()
-    for p in PROPS:
+    for p in PROPS_ALL:
         build_property(p)
     build_zonas_index()
     for a in ALCALDIAS:

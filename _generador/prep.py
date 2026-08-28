@@ -120,19 +120,42 @@ def normalize(images):
     props = []
     for n, raw in enumerate(PROPIEDADES):
         p = dict(raw)
-        col = COLONIA_BY_SLUG[p["colonia"]]
-        p["colonia_slug"] = col["slug"]
-        p["colonia_nombre"] = col["nombre"]
-        p["alcaldia_nombre"] = col["alcaldia"]
-        p["alcaldia"] = ALCALDIA_SLUG_BY_NOMBRE[col["alcaldia"]]
-        if not p.get("cp"):
-            p["cp"] = col["cp"][n % len(col["cp"])]
+        col = COLONIA_BY_SLUG.get(p["colonia"])
+        if col:
+            # colonia con página propia en el catálogo curado: comportamiento normal
+            p["colonia_slug"] = col["slug"]
+            p["colonia_nombre"] = col["nombre"]
+            p["alcaldia_nombre"] = col["alcaldia"]
+            p["alcaldia"] = ALCALDIA_SLUG_BY_NOMBRE[col["alcaldia"]]
+            p["alcaldia_tiene_pagina"] = True
+            p["estado_nombre"] = "Ciudad de México"
+            p["sin_pagina"] = False
+            if not p.get("cp"):
+                p["cp"] = col["cp"][n % len(col["cp"])]
+        else:
+            # colonia sin página propia: se publica con su ubicación real
+            # (dentro de una alcaldía real de CDMX, o fuera de la ciudad)
+            p["colonia_slug"] = p["colonia"]
+            p["colonia_nombre"] = p.get("colonia_nombre_real") or p["colonia"]
+            alcaldia_real = p.get("alcaldia_real") or ""
+            alc_slug = ALCALDIA_SLUG_BY_NOMBRE.get(alcaldia_real)
+            if alc_slug and not p.get("fuera_cdmx"):
+                p["alcaldia_nombre"] = alcaldia_real
+                p["alcaldia"] = alc_slug
+                p["alcaldia_tiene_pagina"] = True
+                p["estado_nombre"] = "Ciudad de México"
+            else:
+                p["alcaldia_nombre"] = alcaldia_real or p.get("estado_real") or "México"
+                p["alcaldia"] = slugify(alcaldia_real or p["colonia_slug"])
+                p["alcaldia_tiene_pagina"] = False
+                p["estado_nombre"] = p.get("estado_real") or "México"
+            p["sin_pagina"] = True
         p["tipo_label"] = TIPO_LABEL[p["tipo"]]
 
         # coordenadas: usar las reales si vienen del inventario (EasyBroker),
         # y solo fabricar una dispersión determinista para el dataset demo
         h = int(hashlib.md5(p["id"].encode()).hexdigest()[:8], 16)
-        if not (p.get("lat") and p.get("lng")):
+        if not (p.get("lat") and p.get("lng")) and col:
             p["lat"] = round(col["lat"] + ((h % 1000) / 1000 - 0.5) * 0.016, 6)
             p["lng"] = round(col["lng"] + (((h >> 10) % 1000) / 1000 - 0.5) * 0.020, 6)
 
@@ -230,6 +253,9 @@ def emit_data_js(props, colonias, alcaldias, path=os.path.join(OUT, "assets/data
             "precio": p["precio"], "mantenimiento": p["mantenimiento"],
             "colonia": p["colonia_slug"], "colonia_nombre": p["colonia_nombre"],
             "alcaldia": p["alcaldia"], "alcaldia_nombre": p["alcaldia_nombre"],
+            "alcaldia_tiene_pagina": bool(p.get("alcaldia_tiene_pagina")),
+            "estado_nombre": p.get("estado_nombre", "Ciudad de México"),
+            "sin_pagina": bool(p.get("sin_pagina")),
             "calle": p["calle"], "cp": p["cp"], "lat": p["lat"], "lng": p["lng"],
             "rec": p["rec"], "ban": p["ban"], "medios": p["medios"], "est": p["est"],
             "m2c": p["m2c"], "m2t": p["m2t"], "antig": p["antig"], "piso": p["piso"],
