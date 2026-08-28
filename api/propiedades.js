@@ -49,7 +49,7 @@ module.exports = (req, res) => {
     banos: p.ban,
     estacionamientos: p.est,
     m2_construccion: p.m2c,
-    url: `https://giofilio-sitio.vercel.app/${p.url}`,
+    url: `https://giofilio.com/${p.url}`,
   }));
 
   res.status(200).json({ total_encontradas, mostrando: resultado.length, propiedades: resultado });
