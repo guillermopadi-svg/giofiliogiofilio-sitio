@@ -1,0 +1,36 @@
+# Gio Filio
+
+> Asesoría inmobiliaria independiente en Ciudad de México. Gio Filio acompaña
+> personalmente todo el proceso de comprar, rentar, vender o invertir en
+> CDMX — selección de propiedades, visitas, negociación, revisión documental
+> y cierre. También publica algunas propiedades fuera de la ciudad cuando
+> la operación lo amerita, pero su especialidad y cobertura principal es
+> la Ciudad de México.
+
+Cobertura: las 16 alcaldías de la Ciudad de México, con guía propia para
+19 colonias prioritarias: Polanco, Lomas de Chapultepec, Condesa, Hipódromo Condesa, Roma Norte, Roma Sur, Juárez, Del Valle, Narvarte, Nápoles, Portales, Insurgentes Mixcoac, Anzures, Escandón, Santa Fe, Bosques de las Lomas, Jardines del Pedregal, San Ángel, Coyoacán.
+
+Contacto directo: WhatsApp +52 1 55 4487 6074 · gio@giofilio.com
+
+## Secciones principales
+
+- [Inicio](https://giofilio.com/): resumen de la propuesta y propiedades destacadas.
+- [Propiedades](https://giofilio.com/propiedades/): buscador completo con filtros y mapa.
+- [Comprar](https://giofilio.com/comprar/), [Rentar](https://giofilio.com/rentar/), [Invertir](https://giofilio.com/invertir/), [Vender](https://giofilio.com/vender/): el proceso de acompañamiento explicado para cada objetivo.
+- [Zonas de CDMX](https://giofilio.com/zonas/): guía de las 16 alcaldías y sus colonias — estilo de vida, movilidad, precios de referencia.
+- [Conoce a Gio](https://giofilio.com/conoce-a-gio/): quién es Gio Filio y cómo trabaja.
+- [Blog](https://giofilio.com/blog/): artículos sobre el mercado inmobiliario de CDMX.
+- [Contacto](https://giofilio.com/contacto/): formulario y WhatsApp directo.
+
+## Datos e inventario
+
+El inventario de propiedades cambia constantemente (sincronizado desde el
+CRM de Gio); no está listado aquí por ser transitorio. Para el estado
+actual, usar:
+
+- Sitemap completo: https://giofilio.com/sitemap.xml (índice segmentado: propiedades,
+  zonas, listados por tipo/colonia/operación, blog, páginas).
+- Cada ficha de propiedad (https://giofilio.com/propiedad/*/) trae precio, ubicación,
+  características y datos estructurados schema.org/RealEstateListing.
+- Cada página de colonia (https://giofilio.com/propiedades/*/) trae precio de referencia
+  por m² en venta y renta, aunque no haya inventario activo en ese momento.

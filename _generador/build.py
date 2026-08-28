@@ -888,7 +888,7 @@ def build_seo_combo(op, tipo, col):
                                                    "url": canonical(p["url"]), "name": p["titulo"]}
                                                   for i, p in enumerate(props)]}]
     else:
-        lead = f'Todavía no tengo {plural.lower()} {op_label} publicados en {e(col["nombre"])}. El precio de referencia de la zona ronda {money(ref_m2)} por m²{ref_suffix}. {e(col["tagline"])}'
+        lead = f'Todavía no publico {plural.lower()} {op_label} en {e(col["nombre"])}. El precio de referencia de la zona ronda {money(ref_m2)} por m²{ref_suffix}. {e(col["tagline"])}'
         listado_html = f'''<section class="section"><div class="wrap"><div class="empty">
       {icon("search")}
       <h3>Sin inventario de {plural.lower()} {op_label} ahora mismo en {e(col["nombre"])}</h3>
@@ -899,7 +899,7 @@ def build_seo_combo(op, tipo, col):
       </div>
     </div></div></section>'''
         faq_precio = (f'¿Cuánto cuesta un {TIPO_LABEL[tipo].lower()} {op_label} en {col["nombre"]}?',
-                      f'Ahora mismo no tengo {plural.lower()} {op_label} publicados en {col["nombre"]}, pero el precio de referencia de la zona ronda {money(ref_m2)} por metro cuadrado{ref_suffix}. El valor real depende del edificio, el nivel y el estado del inmueble.')
+                      f'Ahora mismo no publico {plural.lower()} {op_label} en {col["nombre"]}, pero el precio de referencia de la zona ronda {money(ref_m2)} por metro cuadrado{ref_suffix}. El valor real depende del edificio, el nivel y el estado del inmueble.')
         meta_desc = f'{plural} {op_label} en {col["nombre"]}, {col["alcaldia"]}, Ciudad de México. Precio de referencia {money(ref_m2)} por m²{ref_suffix}. Asesoría personal de Gio Filio.'
         seo_title = f'{titulo} | ref. {money_short(ref_m2)}/m²'
         item_list_schema = []
@@ -1863,6 +1863,51 @@ Sitemap: {SITE}/sitemap.xml
 """
     with open(os.path.join(OUT, "robots.txt"), "w", encoding="utf-8") as f:
         f.write(robots)
+
+    # llms.txt: resumen del sitio para agentes/LLMs (convención emergente,
+    # sin estándar formal todavía, pero de bajo costo y sin riesgo — no
+    # reemplaza sitemap.xml/robots.txt, es un mapa de contexto adicional).
+    colonias_lista = ", ".join(c["nombre"] for c in COLONIAS)
+    llms_txt = f"""# Gio Filio
+
+> Asesoría inmobiliaria independiente en Ciudad de México. Gio Filio acompaña
+> personalmente todo el proceso de comprar, rentar, vender o invertir en
+> CDMX — selección de propiedades, visitas, negociación, revisión documental
+> y cierre. También publica algunas propiedades fuera de la ciudad cuando
+> la operación lo amerita, pero su especialidad y cobertura principal es
+> la Ciudad de México.
+
+Cobertura: las 16 alcaldías de la Ciudad de México, con guía propia para
+{len(COLONIAS)} colonias prioritarias: {colonias_lista}.
+
+Contacto directo: WhatsApp {MARCA["whatsapp_display"]} · {MARCA["email"]}
+
+## Secciones principales
+
+- [Inicio]({SITE}/): resumen de la propuesta y propiedades destacadas.
+- [Propiedades]({SITE}/propiedades/): buscador completo con filtros y mapa.
+- [Comprar]({SITE}/comprar/), [Rentar]({SITE}/rentar/), [Invertir]({SITE}/invertir/), [Vender]({SITE}/vender/): el proceso de acompañamiento explicado para cada objetivo.
+- [Zonas de CDMX]({SITE}/zonas/): guía de las 16 alcaldías y sus colonias — estilo de vida, movilidad, precios de referencia.
+- [Conoce a Gio]({SITE}/conoce-a-gio/): quién es Gio Filio y cómo trabaja.
+- [Blog]({SITE}/blog/): artículos sobre el mercado inmobiliario de CDMX.
+- [Contacto]({SITE}/contacto/): formulario y WhatsApp directo.
+
+## Datos e inventario
+
+El inventario de propiedades cambia constantemente (sincronizado desde el
+CRM de Gio); no está listado aquí por ser transitorio. Para el estado
+actual, usar:
+
+- Sitemap completo: {SITE}/sitemap.xml (índice segmentado: propiedades,
+  zonas, listados por tipo/colonia/operación, blog, páginas).
+- Cada ficha de propiedad ({SITE}/propiedad/*/) trae precio, ubicación,
+  características y datos estructurados schema.org/RealEstateListing.
+- Cada página de colonia ({SITE}/propiedades/*/) trae precio de referencia
+  por m² en venta y renta, aunque no haya inventario activo en ese momento.
+"""
+    with open(os.path.join(OUT, "llms.txt"), "w", encoding="utf-8") as f:
+        f.write(llms_txt)
+
     print(f"   sitemap.xml (índice) con {len(urls)} URLs repartidas en 5 sub-sitemaps")
 
 
