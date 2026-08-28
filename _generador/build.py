@@ -857,8 +857,6 @@ TIPO_URL = {"departamento": "departamentos", "casa": "casas", "penthouse": "pent
 
 def build_seo_combo(op, tipo, col):
     props = [p for p in PROPS if p["operacion"] == op and p["tipo"] == tipo and p["colonia_slug"] == col["slug"]]
-    if not props:
-        return
     tipo_url = TIPO_URL[tipo]
     path = f'{op}/{tipo_url}/{col["slug"]}/index.html'
     R = lambda t: rel(path, t)
@@ -871,13 +869,43 @@ def build_seo_combo(op, tipo, col):
               ("Venta" if op == "venta" else "Renta", f"{op}/"),
               (plural, tipo_index),
               (col["nombre"], None)]
-    lo = min(p["precio"] for p in props)
-    hi = max(p["precio"] for p in props)
-    m2avg = round(sum(p["precio_m2"] for p in props) / len(props))
+    ref_m2 = col["precio_m2_venta"] if op == "venta" else col["precio_m2_renta"]
+    ref_suffix = " al mes" if op == "renta" else ""
+
+    if props:
+        lo = min(p["precio"] for p in props)
+        hi = max(p["precio"] for p in props)
+        m2avg = round(sum(p["precio_m2"] for p in props) / len(props))
+        lead = f'{len(props)} {plural.lower()} {op_label} en {e(col["nombre"])}, de {money(lo)} a {money(hi)}. Precio medio de {money(m2avg)} por m²{ref_suffix}. {e(col["tagline"])}'
+        listado_html = f'<section class="section"><div class="wrap">{card_grid(path, props)}</div></section>'
+        faq_precio = (f'¿Cuánto cuesta un {TIPO_LABEL[tipo].lower()} {op_label} en {col["nombre"]}?',
+                      f'Los {plural.lower()} {op_label} publicados en {col["nombre"]} van de {money(lo)} a {money(hi)}, con un precio medio de {money(m2avg)} por metro cuadrado{ref_suffix}.')
+        meta_desc = f'{len(props)} {plural.lower()} {op_label} en {col["nombre"]}, {col["alcaldia"]}, Ciudad de México. Desde {money(lo)}. Precio medio {money(m2avg)} por m². Asesoría personal de Gio Filio.'
+        seo_title = f'{titulo}, CDMX | desde {money_short(lo)}'
+        item_list_schema = [{"@context": "https://schema.org", "@type": "ItemList",
+                              "name": titulo, "numberOfItems": len(props),
+                              "itemListElement": [{"@type": "ListItem", "position": i + 1,
+                                                   "url": canonical(p["url"]), "name": p["titulo"]}
+                                                  for i, p in enumerate(props)]}]
+    else:
+        lead = f'Todavía no tengo {plural.lower()} {op_label} publicados en {e(col["nombre"])}. El precio de referencia de la zona ronda {money(ref_m2)} por m²{ref_suffix}. {e(col["tagline"])}'
+        listado_html = f'''<section class="section"><div class="wrap"><div class="empty">
+      {icon("search")}
+      <h3>Sin inventario de {plural.lower()} {op_label} ahora mismo en {e(col["nombre"])}</h3>
+      <p>La rotación en {e(col["nombre"])} es alta. Escríbeme y te aviso en cuanto entre algo que encaje, o cuéntame qué buscas y lo rastreo con mi red de colegas.</p>
+      <div class="cta-actions">
+        <a class="btn" href="{R("contacto/")}">Avísame cuando haya</a>
+        <a class="btn btn--ghost" href="{R("propiedades/" + col["slug"] + "/")}">Ver todo en {e(col["nombre"])}</a>
+      </div>
+    </div></div></section>'''
+        faq_precio = (f'¿Cuánto cuesta un {TIPO_LABEL[tipo].lower()} {op_label} en {col["nombre"]}?',
+                      f'Ahora mismo no tengo {plural.lower()} {op_label} publicados en {col["nombre"]}, pero el precio de referencia de la zona ronda {money(ref_m2)} por metro cuadrado{ref_suffix}. El valor real depende del edificio, el nivel y el estado del inmueble.')
+        meta_desc = f'{plural} {op_label} en {col["nombre"]}, {col["alcaldia"]}, Ciudad de México. Precio de referencia {money(ref_m2)} por m²{ref_suffix}. Asesoría personal de Gio Filio.'
+        seo_title = f'{titulo} | ref. {money_short(ref_m2)}/m²'
+        item_list_schema = []
 
     faqs = [
-        (f'¿Cuánto cuesta un {TIPO_LABEL[tipo].lower()} {op_label} en {col["nombre"]}?',
-         f'Los {plural.lower()} {op_label} publicados en {col["nombre"]} van de {money(lo)} a {money(hi)}, con un precio medio de {money(m2avg)} por metro cuadrado{" al mes" if op == "renta" else ""}.'),
+        faq_precio,
         (f'¿Qué incluye vivir en {col["nombre"]}?', col["vivir"]),
         (f'¿Cómo llego a {col["nombre"]}?', col["movilidad"]),
     ]
@@ -888,7 +916,7 @@ def build_seo_combo(op, tipo, col):
   <div class="hero-inner wrap">
     <p class="eyebrow">{e(col["alcaldia"])} · Ciudad de México</p>
     <h1>{e(titulo)}</h1>
-    <p class="lead" style="max-width:64ch">{len(props)} {plural.lower()} {op_label} en {e(col["nombre"])}, de {money(lo)} a {money(hi)}. Precio medio de {money(m2avg)} por m²{" al mes" if op == "renta" else ""}. {e(col["tagline"])}</p>
+    <p class="lead" style="max-width:64ch">{lead}</p>
     <div class="cta-actions" style="justify-content:flex-start;margin-top:1.5rem">
       <a class="btn" href="{R("propiedades/")}?colonia={col["slug"]}&operacion={op}&tipo={tipo}">Abrir con filtros y mapa</a>
       <a class="btn btn--ghost" href="{R("propiedades/" + col["slug"] + "/")}">Guía de {e(col["nombre"])}</a>
@@ -896,9 +924,7 @@ def build_seo_combo(op, tipo, col):
   </div>
 </section>
 
-<section class="section">
-  <div class="wrap">{card_grid(path, props)}</div>
-</section>
+{listado_html}
 
 <section class="section section--ivory">
   <div class="wrap-narrow">
@@ -923,15 +949,8 @@ def build_seo_combo(op, tipo, col):
           f"Puedo agendar las visitas de {col['nombre']} en una sola tarde y darte mi lectura honesta de cada una.",
           ("Hablar con Gio", "contacto/"))}
 '''
-    write(path, page(path,
-        f'{titulo}, CDMX | desde {money_short(lo)}',
-        f'{len(props)} {plural.lower()} {op_label} en {col["nombre"]}, {col["alcaldia"]}, Ciudad de México. Desde {money(lo)}. Precio medio {money(m2avg)} por m². Asesoría personal de Gio Filio.',
-        body, schema=[breadcrumb_schema(crumbs), faq_schema(faqs), person_schema(),
-                      {"@context": "https://schema.org", "@type": "ItemList",
-                       "name": titulo, "numberOfItems": len(props),
-                       "itemListElement": [{"@type": "ListItem", "position": i + 1,
-                                            "url": canonical(p["url"]), "name": p["titulo"]}
-                                           for i, p in enumerate(props)]}],
+    write(path, page(path, seo_title, meta_desc,
+        body, schema=[breadcrumb_schema(crumbs), faq_schema(faqs), person_schema(), *item_list_schema],
         og_image=ZONE_IMG[col["slug"]] + "-hero.jpg", page_type="seo_listing", **K()))
 
 
@@ -1762,32 +1781,67 @@ def build_404():
 
 
 def build_sitemap():
-    prio = {"index.html": "1.0"}
-    urls = []
-    for p in sorted(set(PAGES)):
-        if p.endswith("404.html"):
-            continue
-        if p.startswith(("favoritos/", "comparador/")):
-            continue
+    def entrada(p):
         loc = canonical(p)
         if p == "index.html":
             pr, cf = "1.0", "daily"
         elif p.startswith("propiedad/"):
             pr, cf = "0.9", "weekly"
-        elif p.startswith(("propiedades/", "venta/", "renta/", "departamentos/", "casas/", "zonas/")):
+        elif p.startswith(("propiedades/", "zonas/")):
             pr, cf = "0.8", "daily"
+        elif p.startswith(("venta/", "renta/", "departamentos/", "casas/")):
+            pr, cf = "0.7", "daily"
         elif p.startswith("blog/"):
             pr, cf = "0.6", "monthly"
         elif p.startswith(("aviso-", "terminos-")):
             pr, cf = "0.3", "yearly"
         else:
             pr, cf = "0.7", "monthly"
-        urls.append(f"  <url>\n    <loc>{loc}</loc>\n    <lastmod>{TODAY}</lastmod>\n    <changefreq>{cf}</changefreq>\n    <priority>{pr}</priority>\n  </url>")
+        return f"  <url>\n    <loc>{loc}</loc>\n    <lastmod>{TODAY}</lastmod>\n    <changefreq>{cf}</changefreq>\n    <priority>{pr}</priority>\n  </url>"
+
+    def es_valida(p):
+        return not p.endswith("404.html") and not p.startswith(("favoritos/", "comparador/"))
+
+    todas = sorted(p for p in set(PAGES) if es_valida(p))
+
+    # Sitemap segmentado por sección (como los sitios grandes: un índice que
+    # referencia un sitemap por tipo de contenido), en vez de un único
+    # urlset — más fácil de vigilar por sección en Search Console y listo
+    # para crecer sin acercarse al límite de 50,000 URLs por archivo.
+    secciones = [
+        ("sitemap-propiedades.xml", lambda p: p.startswith("propiedad/")),
+        ("sitemap-zonas.xml", lambda p: p.startswith("zonas/") or p == "propiedades/index.html" or (p.startswith("propiedades/") and p.count("/") == 2)),
+        ("sitemap-listados.xml", lambda p: p.startswith(("venta/", "renta/", "departamentos/", "casas/"))),
+        ("sitemap-blog.xml", lambda p: p.startswith("blog/")),
+    ]
+    asignadas = set()
+    for nombre, filtro in secciones:
+        subset = [p for p in todas if filtro(p)]
+        asignadas.update(subset)
+        xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+               + "\n".join(entrada(p) for p in subset) + "\n</urlset>\n")
+        with open(os.path.join(OUT, nombre), "w", encoding="utf-8") as f:
+            f.write(xml)
+
+    # todo lo que no cayó en una sección temática: home, institucionales, legal
+    resto = [p for p in todas if p not in asignadas]
     xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-           + "\n".join(urls) + "\n</urlset>\n")
-    with open(os.path.join(OUT, "sitemap.xml"), "w", encoding="utf-8") as f:
+           + "\n".join(entrada(p) for p in resto) + "\n</urlset>\n")
+    with open(os.path.join(OUT, "sitemap-paginas.xml"), "w", encoding="utf-8") as f:
         f.write(xml)
+
+    urls = todas  # para el contador impreso al final del build
+    index_xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+                 '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+                 + "\n".join(
+                     f"  <sitemap>\n    <loc>{SITE}/{n}</loc>\n    <lastmod>{TODAY}</lastmod>\n  </sitemap>"
+                     for n in ["sitemap-paginas.xml", "sitemap-zonas.xml", "sitemap-listados.xml",
+                               "sitemap-propiedades.xml", "sitemap-blog.xml"])
+                 + "\n</sitemapindex>\n")
+    with open(os.path.join(OUT, "sitemap.xml"), "w", encoding="utf-8") as f:
+        f.write(index_xml)
 
     robots = f"""# Gio Filio — Tu espacio ideal
 # https://giofilio.com
@@ -1809,7 +1863,7 @@ Sitemap: {SITE}/sitemap.xml
 """
     with open(os.path.join(OUT, "robots.txt"), "w", encoding="utf-8") as f:
         f.write(robots)
-    print(f"   sitemap.xml con {len(urls)} URLs")
+    print(f"   sitemap.xml (índice) con {len(urls)} URLs repartidas en 5 sub-sitemaps")
 
 
 # =========================================================== MAIN
