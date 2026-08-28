@@ -721,7 +721,9 @@
     $$('.view-switch button').forEach(function (b) {
       on(b, 'click', function () {
         RES.view = b.dataset.view; syncControls(); writeQuery(true);
-        setTimeout(function () { drawMap(RES.lista); }, 60);
+        requestAnimationFrame(function () { requestAnimationFrame(function () {
+          ensureMapReady(); drawMap(RES.lista);
+        }); });
       });
     });
     $$('[data-open-drawer]').forEach(function (b) {
@@ -729,8 +731,11 @@
     });
     on($('#mobileMapBtn'), 'click', function () {
       RES.view = RES.view === 'mapa' ? 'lista' : 'mapa';
-      syncControls(); drawMap(RES.lista);
+      syncControls();
       this.innerHTML = RES.view === 'mapa' ? 'Ver lista' : 'Ver mapa';
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        ensureMapReady(); drawMap(RES.lista);
+      }); });
     });
 
     on(window, 'popstate', function () { RES.filtros = readQuery(); syncControls(); apply(false); });
@@ -774,8 +779,21 @@
 
   function initMap() {
     var host = $('#map'); if (!host) return;
-    if (CFG.googleMapsKey) loadGoogle(host);
-    else buildFallback(host);
+    if (!CFG.googleMapsKey) { buildFallback(host); return; }
+    // En móvil el mapa arranca oculto (display:none, vista "lista"). Un
+    // google.maps.Map creado sobre un contenedor de 0×0 queda con las
+    // teselas rotas de forma permanente — ni resize ni setCenter después
+    // lo recuperan. Se retrasa la creación real hasta que el usuario
+    // muestre el mapa por primera vez (ver ensureMapReady).
+    if (host.getBoundingClientRect().width > 0) loadGoogle(host);
+    else MAP.pendingHost = host;
+  }
+
+  function ensureMapReady() {
+    if (MAP.pendingHost && MAP.pendingHost.getBoundingClientRect().width > 0) {
+      var host = MAP.pendingHost; MAP.pendingHost = null;
+      loadGoogle(host);
+    }
   }
 
   function loadGoogle(host) {
@@ -985,6 +1003,21 @@
   }
 
   function drawGoogle(list) {
+    // El contenedor del mapa puede acabar de pasar de display:none a
+    // visible (vista "lista" → "mapa" en móvil) en este mismo tick — el
+    // navegador todavía no recalculó el layout, así que si pedimos el
+    // resize ahora mismo Google Maps lo hace sobre un tamaño de 0×0. Dos
+    // requestAnimationFrame seguidos garantizan que ya hubo un reflow
+    // antes de avisarle a Maps que recalcule tamaño y de ajustar el zoom.
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        google.maps.event.trigger(MAP.gmap, 'resize');
+        drawGoogleMarkers(list);
+      });
+    });
+  }
+
+  function drawGoogleMarkers(list) {
     MAP.markers.forEach(function (m) { m.setMap && m.setMap(null); });
     MAP.markers = [];
     if (!list.length) return;
