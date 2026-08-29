@@ -1855,6 +1855,9 @@ Disallow: /comparador/
 Disallow: /*?orden=
 Disallow: /*?view=
 
+# Panel interno, sin valor de indexación
+Disallow: /admin/
+
 # Bots de scraping agresivo
 User-agent: SemrushBot
 Crawl-delay: 10
