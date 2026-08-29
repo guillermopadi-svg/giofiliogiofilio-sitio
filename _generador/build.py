@@ -379,16 +379,23 @@ def build_property(p):
                   (p["colonia_nombre"], f'propiedades/{p["colonia_slug"]}/'),
                   (f'{p["tipo_label"]} {op_label}', None)]
     elif p.get("alcaldia_tiene_pagina"):
+        # La colonia no tiene página propia — se funde en la etiqueta final
+        # en vez de dejar dos niveles seguidos sin "item" en el schema
+        # (Search Console lo marca como "Falta el campo 'item'").
         crumbs = [("CDMX", "propiedades/"),
                   (p["alcaldia_nombre"], f'zonas/{p["alcaldia"]}/'),
-                  (p["colonia_nombre"], None),
-                  (f'{p["tipo_label"]} {op_label}', None)]
+                  (f'{p["colonia_nombre"]} · {p["tipo_label"]} {op_label}', None)]
     else:
-        crumbs = [(p.get("estado_nombre", "México"), None)]
-        if p["alcaldia_nombre"] != p.get("estado_nombre"):
-            crumbs.append((p["alcaldia_nombre"], None))
-        crumbs.append((p["colonia_nombre"], None))
-        crumbs.append((f'{p["tipo_label"]} {op_label}', None))
+        # Ni la alcaldía ni la colonia tienen página propia — un solo nivel
+        # final sin link, igual que el resto del sitio, para no repetir el
+        # mismo problema de schema.
+        estado = p.get("estado_nombre", "México")
+        lugar = p["colonia_nombre"]
+        if p["alcaldia_nombre"] != estado:
+            lugar += f', {p["alcaldia_nombre"]}'
+        lugar += f', {estado}'
+        crumbs = [("Inicio", "index.html"),
+                  (f'{p["tipo_label"]} {op_label} en {lugar}', None)]
 
     # galería
     thumbs = ""
