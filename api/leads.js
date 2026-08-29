@@ -23,15 +23,47 @@ function esOrigenValido(origin) {
   return !!origin && (ALLOWED_ORIGINS.has(origin) || PREVIEW_ORIGIN_RE.test(origin));
 }
 
+// Rate-limiting por IP contra el abuso scripteado directo (curl/bots), que
+// el CORS de arriba no frena. Se usa la REST API de Upstash Redis en vez de
+// su SDK para no meter una dependencia de npm en un proyecto que hoy no
+// tiene package.json. Si Upstash no está configurado o falla, se deja pasar
+// el lead (fail-open) — nunca perder un lead real por una caída de un
+// servicio de soporte.
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_SECONDS = 3600;
+
+async function upstash(...command) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  try {
+    const res = await fetch(`${url}/${command.map(encodeURIComponent).join('/')}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.result;
+  } catch (err) {
+    console.error('[api/leads] fallo consultando Upstash:', err.message);
+    return null;
+  }
+}
+
+async function excedeLimite(ip) {
+  const count = await upstash('INCR', `ratelimit:leads:${ip}`);
+  if (count === null) return false;
+  if (count === 1) await upstash('EXPIRE', `ratelimit:leads:${ip}`, String(RATE_LIMIT_WINDOW_SECONDS));
+  return count > RATE_LIMIT_MAX;
+}
+
 module.exports = async (req, res) => {
   const origin = req.headers.origin;
   // CORS acotado al propio sitio: un formulario legítimo del sitio siempre
   // manda Origin; scripts de otros dominios que intenten llenar el
   // formulario desde el navegador de un visitante quedan bloqueados por
-  // el navegador al no coincidir el Origin. No frena un abuso scripteado
-  // directo (curl/requests, sin navegador de por medio) — eso requiere
-  // rate-limiting con almacenamiento compartido (Upstash/Vercel KV), que
-  // no está conectado todavía.
+  // el navegador al no coincidir el Origin. El abuso scripteado directo
+  // (curl/requests, sin navegador de por medio) lo frena el rate-limiting
+  // por IP de más abajo (excedeLimite), respaldado en Upstash Redis.
   if (esOrigenValido(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
@@ -46,6 +78,12 @@ module.exports = async (req, res) => {
 
   if (req.method !== 'POST') {
     res.status(405).json({ ok: false, error: 'method_not_allowed' });
+    return;
+  }
+
+  const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
+  if (await excedeLimite(ip)) {
+    res.status(429).json({ ok: false, error: 'demasiados_intentos' });
     return;
   }
 
