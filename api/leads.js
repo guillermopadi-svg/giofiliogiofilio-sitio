@@ -35,13 +35,21 @@ const RATE_LIMIT_WINDOW_SECONDS = 3600;
 async function upstash(...command) {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null;
+  if (!url || !token) {
+    console.warn('[api/leads][debug] Upstash sin configurar: url=', !!url, 'token=', !!token);
+    return null;
+  }
   try {
     const res = await fetch(`${url}/${command.map(encodeURIComponent).join('/')}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const body = await res.text();
+      console.error('[api/leads][debug] Upstash respondio', res.status, body.slice(0, 200));
+      return null;
+    }
     const data = await res.json();
+    console.warn('[api/leads][debug] Upstash', command[0], '->', JSON.stringify(data.result));
     return data.result;
   } catch (err) {
     console.error('[api/leads] fallo consultando Upstash:', err.message);
