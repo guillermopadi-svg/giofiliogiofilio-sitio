@@ -21,6 +21,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Instalar dependencias
+        run: pip install Pillow
+
       - name: Sincronizar propiedades desde EasyBroker
         working-directory: _generador
         env:
