@@ -557,7 +557,13 @@ def build_property(p):
 {lightbox_markup()}
 '''
     extra_js = f'<script>window.GF_GALLERY = {gallery_json};</script>'
-    seo_title = f'{p["titulo"]} | {money_short(p["precio"])}'
+    # Se agrega m² como desempate: dos propiedades distintas pueden compartir
+    # titulo generico de EasyBroker y precio identico (visto en Santa Fe con
+    # dos oficinas a $16K), lo que producia <title> duplicados.
+    m2_suffix = f' · {num(p["m2_ref"])} m²' if p.get("m2_ref") else ''
+    seo_title = f'{p["titulo"]} | {money_short(p["precio"])}{m2_suffix}'
+    if len(seo_title) > 68:
+        seo_title = f'{p["tipo_label"]} {op_label} en {p["colonia_nombre"]} | {money_short(p["precio"])}{m2_suffix}'
     if len(seo_title) > 68:
         seo_title = f'{p["tipo_label"]} {op_label} en {p["colonia_nombre"]} | {money_short(p["precio"])}'
     write(path, page(path, seo_title,
@@ -722,7 +728,7 @@ def build_alcaldia(a):
           ("Hablar con Gio", "contacto/"), ("Ver propiedades", "propiedades/"))}
 '''
     write(path, page(path,
-        f'Propiedades en {a["nombre"]}, CDMX | Gio Filio',
+        f'Vivir en {a["nombre"]}, CDMX | Guía de zona | Gio Filio',
         f'Guía de {a["nombre"]}, Ciudad de México: cómo se vive, colonias destacadas y {len(props)} propiedades en venta y renta con la asesoría de Gio Filio.',
         body, active="zonas/",
         schema=[breadcrumb_schema(crumbs), faq_schema(faqs), person_schema(),
