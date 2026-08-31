@@ -328,6 +328,13 @@ def main():
         if p["id"] in FIX_TIPO_TERRENO:
             p["tipo"] = "terreno"
 
+    # EB-WD4874 ("OFICINA EN RENTA SOBRE CALLE COLIMA COLONIA ROMA NORTE") es
+    # el mismo local que EB-WA8714 ("LOCAL COMERCIAL...") publicado dos veces
+    # con distinta referencia — mismas coordenadas, calle, CP y precio exactos.
+    # Se omite el duplicado hasta que se depure directamente en EasyBroker.
+    DUPLICADOS = {"EB-WD4874"}
+    props = [p for p in props if p["id"] not in DUPLICADOS]
+
     fuera = [p for p in props if p.get("fuera_cdmx")]
     if fuera:
         print(f"\n{len(fuera)} propiedades fuera de CDMX se publican con su ubicación real:")

@@ -2,6 +2,13 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "trailingSlash": true,
   "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/propiedad/local-comercial-roma-norte-ebwd4874",
+      "destination": "/propiedad/local-comercial-roma-norte-ebwa8714",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",

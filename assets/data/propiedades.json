@@ -3,7 +3,7 @@
     "demo": false,
     "ciudad": "Ciudad de México",
     "generado": "2026-08-16",
-    "total": 31
+    "total": 30
   },
   "propiedades": [
     {
@@ -947,49 +947,6 @@
       "publicado": "2026-06-15",
       "actualizado": "2026-07-16",
       "foto_card": "assets/img/properties/eb-eb-wa8714-00-card.jpg",
-      "precio_m2": 670,
-      "estado": "disponible"
-    },
-    {
-      "id": "EB-WD4874",
-      "titulo": "OFICINA EN RENTA SOBRE CALLE COLIMA COLONIA ROMA NORTE",
-      "titulo_wa": "la propiedad en Roma Norte",
-      "url": "propiedad/local-comercial-roma-norte-ebwd4874/",
-      "operacion": "renta",
-      "tipo": "local-comercial",
-      "tipo_label": "Local comercial",
-      "precio": 75000.0,
-      "mantenimiento": 0,
-      "colonia": "roma-norte",
-      "colonia_nombre": "Roma Norte",
-      "alcaldia": "cuauhtemoc",
-      "alcaldia_nombre": "Cuauhtémoc",
-      "alcaldia_tiene_pagina": true,
-      "estado_nombre": "Ciudad de México",
-      "sin_pagina": false,
-      "calle": "Colima",
-      "cp": "06700",
-      "lat": 19.4191493,
-      "lng": -99.1622738,
-      "rec": 0,
-      "ban": 1,
-      "medios": 0,
-      "est": 0,
-      "m2c": 112.0,
-      "m2t": 0,
-      "antig": 2026,
-      "piso": "3",
-      "estado_inm": "excelente",
-      "amenidades": [
-        "cisterna",
-        "terraza"
-      ],
-      "badges": [],
-      "destacada": false,
-      "exclusiva": false,
-      "publicado": "2026-06-29",
-      "actualizado": "2026-07-16",
-      "foto_card": "assets/img/properties/eb-eb-wd4874-00-card.jpg",
       "precio_m2": 670,
       "estado": "disponible"
     },
