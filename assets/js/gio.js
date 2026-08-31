@@ -1170,6 +1170,20 @@
   }
   window.gfLeads = function () { return store(LS.leads, []); };
 
+  // Redirige a la página de gracias tras un envío exitoso. Se pasan los
+  // datos por query string (no por localStorage) para que la página de
+  // gracias, al cargar, mande al dataLayer un evento "lead_thank_you" con
+  // contexto suficiente para servir de conversión en GTM (Meta Pixel,
+  // Google Ads), sin depender de que el tag alcance a dispararse antes de
+  // que el navegador abandone esta página.
+  function goToGracias(formName, fuente, value) {
+    var qp = new URLSearchParams();
+    qp.set('form', formName || 'contacto');
+    qp.set('source', fuente || 'sitio_web');
+    if (value) { qp.set('value', value); qp.set('currency', 'MXN'); }
+    location.href = url('gracias/') + '?' + qp.toString();
+  }
+
   function validate(form) {
     var ok = true;
     $$('[required]', form).forEach(function (f) {
@@ -1206,15 +1220,7 @@
           lead_source: lead.fuente,
           city: 'Ciudad de México'
         }));
-        var ok = $('[data-form-success]', form.parentElement) || $('[data-form-success]', form);
-        if (ok) {
-          form.style.display = 'none';
-          ok.classList.add('is-on');
-          ok.setAttribute('tabindex', '-1'); ok.focus();
-        } else {
-          toast('Mensaje enviado. Gio te contacta pronto.');
-          form.reset();
-        }
+        goToGracias(form.dataset.formName || 'contacto', lead.fuente, p ? p.precio : null);
       });
     });
 
@@ -1443,17 +1449,17 @@
       e.preventDefault();
       if (!validate(form)) { toast('Revisa los campos marcados'); return; }
       var fd = new FormData(form);
-      captureLead(form);
+      var lead = captureLead(form);
+      var expectedPrice = Number(fd.get('precio')) || 0;
       track('submit_property', {
         form_name: 'vender_propiedad',
         property_type: fd.get('tipo'),
         colonia: fd.get('colonia'), alcaldia: fd.get('alcaldia'),
         m2: Number(fd.get('m2')) || 0,
-        expected_price: Number(fd.get('precio')) || 0,
+        expected_price: expectedPrice,
         city: 'Ciudad de México'
       });
-      form.style.display = 'none';
-      var ok = $('#venderSuccess'); if (ok) { ok.classList.add('is-on'); ok.setAttribute('tabindex', '-1'); ok.focus(); ok.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      goToGracias('vender_propiedad', lead.fuente, expectedPrice);
     });
   }
 

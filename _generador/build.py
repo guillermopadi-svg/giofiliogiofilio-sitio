@@ -1772,6 +1772,48 @@ def build_legal(slug, titulo, intro, secciones, desc):
 
 
 # =========================================================== 404 + SITEMAP
+def build_gracias():
+    # Destino post-envio de los formularios de lead (ver captureLead/initForms
+    # en gio.js). Ademas de servir como pagina de confirmacion para la
+    # persona, es el gancho de conversion: la URL /gracias/ se puede usar
+    # como trigger simple en Google Ads/GTM, y el evento "lead_thank_you"
+    # que se manda al dataLayer sirve como trigger de evento personalizado
+    # con datos mas ricos (form_name, lead_source, value si hay propiedad).
+    path = "gracias/index.html"
+    R = lambda t: rel(path, t)
+    body = f'''
+<section class="section">
+  <div class="wrap-narrow center">
+    <p class="eyebrow eyebrow--center">Listo</p>
+    <h1>Gracias, ya recibí tu mensaje</h1>
+    <p class="lead">Lo reviso personalmente y te contacto en cuanto pueda, normalmente el mismo día. Si prefieres platicarlo ahora, escríbeme directo por WhatsApp.</p>
+    <div class="cta-actions" style="margin-top:2rem">
+      <a class="btn btn--wa" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-global="pagina_gracias">{icon("wa")} Escribirle a Gio</a>
+      <a class="btn btn--ghost" href="{R("propiedades/")}">Seguir viendo propiedades</a>
+      <a class="btn btn--ghost" href="{R("index.html")}">Volver al inicio</a>
+    </div>
+  </div>
+</section>'''
+    extra_js = '''<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var payload = {
+    event: 'lead_thank_you',
+    form_name: q.get('form') || 'contacto',
+    lead_source: q.get('source') || 'sitio_web',
+    city: 'Ciudad de México'
+  };
+  var value = q.get('value');
+  if (value) { payload.value = Number(value); payload.currency = q.get('currency') || 'MXN'; }
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push(payload);
+})();
+</script>'''
+    write(path, page(path, "Gracias | Gio Filio",
+        "Gracias por contactar a Gio Filio. En breve recibirás una respuesta personalizada sobre tu solicitud.",
+        body, noindex=True, extra_js=extra_js, page_type="gracias", **K()))
+
+
 def build_404():
     path = "404.html"
     R = lambda t: rel(path, t)
@@ -1813,7 +1855,7 @@ def build_sitemap():
         return f"  <url>\n    <loc>{loc}</loc>\n    <lastmod>{TODAY}</lastmod>\n    <changefreq>{cf}</changefreq>\n    <priority>{pr}</priority>\n  </url>"
 
     def es_valida(p):
-        return not p.endswith("404.html") and not p.startswith(("favoritos/", "comparador/"))
+        return not p.endswith("404.html") and not p.startswith(("favoritos/", "comparador/", "gracias/"))
 
     todas = sorted(p for p in set(PAGES) if es_valida(p))
 
@@ -1962,6 +2004,7 @@ def main():
                 "Condiciones de uso del sitio de Gio Filio, alcance de la información publicada y naturaleza demostrativa del inventario.",
                 LEGAL_TERMINOS,
                 "Términos y condiciones de uso del sitio de Gio Filio — Tu espacio ideal, asesoría inmobiliaria en Ciudad de México.")
+    build_gracias()
     build_404()
     build_sitemap()
     print(f"   {len(PAGES)} páginas HTML ({combos} de SEO programático)")
