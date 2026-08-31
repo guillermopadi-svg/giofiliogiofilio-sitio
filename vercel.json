@@ -4,8 +4,8 @@
   "cleanUrls": true,
   "redirects": [
     {
-      "source": "/propiedad/local-comercial-roma-norte-ebwd4874",
-      "destination": "/propiedad/local-comercial-roma-norte-ebwa8714",
+      "source": "/propiedad/local-comercial-roma-norte-ebwd4874/",
+      "destination": "/propiedad/local-comercial-roma-norte-ebwa8714/",
       "permanent": true
     }
   ],
