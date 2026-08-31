@@ -92,9 +92,11 @@
     }
 
     if (!SUPABASE_READY) {
-      // TODO Supabase: reemplazar por supabase.auth.signInWithPassword({ email, password: pass })
-      toast('Modo de prueba: entrando con datos de muestra (Supabase aún no conectado)');
-      showApp(email.split('@')[0]);
+      // Sin Supabase conectado no hay forma de validar credenciales de verdad,
+      // asi que el panel se queda cerrado en vez de dejar entrar con cualquier
+      // correo/contraseña (ver [[gio_filio_automation]] / auditoria de seguridad).
+      errBox.textContent = 'Panel en construcción: la autenticación real todavía no está conectada.';
+      errBox.classList.add('show');
       return;
     }
 
