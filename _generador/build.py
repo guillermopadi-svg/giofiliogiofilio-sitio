@@ -139,7 +139,6 @@ def build_home():
     path = "index.html"
     R = lambda t: rel(path, t)
     dest = destacadas(8)
-    inversion = [p for p in PROPS if "oportunidad" in p["badges"] or p["tipo"] == "desarrollo"][:6]
     zonas_home = ["polanco", "roma-norte", "condesa"]
 
     objetivos = [
@@ -253,20 +252,6 @@ def build_home():
       <a class="btn btn--ghost" href="{R("zonas/")}">Ver las 16 alcaldías</a>
     </div>
     <div class="grid grid-3">{zonas_html}</div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="wrap">
-    <div class="carousel-head">
-      <div>
-        <p class="eyebrow">Inversión</p>
-        <h2>Oportunidades de inversión</h2>
-        <p class="lead" style="max-width:54ch">Propiedades donde los números cierran. Puedo compartirte el análisis de rendimiento y comparables de renta de cada una.</p>
-      </div>
-      <a class="btn btn--ghost" href="{R("inversion/")}">Ver todas</a>
-    </div>
-    {card_grid(path, inversion)}
   </div>
 </section>
 
