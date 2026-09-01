@@ -106,7 +106,6 @@ NAV = [
         ("Ir a Inicio", ""),
         ("Propiedades destacadas", "#destacadas"),
         ("Zonas destacadas", "#zonas-home"),
-        ("Nuevas y en preventa", "#nuevas"),
         ("Testimonios", "#testimonios"),
         ("Vender tu propiedad", "#vender-home"),
     ]),
