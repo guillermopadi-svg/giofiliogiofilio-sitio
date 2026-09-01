@@ -265,7 +265,7 @@ def footer(path, colonias, alcaldias):
 
 
 def wa_fab(path):
-    return f'''<a class="wa-fab" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-fab data-wa-global="fab">{icon("wa")}<span class="wa-text">Habla con Gio</span></a>'''
+    return f'''<a class="wa-fab" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-fab data-wa-global="fab">{icon("wa")}<span class="wa-text">WhatsApp</span></a>'''
 
 
 # ------------------------------------------------------------------ LAYOUT
@@ -411,7 +411,7 @@ def pcard(path, p, no_cmp=False):
   {cmp_html}
   <div class="pcard-actions">
     <a class="btn btn--ghost btn--sm" href="{R(p["url"])}">Ver propiedad</a>
-    <a class="btn btn--sm" href="{wa}" target="_blank" rel="noopener" data-wa="{e(p["id"])}">Contactar a Gio</a>
+    <a class="btn btn--sm" href="{wa}" target="_blank" rel="noopener" data-wa="{e(p["id"])}">WhatsApp</a>
   </div>
 </article>'''
 
