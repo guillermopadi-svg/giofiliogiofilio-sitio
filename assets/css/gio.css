@@ -177,8 +177,9 @@ hr{ border:0; border-top:1px solid var(--line); margin:var(--sp-6) 0; }
 .btn--light:hover{ --btn-bg:var(--ivory); --btn-fg:var(--navy); --btn-bd:var(--ivory); color:var(--navy); }
 .btn--outline-light{ --btn-bg:transparent; --btn-fg:#fff; --btn-bd:rgba(255,255,255,.45); }
 .btn--outline-light:hover{ --btn-bg:rgba(255,255,255,.12); --btn-fg:#fff; --btn-bd:#fff; color:#fff; }
-.btn--wa{ --btn-bg:#1FA855; --btn-fg:#fff; --btn-bd:#1FA855; }
+.btn--wa{ --btn-bg:#1FA855; --btn-fg:#fff; --btn-bd:#1FA855; font-family:var(--font-body); font-weight:600; letter-spacing:0; }
 .btn--wa:hover{ --btn-bg:#17904a; --btn-bd:#17904a; }
+.wa-fab .wa-text{ font-family:var(--font-body); font-weight:600; letter-spacing:0; }
 .btn--sm{ padding:.55rem 1.05rem; font-size:var(--step--1); }
 .btn--lg{ padding:1rem 1.9rem; font-size:var(--step-1); }
 .btn--block{ width:100%; }
