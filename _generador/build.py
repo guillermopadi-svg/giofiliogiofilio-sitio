@@ -176,18 +176,39 @@ def build_home():
         <h3>{e(b["titulo"])}</h3><p>{e(b["resumen"])}</p>
       </div></a>''' for b in BLOG[:3])
 
+    # Slides del hero: la primera es la imagen generica de siempre (sin
+    # highlight, es el estado por defecto); las siguientes son fotos reales
+    # de zonas concretas con un dato honesto (precio de referencia por m²,
+    # el mismo que se usa en las paginas de zona aunque no haya inventario
+    # en vivo) a modo de highlight/CTA, enlazando a esa zona.
+    hero_slides = [
+        dict(slug="_default", img=ZONE_IMG["_hero"] + "-hero",
+             alt="Residencia contemporánea en Ciudad de México",
+             highlight=None, href=None),
+    ]
+    for slug in ("polanco", "roma-norte", "condesa"):
+        c = COLONIA_BY_SLUG[slug]
+        hero_slides.append(dict(
+            slug=slug, img=f"assets/img/hero/hero-{slug}",
+            alt=f"{c['nombre']}, Ciudad de México",
+            highlight=f"{money(c['precio_m2_venta'])} por m² de referencia en {c['nombre']}",
+            href=f"propiedades/{slug}/",
+        ))
+    hero_slides_html = "".join(f'''<picture class="{"is-active" if i == 0 else ""}"{f' data-highlight="{e(s["highlight"])}" data-highlight-href="{R(s["href"])}"' if s["highlight"] else ""}>
+      <source type="image/webp" srcset="{R(s["img"] + ".webp")}">
+      <img src="{R(s["img"] + ".jpg")}" alt="{e(s["alt"])}" {'fetchpriority="high"' if i == 0 else 'loading="lazy"'} width="1600" height="900">
+    </picture>''' for i, s in enumerate(hero_slides))
+
     body = f'''
 <section class="hero">
-  <div class="hero-media">
-    <picture>
-      <source type="image/webp" srcset="{R(ZONE_IMG["_hero"] + "-hero.webp")}">
-      <img src="{R(ZONE_IMG["_hero"] + "-hero.jpg")}" alt="Residencia contemporánea en Ciudad de México" fetchpriority="high" width="1600" height="900">
-    </picture>
+  <div class="hero-media" data-hero-carousel>
+    {hero_slides_html}
   </div>
   <div class="hero-inner wrap">
     <p class="eyebrow hero-eyebrow">Asesoría inmobiliaria en Ciudad de México</p>
     <h1>Encuentra tu espacio ideal.</h1>
     <p class="lead">Propiedades seleccionadas y asesoría personalizada para comprar, rentar o invertir en Ciudad de México.</p>
+    <a class="hero-highlight" id="heroHighlight" href="#" hidden></a>
     {searchbox(path)}
     <div class="hero-stats">
       <div class="hero-stat"><b>16</b><span>Alcaldías de CDMX</span></div>

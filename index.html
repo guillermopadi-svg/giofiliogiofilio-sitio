@@ -99,16 +99,26 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <main id="main">
 
 <section class="hero">
-  <div class="hero-media">
-    <picture>
+  <div class="hero-media" data-hero-carousel>
+    <picture class="is-active">
       <source type="image/webp" srcset="assets/img/zonas/_hero-hero.webp">
       <img src="assets/img/zonas/_hero-hero.jpg" alt="Residencia contemporánea en Ciudad de México" fetchpriority="high" width="1600" height="900">
+    </picture><picture class="" data-highlight="$92,000 MXN por m² de referencia en Polanco" data-highlight-href="propiedades/polanco/">
+      <source type="image/webp" srcset="assets/img/hero/hero-polanco.webp">
+      <img src="assets/img/hero/hero-polanco.jpg" alt="Polanco, Ciudad de México" loading="lazy" width="1600" height="900">
+    </picture><picture class="" data-highlight="$72,000 MXN por m² de referencia en Roma Norte" data-highlight-href="propiedades/roma-norte/">
+      <source type="image/webp" srcset="assets/img/hero/hero-roma-norte.webp">
+      <img src="assets/img/hero/hero-roma-norte.jpg" alt="Roma Norte, Ciudad de México" loading="lazy" width="1600" height="900">
+    </picture><picture class="" data-highlight="$74,000 MXN por m² de referencia en Condesa" data-highlight-href="propiedades/condesa/">
+      <source type="image/webp" srcset="assets/img/hero/hero-condesa.webp">
+      <img src="assets/img/hero/hero-condesa.jpg" alt="Condesa, Ciudad de México" loading="lazy" width="1600" height="900">
     </picture>
   </div>
   <div class="hero-inner wrap">
     <p class="eyebrow hero-eyebrow">Asesoría inmobiliaria en Ciudad de México</p>
     <h1>Encuentra tu espacio ideal.</h1>
     <p class="lead">Propiedades seleccionadas y asesoría personalizada para comprar, rentar o invertir en Ciudad de México.</p>
+    <a class="hero-highlight" id="heroHighlight" href="#" hidden></a>
     <form class="searchbox" data-search-form action="propiedades/" method="get" role="search" aria-label="Buscar propiedades en Ciudad de México">
   <div class="search-tabs" role="tablist" aria-label="Tipo de operación">
     <button type="button" class="search-tab" role="tab" data-op="venta" aria-selected="true">Comprar</button>

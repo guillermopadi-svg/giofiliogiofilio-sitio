@@ -1478,6 +1478,36 @@
     });
   }
 
+  // ================================================== HERO CARRUSEL
+  function initHeroCarousel() {
+    var media = $('[data-hero-carousel]'); if (!media) return;
+    var slides = $$('picture', media);
+    var highlight = $('#heroHighlight');
+    if (slides.length < 2) return;
+    var i = slides.findIndex(function (s) { return s.classList.contains('is-active'); });
+    if (i < 0) i = 0;
+
+    function apply(idx) {
+      slides.forEach(function (s, n) { s.classList.toggle('is-active', n === idx); });
+      var s = slides[idx];
+      var text = s.dataset.highlight, href = s.dataset.highlightHref;
+      if (!highlight) return;
+      if (!text) { highlight.classList.add('is-fading'); setTimeout(function () { highlight.hidden = true; }, 500); return; }
+      highlight.classList.add('is-fading');
+      setTimeout(function () {
+        highlight.textContent = text;
+        highlight.href = href || '#';
+        highlight.hidden = false;
+        highlight.classList.remove('is-fading');
+      }, 500);
+    }
+    apply(i);
+    setInterval(function () {
+      i = (i + 1) % slides.length;
+      apply(i);
+    }, 6000);
+  }
+
   // ================================================== VISTA DE PROPIEDAD
   function initPropertyView() {
     var pid = document.body.dataset.propertyId;
@@ -1510,6 +1540,7 @@
     initSearchForms();
     initTabs();
     initCarousels();
+    initHeroCarousel();
     initLightbox();
     initForms();
     initResults();
