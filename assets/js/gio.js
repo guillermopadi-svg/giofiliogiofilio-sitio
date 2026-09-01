@@ -1492,13 +1492,12 @@
       var s = slides[idx];
       var text = s.dataset.highlight, href = s.dataset.highlightHref;
       if (!highlight) return;
-      if (!text) { highlight.classList.add('is-fading'); setTimeout(function () { highlight.hidden = true; }, 500); return; }
-      highlight.classList.add('is-fading');
+      if (!text) { highlight.classList.remove('is-visible'); return; }
+      highlight.classList.remove('is-visible');
       setTimeout(function () {
         highlight.textContent = text;
         highlight.href = href || '#';
-        highlight.hidden = false;
-        highlight.classList.remove('is-fading');
+        highlight.classList.add('is-visible');
       }, 500);
     }
     apply(i);

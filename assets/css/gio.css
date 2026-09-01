@@ -340,12 +340,19 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 /* -------------------------------------------------------------- 9. HERO */
 .hero{ position:relative; background:var(--navy); color:#fff; overflow:hidden; }
 .hero-media{ position:absolute; inset:0; }
-.hero-media picture{ position:absolute; inset:0; opacity:0; transition:opacity 1.4s ease; }
-.hero-media picture.is-active{ opacity:1; }
+[data-hero-carousel] picture{ position:absolute; inset:0; opacity:0; transition:opacity 1.4s ease; }
+[data-hero-carousel] picture.is-active{ opacity:1; }
 .hero-media img{ width:100%; height:100%; object-fit:cover; }
 .hero-media::after{
   content:""; position:absolute; inset:0; z-index:1;
-  background:linear-gradient(180deg, rgba(7,31,74,.80) 0%, rgba(7,31,74,.62) 42%, rgba(7,31,74,.90) 100%);
+  background:linear-gradient(180deg, rgba(7,31,74,.58) 0%, rgba(7,31,74,.40) 42%, rgba(7,31,74,.68) 100%);
+}
+/* Los heroes cortos (fichas de colonia, alcaldia, etc.) no llegan a mostrar
+   la franja clara del degradado de arriba — con menos altura, el mismo
+   degradado pensado para el hero alto del home se ve casi solido. Se usa
+   un overlay plano y mas suave ahi para que la foto se note. */
+.hero--page .hero-media::after{
+  background:rgba(7,31,74,.52);
 }
 .hero-inner{ position:relative; z-index:2; padding-block:clamp(3.5rem,9vw,7rem) clamp(2.5rem,6vw,4.5rem); }
 .hero h1{ color:#fff; max-width:16ch; margin-bottom:var(--sp-4); font-weight:400; }
@@ -356,11 +363,14 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
   background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.28);
   border-radius:var(--r-full); padding:.5rem 1rem; margin-bottom:var(--sp-4);
   font-family:var(--font-body); font-size:var(--step--1); font-weight:600;
-  transition:background var(--t-fast), opacity .5s ease; opacity:1;
+  transition:background var(--t-fast), opacity .5s ease, visibility 0s .5s;
+  opacity:0; visibility:hidden;
 }
+/* Se reserva el espacio siempre (nunca se saca del flujo) para que al
+   aparecer/desaparecer el highlight entre slides no empuje el buscador
+   ni las estadisticas de abajo — solo cambia de opacidad. */
+.hero-highlight.is-visible{ opacity:1; visibility:visible; transition:background var(--t-fast), opacity .5s ease; }
 .hero-highlight:hover{ background:rgba(255,255,255,.24); color:#fff; }
-.hero-highlight[hidden]{ display:none; }
-.hero-highlight.is-fading{ opacity:0; }
 .hero-highlight::after{ content:"→"; }
 .hero-stats{ display:flex; flex-wrap:wrap; gap:var(--sp-6); margin-top:var(--sp-6); padding-top:var(--sp-5); border-top:1px solid rgba(255,255,255,.16); }
 .hero-stat b{ display:block; font-family:var(--font-display); font-size:var(--step-2); font-weight:400; color:#fff; }

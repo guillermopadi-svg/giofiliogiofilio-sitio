@@ -208,7 +208,7 @@ def build_home():
     <p class="eyebrow hero-eyebrow">Asesoría inmobiliaria en Ciudad de México</p>
     <h1>Encuentra tu espacio ideal.</h1>
     <p class="lead">Propiedades seleccionadas y asesoría personalizada para comprar, rentar o invertir en Ciudad de México.</p>
-    <a class="hero-highlight" id="heroHighlight" href="#" hidden></a>
+    <a class="hero-highlight" id="heroHighlight" href="#"></a>
     {searchbox(path)}
     <div class="hero-stats">
       <div class="hero-stat"><b>16</b><span>Alcaldías de CDMX</span></div>
