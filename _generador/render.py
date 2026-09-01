@@ -121,7 +121,6 @@ NAV = [
     ("Comprar", "comprar/", None),
     ("Vender", "vender/", None),
     ("Rentar", "rentar/", None),
-    ("Conoce a Gio", "conoce-a-gio/", None),
 ]
 
 CUR = ' aria-current="page"'
