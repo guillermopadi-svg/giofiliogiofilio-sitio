@@ -138,7 +138,7 @@ def listing_schema(p):
 def build_home():
     path = "index.html"
     R = lambda t: rel(path, t)
-    dest = destacadas(6)
+    dest = destacadas(8)
     inversion = [p for p in PROPS if "oportunidad" in p["badges"] or p["tipo"] == "desarrollo"][:6]
     zonas_home = ["polanco", "roma-norte", "condesa"]
 

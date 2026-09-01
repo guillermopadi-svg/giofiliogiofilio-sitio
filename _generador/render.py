@@ -106,7 +106,6 @@ NAV = [
         ("Ir a Inicio", ""),
         ("Propiedades destacadas", "#destacadas"),
         ("Zonas destacadas", "#zonas-home"),
-        ("Nuevas y en preventa", "#nuevas"),
         ("Testimonios", "#testimonios"),
         ("Vender tu propiedad", "#vender-home"),
     ]),
@@ -122,7 +121,6 @@ NAV = [
     ("Comprar", "comprar/", None),
     ("Vender", "vender/", None),
     ("Rentar", "rentar/", None),
-    ("Conoce a Gio", "conoce-a-gio/", None),
 ]
 
 CUR = ' aria-current="page"'
