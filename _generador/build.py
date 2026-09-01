@@ -1276,7 +1276,7 @@ def build_vender_form_section():
           {icon("checkc")}
           <h4 style="margin-bottom:.35rem">Solicitud recibida</h4>
           <p class="small">Gio prepara el análisis de comparables de tu colonia y te contacta en menos de 48 horas con un rango de precio sustentado.</p>
-          <a class="btn btn--wa btn--sm" style="margin-top:1rem" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-global="post_vender">{icon("wa")} Adelantar por WhatsApp</a>
+          <a class="btn btn--wa btn--sm" style="margin-top:1rem" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-global="post_vender">{icon("wa")} WhatsApp</a>
         </div>
       </div>
       <aside>
@@ -1390,7 +1390,7 @@ def build_valuacion():
           <p class="fin-note">Esta cifra es orientativa y no sustituye un avalúo formal. Para vender bien, el siguiente paso es revisar operaciones cerradas comparables de tu calle y tu edificio. Gio te contacta para prepararlo.</p>
           <div class="cta-actions" style="justify-content:flex-start;margin-top:1.5rem">
             <a class="btn" href="{R("vender/")}">Quiero vender con Gio</a>
-            <a class="btn btn--wa" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-global="post_valuacion">{icon("wa")} Comentarlo por WhatsApp</a>
+            <a class="btn btn--wa" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-global="post_valuacion">{icon("wa")} WhatsApp</a>
           </div>
         </div>
       </div>
@@ -1780,7 +1780,7 @@ def build_gracias():
     <h1>Gracias, ya recibí tu mensaje</h1>
     <p class="lead">Lo reviso personalmente y te contacto en cuanto pueda, normalmente el mismo día. Si prefieres platicarlo ahora, escríbeme directo por WhatsApp.</p>
     <div class="cta-actions" style="margin-top:2rem">
-      <a class="btn btn--wa" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-global="pagina_gracias">{icon("wa")} Escribirle a Gio</a>
+      <a class="btn btn--wa" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-global="pagina_gracias">{icon("wa")} WhatsApp</a>
       <a class="btn btn--ghost" href="{R("propiedades/")}">Seguir viendo propiedades</a>
       <a class="btn btn--ghost" href="{R("index.html")}">Volver al inicio</a>
     </div>

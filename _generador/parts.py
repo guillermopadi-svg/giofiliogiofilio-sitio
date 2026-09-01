@@ -260,7 +260,7 @@ def contact_form(path, *, form_name="contacto", property_id="", source="sitio_we
   {icon("checkc")}
   <h4 style="margin-bottom:.35rem">Mensaje recibido</h4>
   <p class="small" style="margin:0">Gio te contacta personalmente, normalmente el mismo día. Si prefieres avanzar ahora, escríbele por WhatsApp.</p>
-  <a class="btn btn--wa btn--sm" style="margin-top:1rem" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-global="post_lead">{icon("wa")} Abrir WhatsApp</a>
+  <a class="btn btn--wa btn--sm" style="margin-top:1rem" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-global="post_lead">{icon("wa")} WhatsApp</a>
 </div>'''
 
 
