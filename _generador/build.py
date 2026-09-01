@@ -138,10 +138,9 @@ def listing_schema(p):
 def build_home():
     path = "index.html"
     R = lambda t: rel(path, t)
-    dest = destacadas(6)
-    nuevas = [p for p in PROPS if "nueva" in p["badges"] or "preventa" in p["badges"]][:8]
+    dest = destacadas(8)
     inversion = [p for p in PROPS if "oportunidad" in p["badges"] or p["tipo"] == "desarrollo"][:6]
-    zonas_home = ["polanco", "roma-norte", "condesa", "del-valle", "san-angel", "santa-fe"]
+    zonas_home = ["polanco", "roma-norte", "condesa"]
 
     objetivos = [
         ("Comprar", "comprar/", "home", "Encontrar el lugar correcto para tu momento de vida, no solo una propiedad disponible.", "Quiero comprar"),
@@ -155,8 +154,17 @@ def build_home():
       <span class="link-arrow">{e(cta)}{icon("arrow")}</span>
     </a>''' for t, u, ic, d, cta in objetivos)
 
-    zonas_html = "".join(f'''<a class="zona-card" href="{R("propiedades/" + s + "/")}">
-      <img src="{R(ZONE_IMG[s] + "-card.jpg")}" alt="Propiedades en {e(COLONIA_BY_SLUG[s]["nombre"])}, Ciudad de México" loading="lazy" width="640" height="853">
+    # Fotos propias por zona (generadas para el home), en vez del pool generico
+    # de ZONE_IMG — buscan verse reconociblemente CDMX (Masaryk en Polanco,
+    # jacarandas y cantera en Roma Norte, Art Deco del Parque Mexico en la
+    # Condesa) en lugar de interiores/exteriores genericos de stock.
+    ZONAS_HOME_IMG = {
+        "polanco": "assets/img/zonas-home/polanco-card.jpg",
+        "roma-norte": "assets/img/zonas-home/roma-norte-card.jpg",
+        "condesa": "assets/img/zonas-home/condesa-card.jpg",
+    }
+    zonas_html = "".join(f'''<a class="zona-card zona-card--wide" href="{R("propiedades/" + s + "/")}">
+      <img src="{R(ZONAS_HOME_IMG.get(s, ZONE_IMG[s] + "-card.jpg"))}" alt="Propiedades en {e(COLONIA_BY_SLUG[s]["nombre"])}, Ciudad de México" loading="lazy" width="800" height="500">
       <div class="zc-body"><h3>{e(COLONIA_BY_SLUG[s]["nombre"])}</h3>
       <span>{len(by(colonia=s))} propiedades · {e(COLONIA_BY_SLUG[s]["alcaldia"])}</span></div>
     </a>''' for s in zonas_home)
@@ -224,22 +232,6 @@ def build_home():
       <a class="btn btn--ghost" href="{R("zonas/")}">Ver las 16 alcaldías</a>
     </div>
     <div class="grid grid-3">{zonas_html}</div>
-  </div>
-</section>
-
-<section class="section section--ivory" data-carousel id="nuevas">
-  <div class="wrap">
-    <div class="carousel-head">
-      <div>
-        <p class="eyebrow">Recién publicadas</p>
-        <h2>Propiedades nuevas y en preventa</h2>
-      </div>
-      <div class="carousel-nav">
-        <button type="button" data-car="-1" aria-label="Anterior">{icon("chevl")}</button>
-        <button type="button" data-car="1" aria-label="Siguiente">{icon("chev")}</button>
-      </div>
-    </div>
-    <div class="carousel">{"".join(pcard(path, p) for p in nuevas)}</div>
   </div>
 </section>
 

@@ -3,17 +3,17 @@
 
 TESTIMONIOS = [
     dict(nombre="Mariana R.", contexto="Compró departamento en Del Valle",
-         texto="Llevaba ocho meses viendo departamentos sola y todos me parecían iguales. Gio me hizo tres preguntas sobre mi rutina y descartó la mitad de mi lista en una tarde. Terminé comprando en una calle que ni siquiera había considerado, y hoy no me imagino viviendo en otro lado."),
+         texto="Gio hizo tres preguntas sobre mi rutina y descartó la mitad de mi lista en una tarde. Terminé comprando en una calle que ni había considerado."),
     dict(nombre="Andrés y Paola", contexto="Rentaron en Roma Norte",
-         texto="Buscábamos algo que aceptara dos perros grandes, que es prácticamente imposible en la Roma. Gio filtró por eso desde el primer día en lugar de mostrarnos cosas que luego iban a rechazarnos. Firmamos en tres semanas."),
+         texto="Necesitábamos algo que aceptara dos perros grandes, casi imposible en la Roma. Gio filtró por eso desde el día uno y firmamos en tres semanas."),
     dict(nombre="Fernanda G.", contexto="Vendió casa en Coyoacán",
-         texto="Me habían dicho que mi casa valía cuatro millones más de lo que finalmente se vendió, y por eso llevaba catorce meses en el mercado con otra asesora. Gio me mostró los comparables reales, ajustamos el precio y se vendió en siete semanas."),
+         texto="Llevaba catorce meses en el mercado con otra asesora. Gio ajustó el precio con comparables reales y se vendió en siete semanas."),
     dict(nombre="Roberto M.", contexto="Inversión en Narvarte",
-         texto="Yo llegué queriendo comprar en Polanco porque sonaba bien. Gio me armó una comparación de rendimiento entre Polanco, Roma Sur y Narvarte con números reales de renta. Compré dos departamentos en Narvarte y ambos se rentaron antes de que terminara la escrituración."),
+         texto="Quería comprar en Polanco porque sonaba bien. Gio me mostró números reales de renta y terminé comprando dos departamentos en Narvarte."),
     dict(nombre="Lucía T.", contexto="Compró su primer departamento en Portales",
-         texto="Era mi primera compra y no entendía nada del proceso. Gio me explicó lo del crédito, el avalúo, la escrituración y los gastos de cierre antes de que empezáramos a ver propiedades, no después. Eso cambió por completo mi presupuesto real."),
+         texto="Era mi primera compra. Gio me explicó crédito, avalúo y gastos de cierre antes de ver propiedades, no después."),
     dict(nombre="Familia Escobar", contexto="Compró casa en San Ángel",
-         texto="La casa que compramos está catalogada y eso nos daba mucho miedo. Gio nos consiguió la información del INAH, nos conectó con un arquitecto que ya había trabajado en la zona y nos acompañó a las reuniones. Nunca sentimos que nos estuviera empujando a cerrar."),
+         texto="La casa estaba catalogada por el INAH. Gio nos conectó con un arquitecto experto en la zona y nunca sentimos presión para cerrar."),
 ]
 
 PROCESO = {
