@@ -167,7 +167,7 @@ def header(path, active=""):
     </a>
     <nav class="nav-main" aria-label="Navegación principal">{nav}</nav>
     <div class="header-actions">
-      <a class="btn btn--sm" href="{R("contacto/")}">Hablar con Gio</a>
+      <a class="btn btn--sm" href="{R("contacto/")}">Contacta</a>
       <button type="button" class="burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileNav">{icon("menu")}</button>
     </div>
   </div>
@@ -186,7 +186,7 @@ def header(path, active=""):
     <a href="{R("contacto/")}">Contacto{icon("chev")}</a>
   </div>
   <div class="mobile-nav-foot">
-    <a class="btn btn--block" href="{R("contacto/")}">Hablar con Gio</a>
+    <a class="btn btn--block" href="{R("contacto/")}">Contacta</a>
     <a class="btn btn--wa btn--block" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-global="mobile_menu">{icon("wa")} WhatsApp</a>
   </div>
 </div>'''
