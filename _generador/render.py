@@ -409,7 +409,7 @@ def pcard(path, p, no_cmp=False):
   {cmp_html}
   <div class="pcard-actions">
     <a class="btn btn--ghost btn--sm" href="{R(p["url"])}">Ver propiedad</a>
-    <a class="btn btn--sm" href="{wa}" target="_blank" rel="noopener" data-wa="{e(p["id"])}">WhatsApp</a>
+    <a class="btn btn--wa btn--sm btn--icon" href="{wa}" target="_blank" rel="noopener" data-wa="{e(p["id"])}" aria-label="Contactar por WhatsApp">{icon("wa")}</a>
   </div>
 </article>'''
 

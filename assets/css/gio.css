@@ -181,6 +181,8 @@ hr{ border:0; border-top:1px solid var(--line); margin:var(--sp-6) 0; }
 .btn--wa:hover{ --btn-bg:#17904a; --btn-bd:#17904a; }
 .wa-fab .wa-text{ font-family:var(--font-body); font-weight:600; letter-spacing:0; }
 .btn--sm{ padding:.55rem 1.05rem; font-size:var(--step--1); }
+.btn--icon{ padding:.55rem; aspect-ratio:1; gap:0; }
+.btn--icon svg{ width:1.15em; height:1.15em; }
 .btn--lg{ padding:1rem 1.9rem; font-size:var(--step-1); }
 .btn--block{ width:100%; }
 .btn[disabled]{ opacity:.45; cursor:not-allowed; transform:none; }
@@ -483,6 +485,7 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .pcard-specs span + span::before{ content:"·"; color:var(--ink-30); margin-right:.28rem; }
 .pcard-actions{ display:flex; gap:.45rem; padding:0 1.15rem 1.15rem; }
 .pcard-actions .btn{ flex:1; }
+.pcard-actions .btn--icon{ flex:0 0 auto; }
 .pcard-link{ position:absolute; inset:0; z-index:1; }
 .pcard-actions,.pcard-fav,.pcard-cmp{ position:relative; z-index:2; }
 .pcard-cmp{
