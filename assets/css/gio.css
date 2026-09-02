@@ -171,6 +171,8 @@ hr{ border:0; border-top:1px solid var(--line); margin:var(--sp-6) 0; }
 .btn--wa svg,.wa-fab svg{ width:1.25em; height:1.25em; fill:currentColor; }
 .btn--gold{ --btn-bg:transparent; --btn-fg:var(--gold-ink); --btn-bd:var(--gold); }
 .btn--gold:hover{ --btn-bg:var(--gold); --btn-fg:#fff; --btn-bd:var(--gold); color:#fff; }
+.btn--gold-solid{ --btn-bg:var(--gold); --btn-fg:#fff; --btn-bd:var(--gold); }
+.btn--gold-solid:hover{ --btn-bg:var(--gold-ink); --btn-bd:var(--gold-ink); color:#fff; }
 .btn--ghost{ --btn-bg:transparent; --btn-fg:var(--navy); --btn-bd:var(--navy-100); }
 .btn--ghost:hover{ --btn-bg:var(--navy-050); --btn-fg:var(--navy); --btn-bd:var(--navy-300); color:var(--navy); }
 .btn--light{ --btn-bg:#fff; --btn-fg:var(--navy); --btn-bd:#fff; }

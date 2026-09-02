@@ -167,7 +167,7 @@ def header(path, active=""):
     </a>
     <nav class="nav-main" aria-label="Navegación principal">{nav}</nav>
     <div class="header-actions">
-      <a class="btn btn--sm" href="{R("contacto/")}">Contacta</a>
+      <a class="btn btn--sm btn--gold-solid" href="{R("contacto/")}">Contacta</a>
       <button type="button" class="burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileNav">{icon("menu")}</button>
     </div>
   </div>
@@ -263,7 +263,7 @@ def footer(path, colonias, alcaldias):
 
 
 def wa_fab(path):
-    return f'''<a class="wa-fab" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-fab data-wa-global="fab">{icon("wa")}<span class="wa-text">WhatsApp</span></a>'''
+    return f'''<a class="wa-fab" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-fab data-wa-global="fab">{icon("wa")}<span class="wa-text">Hablar con Gio</span></a>'''
 
 
 # ------------------------------------------------------------------ LAYOUT
