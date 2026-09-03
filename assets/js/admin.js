@@ -315,6 +315,10 @@
       toast('Elige la colonia de la propiedad', 'err');
       return;
     }
+    if (publicar && !data.fotos.length) {
+      toast('Agrega al menos una foto antes de publicar', 'err');
+      return;
+    }
     data.estado = publicar ? 'disponible' : 'borrador';
     var btn = publicar ? $('#publishBtn') : $('#saveDraftBtn');
     setBusy(btn, true, publicar ? 'Publicando…' : 'Guardando…');

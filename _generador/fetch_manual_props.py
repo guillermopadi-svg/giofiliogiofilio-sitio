@@ -73,9 +73,14 @@ def main():
             warnings.append(f"{row['id']}: tipo '{row.get('tipo')}' desconocido — se usó 'departamento'")
 
         fotos = row.get("fotos") or []
+        if not fotos:
+            # Sin al menos una foto, build.py no tiene de dónde sacar la
+            # imagen de portada/galería/schema.org de la ficha — se omite
+            # hasta que el asesor suba una (el panel ya no debería dejar
+            # publicar sin fotos, esto es un respaldo).
+            warnings.append(f"{row['id']}: sin fotos — se omite hasta que se suba al menos una")
+            continue
         fotos_real = [{"card": u, "hero": u, "thumb": u} for u in fotos]
-        if not fotos_real:
-            warnings.append(f"{row['id']}: sin fotos — la ficha quedará sin imagen de portada")
 
         fecha = (row.get("actualizado_en") or row.get("creado_en") or "")[:10] or date.today().isoformat()
 
