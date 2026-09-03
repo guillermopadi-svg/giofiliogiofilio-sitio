@@ -182,6 +182,7 @@ hr{ border:0; border-top:1px solid var(--line); margin:var(--sp-6) 0; }
 .btn--wa{ --btn-bg:#1FA855; --btn-fg:#fff; --btn-bd:#1FA855; font-family:var(--font-body); font-weight:600; letter-spacing:0; }
 .btn--wa:hover{ --btn-bg:#17904a; --btn-bd:#17904a; }
 .wa-fab .wa-text{ font-family:var(--font-body); font-weight:600; letter-spacing:0; }
+.mobile-nav-foot .btn:not(.btn--wa){ font-family:var(--font-body); font-weight:700; letter-spacing:0; }
 .btn--sm{ padding:.55rem 1.05rem; font-size:var(--step--1); }
 .btn--icon{ padding:.55rem; aspect-ratio:1; gap:0; }
 .btn--icon svg{ width:1.15em; height:1.15em; }
