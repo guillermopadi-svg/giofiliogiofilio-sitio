@@ -7,6 +7,6 @@
    aquí la service_role key.
    ========================================================================== */
 window.GF_ADMIN_CONFIG = {
-  supabaseUrl: "",   // ej. "https://xxxxxxxxxxxx.supabase.co"
-  supabaseAnonKey: "" // ej. "eyJhbGciOi..."
+  supabaseUrl: "https://vjhchuofznfupkpkepky.supabase.co",
+  supabaseAnonKey: "sb_publishable_qAE8Zc3mQ0S_1m6T8HcObQ_VzRLKIun"
 };

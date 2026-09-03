@@ -17,8 +17,9 @@ alter table perfiles enable row level security;
 -- (la opción recomendada), una tabla nueva no queda visible para la API
 -- aunque tenga RLS — hay que darle el permiso a nivel tabla explícitamente.
 -- RLS sigue siendo quien decide qué renglones ve cada quien.
-grant usage on schema public to anon, authenticated;
+grant usage on schema public to anon, authenticated, service_role;
 grant select, update on perfiles to authenticated;
+grant select on perfiles to service_role;
 
 create policy "cada quien lee su propio perfil, admin lee todos"
   on perfiles for select
@@ -75,6 +76,7 @@ create table if not exists propiedades_manual (
 alter table propiedades_manual enable row level security;
 
 grant select, insert, update, delete on propiedades_manual to authenticated;
+grant select on propiedades_manual to service_role;
 
 create policy "todos ven las publicadas, cada quien ve tambien las suyas"
   on propiedades_manual for select
