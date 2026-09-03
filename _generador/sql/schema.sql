@@ -21,11 +21,23 @@ grant usage on schema public to anon, authenticated, service_role;
 grant select, update on perfiles to authenticated;
 grant select on perfiles to service_role;
 
+-- Función auxiliar en vez de una subconsulta directa a `perfiles` dentro de
+-- su propia política: una política que consulta su propia tabla dispara la
+-- misma política otra vez sobre esa subconsulta → recursión infinita
+-- (error de Postgres 42P17). security definer hace que esta función corra
+-- sin aplicar RLS, rompiendo el ciclo.
+create or replace function is_admin()
+returns boolean
+language sql security definer stable set search_path = public
+as $$
+  select exists (select 1 from perfiles where id = auth.uid() and rol = 'admin');
+$$;
+
+grant execute on function is_admin() to authenticated;
+
 create policy "cada quien lee su propio perfil, admin lee todos"
   on perfiles for select
-  using (auth.uid() = id or exists (
-    select 1 from perfiles p where p.id = auth.uid() and p.rol = 'admin'
-  ));
+  using (auth.uid() = id or is_admin());
 
 create policy "cada quien edita su propio perfil"
   on perfiles for update
@@ -80,9 +92,7 @@ grant select on propiedades_manual to service_role;
 
 create policy "todos ven las publicadas, cada quien ve tambien las suyas"
   on propiedades_manual for select
-  using (estado = 'disponible' or asesor_id = auth.uid() or exists (
-    select 1 from perfiles p where p.id = auth.uid() and p.rol = 'admin'
-  ));
+  using (estado = 'disponible' or asesor_id = auth.uid() or is_admin());
 
 create policy "cada asesor crea sus propias fichas"
   on propiedades_manual for insert
@@ -90,15 +100,11 @@ create policy "cada asesor crea sus propias fichas"
 
 create policy "cada asesor edita las suyas, admin edita todas"
   on propiedades_manual for update
-  using (asesor_id = auth.uid() or exists (
-    select 1 from perfiles p where p.id = auth.uid() and p.rol = 'admin'
-  ));
+  using (asesor_id = auth.uid() or is_admin());
 
 create policy "cada asesor borra las suyas, admin borra todas"
   on propiedades_manual for delete
-  using (asesor_id = auth.uid() or exists (
-    select 1 from perfiles p where p.id = auth.uid() and p.rol = 'admin'
-  ));
+  using (asesor_id = auth.uid() or is_admin());
 
 create or replace function set_actualizado_en()
 returns trigger as $$
