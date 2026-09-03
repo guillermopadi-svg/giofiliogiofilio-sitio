@@ -1,51 +1,22 @@
 /* ==========================================================================
    Panel de asesores — Gio Filio
-   Hoy corre con datos de muestra (MOCK_PROPIEDADES). En cuanto exista el
-   proyecto de Supabase, cada función marcada "TODO Supabase" se conecta a
-   la tabla real (propiedades / propiedad_fotos) en lugar de al arreglo local.
+   Conectado a Supabase: auth.signInWithPassword, tabla `propiedades_manual`
+   (con RLS — cada asesor solo ve/edita las suyas, Gio como admin las ve
+   todas) y Storage (bucket `propiedades-manual`) para las fotos. Ver
+   _generador/sql/schema.sql para el esquema completo.
    ========================================================================== */
 (function () {
   'use strict';
 
   var CFG = window.GF_ADMIN_CONFIG || {};
   var SUPABASE_READY = !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
+  var sb = SUPABASE_READY ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey) : null;
 
-  var AMENIDADES = [
-    'seguridad', 'elevador', 'gimnasio', 'roof-garden', 'terraza', 'bodega',
-    'cuarto-servicio', 'salon-eventos', 'estacionamiento-visitas', 'pet-friendly',
-    'alberca', 'jardin', 'chimenea', 'vigilancia-24h'
-  ];
-  var AMENIDADES_LABEL = {
-    'seguridad': 'Seguridad', 'elevador': 'Elevador', 'gimnasio': 'Gimnasio',
-    'roof-garden': 'Roof garden', 'terraza': 'Terraza', 'bodega': 'Bodega',
-    'cuarto-servicio': 'Cuarto de servicio', 'salon-eventos': 'Salón de eventos',
-    'estacionamiento-visitas': 'Estac. visitas', 'pet-friendly': 'Pet friendly',
-    'alberca': 'Alberca', 'jardin': 'Jardín', 'chimenea': 'Chimenea',
-    'vigilancia-24h': 'Vigilancia 24h'
-  };
+  var AMENIDADES = [];       // se llena desde assets/data/amenidades.json
+  var AMENIDAD_LABEL = {};
+  var COLONIAS = [];         // se llena desde assets/data/colonias.json
 
-  // Datos de muestra — misma forma que la tabla real que crearemos en Supabase
-  var MOCK_PROPIEDADES = [
-    {
-      id: 'mock-1', titulo: 'Departamento con terraza y vista a Chapultepec',
-      operacion: 'venta', tipo: 'departamento', precio: 12900000,
-      colonia_nombre: 'Polanco', alcaldia_nombre: 'Miguel Hidalgo',
-      rec: 3, ban: 3, medios: 1, est: 2, m2c: 185,
-      amenidades: ['seguridad', 'elevador', 'terraza', 'gimnasio'],
-      estado: 'disponible', destacada: true,
-      foto_card: '../assets/img/properties/foto-51-card.jpg'
-    },
-    {
-      id: 'mock-2', titulo: 'Terreno con uso de suelo habitacional en Coyoacán',
-      operacion: 'venta', tipo: 'terreno', precio: 9600000,
-      colonia_nombre: 'Coyoacán', alcaldia_nombre: 'Coyoacán',
-      rec: 0, ban: 0, medios: 0, est: 0, m2t: 480,
-      amenidades: [], estado: 'disponible', destacada: false,
-      foto_card: '../assets/img/properties/foto-42-card.jpg'
-    }
-  ];
-
-  var STATE = { propiedades: MOCK_PROPIEDADES.slice(), editingId: null, fotos: [] };
+  var STATE = { propiedades: [], editingId: null, fotos: [], session: null, perfil: null };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -69,13 +40,55 @@
     }, 2800);
   }
 
+  function setBusy(btn, busy, textoOcupado) {
+    if (!btn) return;
+    if (busy) {
+      btn.dataset.textoOriginal = btn.textContent;
+      btn.textContent = textoOcupado || 'Guardando…';
+      btn.disabled = true;
+    } else {
+      btn.textContent = btn.dataset.textoOriginal || btn.textContent;
+      btn.disabled = false;
+    }
+  }
+
+  // ------------------------------------------------------------- CATÁLOGOS
+  function cargarCatalogos() {
+    return Promise.all([
+      fetch('../assets/data/amenidades.json').then(function (r) { return r.json(); }).catch(function () { return []; }),
+      fetch('../assets/data/colonias.json').then(function (r) { return r.json(); }).catch(function () { return []; }),
+    ]).then(function (res) {
+      AMENIDADES = res[0];
+      AMENIDADES.forEach(function (a) { AMENIDAD_LABEL[a.slug] = a.label; });
+      COLONIAS = res[1];
+      $('#amenidadesGrid').innerHTML = AMENIDADES.map(function (a) {
+        return (
+          '<label class="chip-check">' +
+            '<input type="checkbox" value="' + a.slug + '" name="amenidad">' +
+            '<span>' + esc(a.label) + '</span>' +
+          '</label>'
+        );
+      }).join('');
+      var sel = $('#f_colonia');
+      sel.innerHTML = '<option value="">Selecciona una colonia…</option>' + COLONIAS.map(function (c) {
+        return '<option value="' + c.slug + '">' + esc(c.nombre) + ' — ' + esc(c.alcaldia) + '</option>';
+      }).join('');
+    });
+  }
+
   // --------------------------------------------------------------- AUTH
-  function showApp(nombre) {
+  function showApp() {
+    var nombre = (STATE.perfil && STATE.perfil.nombre) || (STATE.session && STATE.session.user.email) || 'Asesor';
     $('#gate').style.display = 'none';
     $('#app').classList.add('is-visible');
-    $('#userName').textContent = nombre || 'Asesor';
-    $('#userAvatar').textContent = (nombre || 'A').trim().charAt(0).toUpperCase();
-    renderGrid();
+    $('#userName').textContent = nombre;
+    $('#userAvatar').textContent = nombre.trim().charAt(0).toUpperCase();
+    cargarPropiedades();
+  }
+
+  function showGate() {
+    $('#app').classList.remove('is-visible');
+    $('#gate').style.display = 'flex';
   }
 
   function handleLogin(e) {
@@ -83,6 +96,7 @@
     var email = $('#loginEmail').value.trim();
     var pass = $('#loginPass').value;
     var errBox = $('#loginError');
+    var submitBtn = $('#loginForm button[type="submit"]');
     errBox.classList.remove('show');
 
     if (!email || !pass) {
@@ -90,27 +104,42 @@
       errBox.classList.add('show');
       return;
     }
-
     if (!SUPABASE_READY) {
-      // Sin Supabase conectado no hay forma de validar credenciales de verdad,
-      // asi que el panel se queda cerrado en vez de dejar entrar con cualquier
-      // correo/contraseña (ver [[gio_filio_automation]] / auditoria de seguridad).
-      errBox.textContent = 'Panel en construcción: la autenticación real todavía no está conectada.';
+      errBox.textContent = 'Panel en construcción: la conexión con Supabase todavía no está configurada.';
       errBox.classList.add('show');
       return;
     }
 
-    // TODO Supabase: flujo real de autenticación
-    // supabase.auth.signInWithPassword({ email, password: pass }).then(...)
-    toast('Conexión a Supabase pendiente de configurar', 'err');
+    setBusy(submitBtn, true, 'Entrando…');
+    sb.auth.signInWithPassword({ email: email, password: pass }).then(function (res) {
+      setBusy(submitBtn, false);
+      if (res.error) {
+        errBox.textContent = res.error.message === 'Invalid login credentials'
+          ? 'Correo o contraseña incorrectos.'
+          : res.error.message;
+        errBox.classList.add('show');
+        return;
+      }
+      STATE.session = res.data.session;
+      cargarPerfilYMostrar();
+    });
+  }
+
+  function cargarPerfilYMostrar() {
+    sb.from('perfiles').select('nombre, rol').eq('id', STATE.session.user.id).single().then(function (res) {
+      STATE.perfil = res.data || null;
+      showApp();
+    });
   }
 
   function handleLogout() {
-    // TODO Supabase: supabase.auth.signOut()
-    $('#app').classList.remove('is-visible');
-    $('#gate').style.display = 'flex';
-    $('#loginEmail').value = '';
-    $('#loginPass').value = '';
+    sb.auth.signOut().then(function () {
+      STATE.session = null;
+      STATE.perfil = null;
+      showGate();
+      $('#loginEmail').value = '';
+      $('#loginPass').value = '';
+    });
   }
 
   // --------------------------------------------------------------- GRID
@@ -124,6 +153,11 @@
     $('#statVenta').textContent = STATE.propiedades.filter(function (p) { return p.operacion === 'venta'; }).length;
   }
 
+  function coloniaLabel(slug) {
+    var c = COLONIAS.filter(function (x) { return x.slug === slug; })[0];
+    return c ? c.nombre : slug;
+  }
+
   function pcardHtml(p) {
     var meta = [];
     if (p.rec) meta.push(p.rec + ' rec');
@@ -132,16 +166,17 @@
     if (p.m2t) meta.push(p.m2t + ' m² terreno');
     var badge = p.estado === 'disponible'
       ? '<span class="pcard-badge">' + (p.operacion === 'renta' ? 'Renta' : 'Venta') + '</span>'
-      : '<span class="pcard-badge borrador">Borrador</span>';
+      : '<span class="pcard-badge borrador">' + (p.estado === 'pausada' ? 'Pausada' : 'Borrador') + '</span>';
+    var foto = (p.fotos && p.fotos[0]) || '';
     return (
       '<div class="pcard" data-id="' + p.id + '">' +
         '<div class="pcard-media">' + badge +
-          (p.foto_card ? '<img src="' + esc(p.foto_card) + '" alt="">' : '') +
+          (foto ? '<img src="' + esc(foto) + '" alt="" loading="lazy">' : '') +
         '</div>' +
         '<div class="pcard-body">' +
           '<div class="pcard-price">' + nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') + '</div>' +
           '<div class="pcard-title">' + esc(p.titulo || 'Sin título') + '</div>' +
-          '<div class="pcard-meta"><span>' + esc(p.colonia_nombre || '') + '</span><span>' + meta.join(' · ') + '</span></div>' +
+          '<div class="pcard-meta"><span>' + esc(coloniaLabel(p.colonia_slug)) + '</span><span>' + meta.join(' · ') + '</span></div>' +
           '<div class="pcard-actions">' +
             '<button class="btn btn--ghost" data-edit="' + p.id + '">Editar</button>' +
             '<button class="btn btn--danger" data-del="' + p.id + '">Eliminar</button>' +
@@ -163,18 +198,21 @@
     renderStats();
   }
 
-  // --------------------------------------------------------------- MODAL / FORM
-  function amenidadesHtml() {
-    return AMENIDADES.map(function (a) {
-      return (
-        '<label class="chip-check">' +
-          '<input type="checkbox" value="' + a + '" name="amenidad">' +
-          '<span>' + AMENIDADES_LABEL[a] + '</span>' +
-        '</label>'
-      );
-    }).join('');
+  function cargarPropiedades() {
+    var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
+    var q = sb.from('propiedades_manual').select('*').order('creado_en', { ascending: false });
+    if (!esAdmin) q = q.eq('asesor_id', STATE.session.user.id);
+    q.then(function (res) {
+      if (res.error) {
+        toast('No se pudieron cargar tus propiedades: ' + res.error.message, 'err');
+        return;
+      }
+      STATE.propiedades = res.data || [];
+      renderGrid();
+    });
   }
 
+  // --------------------------------------------------------------- MODAL / FORM
   function setOperacion(op) {
     $$('.op-toggle button').forEach(function (b) {
       b.classList.toggle('is-active', b.dataset.op === op);
@@ -184,17 +222,18 @@
 
   function openModal(prop) {
     STATE.editingId = prop ? prop.id : null;
-    STATE.fotos = prop && prop.foto_card ? [prop.foto_card] : [];
+    STATE.fotos = prop && prop.fotos ? prop.fotos.slice() : [];
     $('#modalTitle').textContent = prop ? 'Editar propiedad' : 'Nueva propiedad';
     $('#f_titulo').value = prop ? prop.titulo : '';
     $('#f_tipo').value = prop ? prop.tipo : 'departamento';
     $('#f_precio').value = prop ? prop.precio : '';
-    $('#f_colonia').value = prop ? prop.colonia_nombre : '';
-    $('#f_alcaldia').value = prop ? prop.alcaldia_nombre : '';
+    $('#f_colonia').value = prop ? prop.colonia_slug : '';
     $('#f_rec').value = prop ? prop.rec || '' : '';
     $('#f_ban').value = prop ? prop.ban || '' : '';
     $('#f_est').value = prop ? prop.est || '' : '';
     $('#f_m2c').value = prop ? prop.m2c || '' : '';
+    $('#f_m2t').value = prop ? prop.m2t || '' : '';
+    $('#f_descripcion').value = prop ? prop.descripcion || '' : '';
     setOperacion(prop ? prop.operacion : 'venta');
     $$('input[name="amenidad"]').forEach(function (chk) {
       chk.checked = !!(prop && prop.amenidades && prop.amenidades.indexOf(chk.value) !== -1);
@@ -214,42 +253,56 @@
         '<div class="photo-thumb"><img src="' + esc(src) + '" alt="">' +
           '<button type="button" data-photo-del="' + i + '">&times;</button></div>'
       );
-    }).join('');
+    }).join('') + (STATE._subiendo ? '<div class="photo-thumb photo-thumb--loading">Subiendo…</div>' : '');
   }
 
   function handleFiles(files) {
-    Array.prototype.forEach.call(files, function (file) {
-      if (!/^image\//.test(file.type)) return;
-      var reader = new FileReader();
-      reader.onload = function (e) {
-        // TODO Supabase: subir a Supabase Storage (bucket "propiedades") y
-        // guardar la URL pública devuelta en vez del data URL local.
-        STATE.fotos.push(e.target.result);
-        renderPhotoStrip();
-      };
-      reader.readAsDataURL(file);
+    if (!SUPABASE_READY) { toast('Conecta Supabase para poder subir fotos', 'err'); return; }
+    var lista = Array.prototype.filter.call(files, function (f) { return /^image\//.test(f.type); });
+    if (!lista.length) return;
+    STATE._subiendo = true;
+    renderPhotoStrip();
+
+    var carpeta = STATE.session.user.id + '/' + (STATE.editingId || ('tmp-' + Date.now()));
+    Promise.all(lista.map(function (file) {
+      var ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      var ruta = carpeta + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+      return sb.storage.from('propiedades-manual').upload(ruta, file).then(function (res) {
+        if (res.error) { toast('No se pudo subir ' + file.name + ': ' + res.error.message, 'err'); return null; }
+        return sb.storage.from('propiedades-manual').getPublicUrl(ruta).data.publicUrl;
+      });
+    })).then(function (urls) {
+      urls.filter(Boolean).forEach(function (u) { STATE.fotos.push(u); });
+      STATE._subiendo = false;
+      renderPhotoStrip();
     });
   }
 
   function collectForm() {
     var amenidades = $$('input[name="amenidad"]:checked').map(function (c) { return c.value; });
     return {
-      id: STATE.editingId || ('mock-' + Date.now()),
       titulo: $('#f_titulo').value.trim(),
       operacion: $('#f_operacion').value,
       tipo: $('#f_tipo').value,
       precio: Number($('#f_precio').value) || 0,
-      colonia_nombre: $('#f_colonia').value.trim(),
-      alcaldia_nombre: $('#f_alcaldia').value.trim(),
+      colonia_slug: $('#f_colonia').value,
       rec: Number($('#f_rec').value) || 0,
       ban: Number($('#f_ban').value) || 0,
       est: Number($('#f_est').value) || 0,
       m2c: Number($('#f_m2c').value) || 0,
+      m2t: Number($('#f_m2t').value) || 0,
+      descripcion: $('#f_descripcion').value.trim(),
       amenidades: amenidades,
-      foto_card: STATE.fotos[0] || '',
-      destacada: false,
-      estado: 'disponible'
+      fotos: STATE.fotos.slice(),
     };
+  }
+
+  function avisarRebuild() {
+    if (!STATE.session) return;
+    fetch('/api/rebuild', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + STATE.session.access_token },
+    }).catch(function () { /* el respaldo por hora lo recoge de todas formas */ });
   }
 
   function saveProperty(publicar) {
@@ -258,30 +311,47 @@
       toast('Falta título o precio', 'err');
       return;
     }
+    if (!data.colonia_slug) {
+      toast('Elige la colonia de la propiedad', 'err');
+      return;
+    }
     data.estado = publicar ? 'disponible' : 'borrador';
+    var btn = publicar ? $('#publishBtn') : $('#saveDraftBtn');
+    setBusy(btn, true, publicar ? 'Publicando…' : 'Guardando…');
 
-    // TODO Supabase: reemplazar por upsert real
-    // supabase.from('propiedades').upsert({ ...data, asesor_id: currentUser.id })
-    var idx = STATE.propiedades.findIndex(function (p) { return p.id === data.id; });
-    if (idx !== -1) STATE.propiedades[idx] = data;
-    else STATE.propiedades.unshift(data);
+    var query = STATE.editingId
+      ? sb.from('propiedades_manual').update(data).eq('id', STATE.editingId)
+      : sb.from('propiedades_manual').insert(Object.assign({ asesor_id: STATE.session.user.id }, data));
 
-    renderGrid();
-    closeModal();
-    toast(publicar ? 'Propiedad publicada' : 'Borrador guardado');
+    query.then(function (res) {
+      setBusy(btn, false);
+      if (res.error) {
+        toast('No se pudo guardar: ' + res.error.message, 'err');
+        return;
+      }
+      closeModal();
+      toast(publicar ? 'Propiedad publicada' : 'Borrador guardado');
+      cargarPropiedades();
+      if (publicar) avisarRebuild();
+    });
   }
 
   function deleteProperty(id) {
     if (!confirm('¿Eliminar esta propiedad? Esta acción no se puede deshacer.')) return;
-    // TODO Supabase: supabase.from('propiedades').delete().eq('id', id)
-    STATE.propiedades = STATE.propiedades.filter(function (p) { return p.id !== id; });
-    renderGrid();
-    toast('Propiedad eliminada');
+    sb.from('propiedades_manual').delete().eq('id', id).then(function (res) {
+      if (res.error) {
+        toast('No se pudo eliminar: ' + res.error.message, 'err');
+        return;
+      }
+      toast('Propiedad eliminada');
+      cargarPropiedades();
+      avisarRebuild();
+    });
   }
 
   // --------------------------------------------------------------- INIT
   document.addEventListener('DOMContentLoaded', function () {
-    $('#amenidadesGrid').innerHTML = amenidadesHtml();
+    cargarCatalogos();
 
     $('#loginForm').addEventListener('submit', handleLogin);
     $('#logoutBtn').addEventListener('click', handleLogout);
@@ -300,7 +370,7 @@
       var editId = e.target.dataset.edit;
       var delId = e.target.dataset.del;
       if (editId) {
-        var p = STATE.propiedades.find(function (x) { return x.id === editId; });
+        var p = STATE.propiedades.filter(function (x) { return x.id === editId; })[0];
         openModal(p);
       } else if (delId) {
         deleteProperty(delId);
@@ -325,7 +395,13 @@
     });
 
     if (!SUPABASE_READY) {
-      console.warn('[Panel Gio Filio] Supabase no configurado todavia — corriendo en modo de prueba con assets/js/admin-config.js vacio.');
+      console.warn('[Panel Gio Filio] Supabase no configurado todavia — completa assets/js/admin-config.js.');
+      return;
     }
+
+    sb.auth.getSession().then(function (res) {
+      STATE.session = res.data.session;
+      if (STATE.session) cargarPerfilYMostrar();
+    });
   });
 })();

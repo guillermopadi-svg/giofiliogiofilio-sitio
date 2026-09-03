@@ -1968,8 +1968,27 @@ actual, usar:
 
 
 # =========================================================== MAIN
+def build_admin_data():
+    """Catálogos (colonias, amenidades) para el panel de asesores (admin/) —
+    así el <select> y los chips nunca se desincronizan del catálogo real que
+    usan los filtros del sitio."""
+    os.makedirs(os.path.join(OUT, "assets/data"), exist_ok=True)
+
+    colonias = sorted(
+        ({"slug": c["slug"], "nombre": c["nombre"], "alcaldia": c["alcaldia"]} for c in COLONIAS),
+        key=lambda c: c["nombre"],
+    )
+    with open(os.path.join(OUT, "assets/data/colonias.json"), "w", encoding="utf-8") as f:
+        json.dump(colonias, f, ensure_ascii=False, indent=2)
+
+    amenidades = [{"slug": slug, "label": label} for slug, label in AMENIDADES]
+    with open(os.path.join(OUT, "assets/data/amenidades.json"), "w", encoding="utf-8") as f:
+        json.dump(amenidades, f, ensure_ascii=False, indent=2)
+
+
 def main():
     print("→ Generando páginas…")
+    build_admin_data()
     build_home()
     build_search_pages()
     for p in PROPS_ALL:

@@ -1,0 +1,97 @@
+[
+  {
+    "slug": "anzures",
+    "nombre": "Anzures",
+    "alcaldia": "Miguel Hidalgo"
+  },
+  {
+    "slug": "bosques-de-las-lomas",
+    "nombre": "Bosques de las Lomas",
+    "alcaldia": "Miguel Hidalgo"
+  },
+  {
+    "slug": "condesa",
+    "nombre": "Condesa",
+    "alcaldia": "Cuauhtémoc"
+  },
+  {
+    "slug": "coyoacan",
+    "nombre": "Coyoacán",
+    "alcaldia": "Coyoacán"
+  },
+  {
+    "slug": "del-valle",
+    "nombre": "Del Valle",
+    "alcaldia": "Benito Juárez"
+  },
+  {
+    "slug": "escandon",
+    "nombre": "Escandón",
+    "alcaldia": "Miguel Hidalgo"
+  },
+  {
+    "slug": "hipodromo-condesa",
+    "nombre": "Hipódromo Condesa",
+    "alcaldia": "Cuauhtémoc"
+  },
+  {
+    "slug": "insurgentes-mixcoac",
+    "nombre": "Insurgentes Mixcoac",
+    "alcaldia": "Benito Juárez"
+  },
+  {
+    "slug": "pedregal",
+    "nombre": "Jardines del Pedregal",
+    "alcaldia": "Álvaro Obregón"
+  },
+  {
+    "slug": "juarez",
+    "nombre": "Juárez",
+    "alcaldia": "Cuauhtémoc"
+  },
+  {
+    "slug": "lomas-de-chapultepec",
+    "nombre": "Lomas de Chapultepec",
+    "alcaldia": "Miguel Hidalgo"
+  },
+  {
+    "slug": "narvarte",
+    "nombre": "Narvarte",
+    "alcaldia": "Benito Juárez"
+  },
+  {
+    "slug": "napoles",
+    "nombre": "Nápoles",
+    "alcaldia": "Benito Juárez"
+  },
+  {
+    "slug": "polanco",
+    "nombre": "Polanco",
+    "alcaldia": "Miguel Hidalgo"
+  },
+  {
+    "slug": "portales",
+    "nombre": "Portales",
+    "alcaldia": "Benito Juárez"
+  },
+  {
+    "slug": "roma-norte",
+    "nombre": "Roma Norte",
+    "alcaldia": "Cuauhtémoc"
+  },
+  {
+    "slug": "roma-sur",
+    "nombre": "Roma Sur",
+    "alcaldia": "Cuauhtémoc"
+  },
+  {
+    "slug": "san-angel",
+    "nombre": "San Ángel",
+    "alcaldia": "Álvaro Obregón"
+  },
+  {
+    "slug": "santa-fe",
+    "nombre": "Santa Fe",
+    "alcaldia": "Cuajimalpa de Morelos"
+  }
+]

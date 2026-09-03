@@ -1,0 +1,50 @@
+name: Sincronizar propiedades manuales (panel de asesores)
+
+on:
+  repository_dispatch:
+    types: [manual-props-updated]
+  workflow_dispatch: {}
+  schedule:
+    # Respaldo por si el aviso desde el panel falla — cada hora.
+    - cron: '15 * * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias
+        run: pip install Pillow
+
+      - name: Traer propiedades del panel de asesores (Supabase)
+        working-directory: _generador
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python3 fetch_manual_props.py
+
+      - name: Reconstruir el sitio
+        working-directory: _generador
+        run: python3 build.py
+
+      - name: Publicar cambios si hay propiedades nuevas o editadas
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Sin cambios en propiedades manuales, no se publica nada."
+          else
+            git commit -m "Sincronización de propiedades cargadas por asesores (panel /admin/)"
+            git push
+          fi

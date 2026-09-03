@@ -5,7 +5,10 @@ from data_zonas import ALCALDIAS, COLONIAS, COLONIA_BY_SLUG, ALCALDIA_SLUG_BY_NO
 from data_props import (TIPOS, TIPO_LABEL, TIPO_PLURAL, AMENIDADES,
                         AMENIDAD_LABEL, ESTADOS_INMUEBLE, P_SALA, P_COCINA, P_RECAMARA,
                         P_BANO, P_EXT, P_DET, P_CIUDAD)
-from data_props_live import PROPIEDADES, DATASET_ES_DEMO
+from data_props_live import PROPIEDADES as PROPIEDADES_EB, DATASET_ES_DEMO
+from data_props_manual import PROPIEDADES as PROPIEDADES_MANUAL
+
+PROPIEDADES = PROPIEDADES_EB + PROPIEDADES_MANUAL
 from render import slugify
 
 OUT = ".."  # el sitio real es el directorio padre de _generador

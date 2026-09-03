@@ -1,0 +1,82 @@
+[
+  {
+    "slug": "seguridad",
+    "label": "Seguridad 24/7"
+  },
+  {
+    "slug": "elevador",
+    "label": "Elevador"
+  },
+  {
+    "slug": "alberca",
+    "label": "Alberca"
+  },
+  {
+    "slug": "gimnasio",
+    "label": "Gimnasio"
+  },
+  {
+    "slug": "roof-garden",
+    "label": "Roof garden"
+  },
+  {
+    "slug": "salon-eventos",
+    "label": "Salón de eventos"
+  },
+  {
+    "slug": "jardin",
+    "label": "Jardín"
+  },
+  {
+    "slug": "terraza",
+    "label": "Terraza"
+  },
+  {
+    "slug": "balcon",
+    "label": "Balcón"
+  },
+  {
+    "slug": "bodega",
+    "label": "Bodega"
+  },
+  {
+    "slug": "cuarto-servicio",
+    "label": "Cuarto de servicio"
+  },
+  {
+    "slug": "home-office",
+    "label": "Home office"
+  },
+  {
+    "slug": "pet-friendly",
+    "label": "Pet friendly"
+  },
+  {
+    "slug": "amueblado",
+    "label": "Amueblado"
+  },
+  {
+    "slug": "accesibilidad",
+    "label": "Accesibilidad"
+  },
+  {
+    "slug": "estacionamiento-visitas",
+    "label": "Estacionamiento de visitas"
+  },
+  {
+    "slug": "area-juegos",
+    "label": "Área de juegos"
+  },
+  {
+    "slug": "cisterna",
+    "label": "Cisterna"
+  },
+  {
+    "slug": "planta-emergencia",
+    "label": "Planta de emergencia"
+  },
+  {
+    "slug": "asador",
+    "label": "Área de asadores"
+  }
+]

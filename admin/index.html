@@ -117,15 +117,9 @@
           <input type="number" id="f_precio" placeholder="8500000">
         </div>
       </div>
-      <div class="field-grid">
-        <div class="field">
-          <label for="f_colonia">Colonia</label>
-          <input type="text" id="f_colonia" placeholder="Polanco">
-        </div>
-        <div class="field">
-          <label for="f_alcaldia">Alcaldía</label>
-          <input type="text" id="f_alcaldia" placeholder="Miguel Hidalgo">
-        </div>
+      <div class="field">
+        <label for="f_colonia">Colonia</label>
+        <select id="f_colonia"><option value="">Selecciona una colonia…</option></select>
       </div>
 
       <div class="section-label">Características</div>
@@ -134,9 +128,19 @@
         <div class="field"><label for="f_ban">Baños</label><input type="number" id="f_ban" min="0"></div>
         <div class="field"><label for="f_est">Estacionamientos</label><input type="number" id="f_est" min="0"></div>
       </div>
+      <div class="field-grid">
+        <div class="field">
+          <label for="f_m2c">Metros de construcción</label>
+          <input type="number" id="f_m2c" min="0">
+        </div>
+        <div class="field">
+          <label for="f_m2t">Metros de terreno</label>
+          <input type="number" id="f_m2t" min="0">
+        </div>
+      </div>
       <div class="field">
-        <label for="f_m2c">Metros de construcción</label>
-        <input type="number" id="f_m2c" min="0">
+        <label for="f_descripcion">Descripción</label>
+        <textarea id="f_descripcion" rows="3" placeholder="Describe la propiedad para la ficha…"></textarea>
       </div>
 
       <div class="section-label">Amenidades</div>
@@ -163,6 +167,7 @@
 
 <div class="toast-wrap" id="toastWrap"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="../assets/js/admin-config.js"></script>
 <script src="../assets/js/admin.js"></script>
 </body>
