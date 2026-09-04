@@ -356,26 +356,14 @@
     }).catch(function () { return false; });
   }
 
+  // heic2any decodifica HEIC/HEIF por software (WASM) — funciona igual en
+  // Chrome/Android/Windows que en Safari, a diferencia del truco anterior
+  // (dibujar en un <canvas>) que solo servía en navegadores que YA sabían
+  // leer HEIC de forma nativa (básicamente solo Safari).
   function convertirHeicAJpeg(file) {
-    return new Promise(function (resolve, reject) {
-      var url = URL.createObjectURL(file);
-      var img = new Image();
-      img.onload = function () {
-        var canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        canvas.getContext('2d').drawImage(img, 0, 0);
-        URL.revokeObjectURL(url);
-        canvas.toBlob(function (blob) {
-          if (!blob) { reject(new Error('no se pudo convertir')); return; }
-          resolve(new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' }));
-        }, 'image/jpeg', 0.85);
-      };
-      img.onerror = function () {
-        URL.revokeObjectURL(url);
-        reject(new Error('este navegador no puede leer HEIC'));
-      };
-      img.src = url;
+    return window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 }).then(function (resultado) {
+      var blob = Array.isArray(resultado) ? resultado[0] : resultado;
+      return new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
     });
   }
 
