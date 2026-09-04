@@ -117,9 +117,16 @@
           <input type="number" id="f_precio" placeholder="8500000">
         </div>
       </div>
-      <div class="field">
-        <label for="f_colonia">Colonia</label>
-        <select id="f_colonia"><option value="">Selecciona una colonia…</option></select>
+      <div class="field-grid">
+        <div class="field">
+          <label for="f_cp">Código postal</label>
+          <input type="text" id="f_cp" inputmode="numeric" maxlength="5" placeholder="11510">
+          <div class="field-hint" id="f_cp_hint"></div>
+        </div>
+        <div class="field">
+          <label for="f_colonia">Colonia</label>
+          <select id="f_colonia"><option value="">Selecciona una colonia…</option></select>
+        </div>
       </div>
 
       <div class="section-label">Características</div>
@@ -153,6 +160,7 @@
       </div>
       <input type="file" id="fileInput" accept="image/*" multiple hidden>
       <div class="photo-strip" id="photoStrip"></div>
+      <div class="field-hint field-hint--warn" id="fotoAviso" hidden></div>
 
     </div>
     <div class="modal-foot">

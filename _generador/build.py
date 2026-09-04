@@ -1975,7 +1975,7 @@ def build_admin_data():
     os.makedirs(os.path.join(OUT, "assets/data"), exist_ok=True)
 
     colonias = sorted(
-        ({"slug": c["slug"], "nombre": c["nombre"], "alcaldia": c["alcaldia"]} for c in COLONIAS),
+        ({"slug": c["slug"], "nombre": c["nombre"], "alcaldia": c["alcaldia"], "cp": c.get("cp", [])} for c in COLONIAS),
         key=lambda c: c["nombre"],
     )
     with open(os.path.join(OUT, "assets/data/colonias.json"), "w", encoding="utf-8") as f:

@@ -61,6 +61,10 @@ button{ font-family:inherit; cursor:pointer; }
   outline:none; border-color:var(--navy-300); box-shadow:0 0 0 3px rgba(7,31,74,.08);
 }
 .field-hint{ font-size:.78rem; color:var(--ink-50); margin-top:.3rem; }
+.field-hint--warn{
+  background:#FBEDEA; color:var(--danger); border:1px solid #E3B3A8; border-radius:var(--r-sm);
+  padding:.65rem .85rem; font-size:.85rem; margin-top:.8rem; line-height:1.45;
+}
 .field-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 .8rem; }
 .field-grid-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:0 .8rem; }
 @media (max-width:640px){ .field-grid,.field-grid-3{ grid-template-columns:1fr; } }

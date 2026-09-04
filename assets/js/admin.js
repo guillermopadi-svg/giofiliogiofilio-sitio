@@ -15,6 +15,7 @@
   var AMENIDADES = [];       // se llena desde assets/data/amenidades.json
   var AMENIDAD_LABEL = {};
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
+  var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
   var STATE = { propiedades: [], editingId: null, fotos: [], session: null, perfil: null };
 
@@ -61,6 +62,9 @@
       AMENIDADES = res[0];
       AMENIDADES.forEach(function (a) { AMENIDAD_LABEL[a.slug] = a.label; });
       COLONIAS = res[1];
+      COLONIAS.forEach(function (c) {
+        (c.cp || []).forEach(function (cp) { CP_A_COLONIA[cp] = c.slug; });
+      });
       $('#amenidadesGrid').innerHTML = AMENIDADES.map(function (a) {
         return (
           '<label class="chip-check">' +
@@ -227,6 +231,9 @@
     $('#f_titulo').value = prop ? prop.titulo : '';
     $('#f_tipo').value = prop ? prop.tipo : 'departamento';
     $('#f_precio').value = prop ? prop.precio : '';
+    $('#f_cp').value = '';
+    $('#f_cp_hint').textContent = '';
+    avisoFoto(null);
     $('#f_colonia').value = prop ? prop.colonia_slug : '';
     $('#f_rec').value = prop ? prop.rec || '' : '';
     $('#f_ban').value = prop ? prop.ban || '' : '';
@@ -256,20 +263,74 @@
     }).join('') + (STATE._subiendo ? '<div class="photo-thumb photo-thumb--loading">Subiendo…</div>' : '');
   }
 
+  // HEIC/HEIF (formato por default de la cámara de iPhone) no se ve en la
+  // mayoría de navegadores ni en redes sociales/WhatsApp al compartir el
+  // link. Los navegadores que sí pueden decodificarlo (Safari) lo dibujan
+  // sin problema en un <img>, así que se aprovecha eso para convertirlo a
+  // JPEG en el momento; donde no se puede (Chrome, Firefox, Android) se
+  // avisa claro en vez de subir un archivo que se verá roto en el sitio.
+  function esHeic(file) {
+    return /\.(heic|heif)$/i.test(file.name) || /^image\/(heic|heif)/i.test(file.type);
+  }
+
+  function convertirHeicAJpeg(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(function (blob) {
+          if (!blob) { reject(new Error('no se pudo convertir')); return; }
+          resolve(new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' }));
+        }, 'image/jpeg', 0.85);
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error('este navegador no puede leer HEIC'));
+      };
+      img.src = url;
+    });
+  }
+
+  function avisoFoto(msg) {
+    var el = $('#fotoAviso');
+    if (!msg) { el.hidden = true; el.textContent = ''; return; }
+    el.hidden = false;
+    el.textContent = msg;
+  }
+
   function handleFiles(files) {
     if (!SUPABASE_READY) { toast('Conecta Supabase para poder subir fotos', 'err'); return; }
-    var lista = Array.prototype.filter.call(files, function (f) { return /^image\//.test(f.type); });
+    var lista = Array.prototype.filter.call(files, function (f) { return /^image\//.test(f.type) || esHeic(f); });
     if (!lista.length) return;
+    avisoFoto(null);
     STATE._subiendo = true;
     renderPhotoStrip();
 
     var carpeta = STATE.session.user.id + '/' + (STATE.editingId || ('tmp-' + Date.now()));
     Promise.all(lista.map(function (file) {
-      var ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-      var ruta = carpeta + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
-      return sb.storage.from('propiedades-manual').upload(ruta, file).then(function (res) {
-        if (res.error) { toast('No se pudo subir ' + file.name + ': ' + res.error.message, 'err'); return null; }
-        return sb.storage.from('propiedades-manual').getPublicUrl(ruta).data.publicUrl;
+      var prep = esHeic(file)
+        ? convertirHeicAJpeg(file).catch(function () {
+            avisoFoto(
+              'No pudimos abrir "' + file.name + '" — tu celular la guardó en un formato (HEIC) que este navegador no reconoce. ' +
+              'Solución más fácil: en tu iPhone ve a Ajustes → Cámara → Formatos, y cambia a "Más compatible" — así las fotos nuevas ya se guardan en JPG y este problema no vuelve a pasar. ' +
+              'Para esta foto en particular, ábrela en Fotos, toca Compartir → Guardar imagen (o mándatela por WhatsApp) para que se convierta, y vuelve a subirla aquí.'
+            );
+            return null;
+          })
+        : Promise.resolve(file);
+      return prep.then(function (f) {
+        if (!f) return null;
+        var ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
+        var ruta = carpeta + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+        return sb.storage.from('propiedades-manual').upload(ruta, f).then(function (res) {
+          if (res.error) { toast('No se pudo subir ' + f.name + ': ' + res.error.message, 'err'); return null; }
+          return sb.storage.from('propiedades-manual').getPublicUrl(ruta).data.publicUrl;
+        });
       });
     })).then(function (urls) {
       urls.filter(Boolean).forEach(function (u) { STATE.fotos.push(u); });
@@ -365,6 +426,21 @@
     $('#modalBackdrop').addEventListener('click', function (e) { if (e.target.id === 'modalBackdrop') closeModal(); });
     $('#saveDraftBtn').addEventListener('click', function () { saveProperty(false); });
     $('#publishBtn').addEventListener('click', function () { saveProperty(true); });
+
+    $('#f_cp').addEventListener('input', function () {
+      var cp = $('#f_cp').value.replace(/\D/g, '').slice(0, 5);
+      $('#f_cp').value = cp;
+      var hint = $('#f_cp_hint');
+      if (cp.length < 5) { hint.textContent = ''; return; }
+      var slug = CP_A_COLONIA[cp];
+      if (slug) {
+        $('#f_colonia').value = slug;
+        var c = COLONIAS.filter(function (x) { return x.slug === slug; })[0];
+        hint.textContent = c ? '✓ ' + c.nombre + ' — ' + c.alcaldia : '';
+      } else {
+        hint.textContent = 'CP no encontrado en el catálogo — elige la colonia manualmente.';
+      }
+    });
 
     $$('.op-toggle button').forEach(function (b) {
       b.addEventListener('click', function () { setOperacion(b.dataset.op); });
