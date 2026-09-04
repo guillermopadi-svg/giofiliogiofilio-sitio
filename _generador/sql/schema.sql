@@ -138,6 +138,60 @@ create policy "un asesor autenticado puede borrar fotos que subio"
   on storage.objects for delete
   using (bucket_id = 'propiedades-manual' and auth.uid() = owner);
 
+-- ------------------------------------------------------------------- leads
+-- Cada envío de un formulario del sitio (api/leads.js) se guarda aquí ADEMÁS
+-- de reenviarse a n8n (que sigue encargándose de la respuesta automática por
+-- WhatsApp/email) — esta tabla es la que alimenta "Contactos" en el panel.
+-- Solo la escribe api/leads.js con la service_role key; el panel (asesores,
+-- con la anon key) únicamente lee y actualiza estado/notas/asesor_id.
+create table if not exists leads (
+  id uuid primary key default gen_random_uuid(),
+  nombre text not null,
+  email text,
+  telefono text,
+  mensaje text,
+  fuente text not null default 'sitio_web',      -- lead.fuente (gio.js captureLead)
+  formulario text not null default 'contacto',   -- lead.formulario
+  propiedad_id text,
+  propiedad_titulo text,
+  propiedad_precio text,
+  operacion text,
+  colonia text,
+  pagina_url text,                               -- lead.url (donde se llenó el formulario)
+  contexto jsonb not null default '{}'::jsonb,    -- resto de campos: utms, gclid/fbclid, referrer, m2, rec, ban...
+  estado text not null default 'nuevo' check (estado in ('nuevo', 'contactado', 'activo', 'cerrado')),
+  asesor_id uuid references auth.users(id) on delete set null,
+  notas text not null default '',
+  creado_en timestamptz not null default now(),
+  actualizado_en timestamptz not null default now()
+);
+
+alter table leads enable row level security;
+
+grant select, insert, update on leads to service_role;
+grant select, update on leads to authenticated;
+
+-- Bandeja compartida: cualquier asesor autenticado ve y puede tomar/mover
+-- cualquier lead (equipo chico, sin territorios asignados por ahora).
+create policy "todo asesor autenticado ve todos los leads"
+  on leads for select
+  to authenticated
+  using (true);
+
+create policy "todo asesor autenticado puede tomar/mover cualquier lead"
+  on leads for update
+  to authenticated
+  using (true)
+  with check (true);
+
+-- El insert es exclusivo de api/leads.js (service_role, que ademas ignora
+-- RLS) -- no se da policy de insert a "authenticated" a proposito.
+
+drop trigger if exists on_lead_updated on leads;
+create trigger on_lead_updated
+  before update on leads
+  for each row execute function set_actualizado_en();
+
 -- ------------------------------------------------------------------ NOTAS
 -- 1. Después de correr este script, crea el primer usuario (Gio) en
 --    Authentication → Users → Add user (con su correo real).
@@ -146,3 +200,6 @@ create policy "un asesor autenticado puede borrar fotos que subio"
 --        (select id from auth.users where email = 'gio@giofilio.com');
 -- 3. Para dar de alta a un nuevo asesor: Authentication → Users → Add user.
 --    Entra como 'asesor' por default — solo ve y edita sus propias fichas.
+-- 4. Para que "Contactos" reciba leads reales, agrega en Vercel (Project
+--    Settings → Environment Variables) las mismas SUPABASE_URL y
+--    SUPABASE_SERVICE_ROLE_KEY que ya usa el GitHub Action de sync-manual.

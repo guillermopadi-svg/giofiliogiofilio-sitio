@@ -52,7 +52,12 @@
     </div>
   </header>
 
-  <main class="shell">
+  <nav class="tabbar">
+    <button type="button" class="tabbar-btn is-active" id="tabPropiedades" data-view="propiedades">Propiedades</button>
+    <button type="button" class="tabbar-btn" id="tabContactos" data-view="contactos">Contactos<span class="tabbar-badge" id="tabContactosBadge" hidden>0</span></button>
+  </nav>
+
+  <main class="shell" id="viewPropiedades">
     <div class="shell-head">
       <div>
         <h1>Mis propiedades</h1>
@@ -78,7 +83,60 @@
     </div>
   </main>
 
+  <main class="shell" id="viewContactos" hidden>
+    <div class="shell-head">
+      <div>
+        <h1>Contactos</h1>
+        <p>Leads capturados en giofilio.com (formularios, WhatsApp) — muévelos conforme les das seguimiento.</p>
+      </div>
+    </div>
+
+    <div class="kanban" id="kanban">
+      <div class="kanban-col" data-estado="nuevo">
+        <div class="kanban-col-head"><span>Nuevo</span><span class="kanban-count" id="kc_nuevo">0</span></div>
+        <div class="kanban-cards" id="kcol_nuevo"></div>
+      </div>
+      <div class="kanban-col" data-estado="contactado">
+        <div class="kanban-col-head"><span>Contactado</span><span class="kanban-count" id="kc_contactado">0</span></div>
+        <div class="kanban-cards" id="kcol_contactado"></div>
+      </div>
+      <div class="kanban-col" data-estado="activo">
+        <div class="kanban-col-head"><span>Activo</span><span class="kanban-count" id="kc_activo">0</span></div>
+        <div class="kanban-cards" id="kcol_activo"></div>
+      </div>
+      <div class="kanban-col" data-estado="cerrado">
+        <div class="kanban-col-head"><span>Cerrado</span><span class="kanban-count" id="kc_cerrado">0</span></div>
+        <div class="kanban-cards" id="kcol_cerrado"></div>
+      </div>
+    </div>
+
+    <div class="empty" id="leadsEmptyState" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <p>Todavía no han llegado contactos desde el sitio.</p>
+    </div>
+  </main>
+
   <button class="btn btn--gold fab" id="addPropBtnFab" style="display:none">+ Nueva propiedad</button>
+</div>
+
+<!-- ---------------------------------------------------------- MODAL: LEAD ---------------------------------------------------------- -->
+<div class="modal-backdrop" id="leadModalBackdrop">
+  <div class="modal modal--sm">
+    <div class="modal-head">
+      <h2 id="leadModalTitle">Contacto</h2>
+      <button class="modal-close" id="leadModalClose" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-body" id="leadModalBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn--ghost btn--sm" id="leadGuardarNotasBtn">Guardar notas</button>
+      <select id="leadEstadoSelect" class="lead-estado-select">
+        <option value="nuevo">Nuevo</option>
+        <option value="contactado">Contactado</option>
+        <option value="activo">Activo</option>
+        <option value="cerrado">Cerrado</option>
+      </select>
+    </div>
+  </div>
 </div>
 
 <!-- ---------------------------------------------------------- MODAL: PROPIEDAD ---------------------------------------------------------- -->

@@ -59,6 +59,58 @@ async function excedeLimite(ip) {
   return count > RATE_LIMIT_MAX;
 }
 
+// Guarda una copia del lead en Supabase para que el panel de asesores
+// (sección Contactos) lo muestre y se pueda dar seguimiento. n8n sigue
+// siendo el que dispara la respuesta automática — esto es en paralelo, no
+// en vez de. Fail-open igual que Upstash: si Supabase no está configurado
+// o falla, nunca se bloquea ni se pierde el lead real.
+async function guardarEnSupabase(lead) {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return;
+
+  const {
+    nombre, email, telefono, mensaje, fuente, formulario,
+    propiedad_id, propiedad_titulo, propiedad_precio, operacion, colonia,
+    url: pagina_url,
+    ...resto
+  } = lead;
+
+  const fila = {
+    nombre,
+    email: email || null,
+    telefono: telefono || null,
+    mensaje: mensaje || null,
+    fuente: fuente || 'sitio_web',
+    formulario: formulario || 'contacto',
+    propiedad_id: propiedad_id || null,
+    propiedad_titulo: propiedad_titulo || null,
+    propiedad_precio: propiedad_precio || null,
+    operacion: operacion || null,
+    colonia: colonia || null,
+    pagina_url: pagina_url || null,
+    contexto: resto,
+  };
+
+  try {
+    const res = await fetch(`${url}/rest/v1/leads`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(fila),
+    });
+    if (!res.ok) {
+      console.error('[api/leads] Supabase respondio', res.status, await res.text());
+    }
+  } catch (err) {
+    console.error('[api/leads] fallo guardando en Supabase:', err.message);
+  }
+}
+
 module.exports = async (req, res) => {
   const origin = req.headers.origin;
   // CORS acotado al propio sitio: un formulario legítimo del sitio siempre
@@ -120,19 +172,15 @@ module.exports = async (req, res) => {
 
   const webhookUrl = process.env.N8N_LEADS_WEBHOOK_URL;
 
-  if (webhookUrl) {
-    try {
-      await fetch(webhookUrl, {
+  const reenviarAN8n = webhookUrl
+    ? fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(lead),
-      });
-    } catch (err) {
-      console.error('[api/leads] fallo reenviando a n8n:', err.message);
-    }
-  } else {
-    console.warn('[api/leads] N8N_LEADS_WEBHOOK_URL no esta configurada, el lead no se reenvio');
-  }
+      }).catch((err) => console.error('[api/leads] fallo reenviando a n8n:', err.message))
+    : Promise.resolve(console.warn('[api/leads] N8N_LEADS_WEBHOOK_URL no esta configurada, el lead no se reenvio'));
+
+  await Promise.all([reenviarAN8n, guardarEnSupabase(lead)]);
 
   res.status(200).json({ ok: true });
 };
