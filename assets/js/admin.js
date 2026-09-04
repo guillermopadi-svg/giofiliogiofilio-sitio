@@ -158,13 +158,12 @@
 
   // --------------------------------------------------------------- GRID
   function renderStats() {
-    var total = STATE.propiedades.length;
-    var disponibles = STATE.propiedades.filter(function (p) { return p.estado === 'disponible'; }).length;
-    var destacadas = STATE.propiedades.filter(function (p) { return p.destacada; }).length;
-    $('#statTotal').textContent = total;
-    $('#statDisponibles').textContent = disponibles;
-    $('#statDestacadas').textContent = destacadas;
-    $('#statVenta').textContent = STATE.propiedades.filter(function (p) { return p.operacion === 'venta'; }).length;
+    var disponibles = STATE.propiedades.filter(function (p) { return p.estado === 'disponible'; });
+    $('#statDisponibles').textContent = disponibles.length;
+    $('#statVenta').textContent = disponibles.filter(function (p) { return p.operacion === 'venta'; }).length;
+    $('#statRenta').textContent = disponibles.filter(function (p) { return p.operacion === 'renta'; }).length;
+    $('#statBorradores').textContent = STATE.propiedades.filter(function (p) { return p.estado === 'borrador'; }).length;
+    $('#statPausadas').textContent = STATE.propiedades.filter(function (p) { return p.estado === 'pausada'; }).length;
   }
 
   function coloniaLabel(slug) {
