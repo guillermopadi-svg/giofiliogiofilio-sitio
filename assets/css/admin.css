@@ -40,10 +40,15 @@ button{ font-family:inherit; cursor:pointer; }
   width:100%; max-width:380px; background:var(--white); border-radius:var(--r-xl);
   box-shadow:var(--sh-4); padding:2.4rem 2rem 2rem;
 }
-.gate-logo{ display:flex; flex-direction:column; align-items:center; gap:.6rem; margin-bottom:1.6rem; }
-.gate-logo img{ height:48px; width:auto; }
-.gate-logo span{ font-family:var(--font-display); font-size:1.05rem; color:var(--navy); letter-spacing:.02em; }
-.gate-sub{ text-align:center; color:var(--ink-50); font-size:.85rem; margin:-1rem 0 1.6rem; }
+.gate-logo{ display:flex; justify-content:center; margin-bottom:1.1rem; }
+.gate-logo img{ height:40px; width:auto; }
+.gate-eyebrow{
+  text-align:center; font-size:.7rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--gold-ink); margin:0 0 .5rem;
+}
+.gate-title{ text-align:center; font-size:1.45rem; line-height:1.2; color:var(--navy); margin:0 0 .6rem; }
+.gate-firma{ text-align:center; font-style:italic; color:var(--ink-70); font-size:.82rem; margin:0 0 1rem; }
+.gate-sub{ text-align:center; color:var(--ink-50); font-size:.85rem; margin:0 0 1.6rem; }
 
 /* -------------------------------------------------------------- FORM ELEMENTS */
 .field{ margin-bottom:1rem; }
