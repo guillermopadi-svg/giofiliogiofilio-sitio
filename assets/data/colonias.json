@@ -2,96 +2,163 @@
   {
     "slug": "anzures",
     "nombre": "Anzures",
-    "alcaldia": "Miguel Hidalgo"
+    "alcaldia": "Miguel Hidalgo",
+    "cp": [
+      "11590"
+    ]
   },
   {
     "slug": "bosques-de-las-lomas",
     "nombre": "Bosques de las Lomas",
-    "alcaldia": "Miguel Hidalgo"
+    "alcaldia": "Miguel Hidalgo",
+    "cp": [
+      "05120"
+    ]
   },
   {
     "slug": "condesa",
     "nombre": "Condesa",
-    "alcaldia": "Cuauhtémoc"
+    "alcaldia": "Cuauhtémoc",
+    "cp": [
+      "06140"
+    ]
   },
   {
     "slug": "coyoacan",
     "nombre": "Coyoacán",
-    "alcaldia": "Coyoacán"
+    "alcaldia": "Coyoacán",
+    "cp": [
+      "04000",
+      "04100"
+    ]
   },
   {
     "slug": "del-valle",
     "nombre": "Del Valle",
-    "alcaldia": "Benito Juárez"
+    "alcaldia": "Benito Juárez",
+    "cp": [
+      "03100",
+      "03103",
+      "03104"
+    ]
   },
   {
     "slug": "escandon",
     "nombre": "Escandón",
-    "alcaldia": "Miguel Hidalgo"
+    "alcaldia": "Miguel Hidalgo",
+    "cp": [
+      "11800"
+    ]
   },
   {
     "slug": "hipodromo-condesa",
     "nombre": "Hipódromo Condesa",
-    "alcaldia": "Cuauhtémoc"
+    "alcaldia": "Cuauhtémoc",
+    "cp": [
+      "06100"
+    ]
   },
   {
     "slug": "insurgentes-mixcoac",
     "nombre": "Insurgentes Mixcoac",
-    "alcaldia": "Benito Juárez"
+    "alcaldia": "Benito Juárez",
+    "cp": [
+      "03920"
+    ]
   },
   {
     "slug": "pedregal",
     "nombre": "Jardines del Pedregal",
-    "alcaldia": "Álvaro Obregón"
+    "alcaldia": "Álvaro Obregón",
+    "cp": [
+      "01900"
+    ]
   },
   {
     "slug": "juarez",
     "nombre": "Juárez",
-    "alcaldia": "Cuauhtémoc"
+    "alcaldia": "Cuauhtémoc",
+    "cp": [
+      "06600"
+    ]
   },
   {
     "slug": "lomas-de-chapultepec",
     "nombre": "Lomas de Chapultepec",
-    "alcaldia": "Miguel Hidalgo"
+    "alcaldia": "Miguel Hidalgo",
+    "cp": [
+      "11000",
+      "11010",
+      "11020"
+    ]
   },
   {
     "slug": "narvarte",
     "nombre": "Narvarte",
-    "alcaldia": "Benito Juárez"
+    "alcaldia": "Benito Juárez",
+    "cp": [
+      "03020",
+      "03023"
+    ]
   },
   {
     "slug": "napoles",
     "nombre": "Nápoles",
-    "alcaldia": "Benito Juárez"
+    "alcaldia": "Benito Juárez",
+    "cp": [
+      "03810"
+    ]
   },
   {
     "slug": "polanco",
     "nombre": "Polanco",
-    "alcaldia": "Miguel Hidalgo"
+    "alcaldia": "Miguel Hidalgo",
+    "cp": [
+      "11510",
+      "11550",
+      "11560"
+    ]
   },
   {
     "slug": "portales",
     "nombre": "Portales",
-    "alcaldia": "Benito Juárez"
+    "alcaldia": "Benito Juárez",
+    "cp": [
+      "03300",
+      "03570"
+    ]
   },
   {
     "slug": "roma-norte",
     "nombre": "Roma Norte",
-    "alcaldia": "Cuauhtémoc"
+    "alcaldia": "Cuauhtémoc",
+    "cp": [
+      "06700"
+    ]
   },
   {
     "slug": "roma-sur",
     "nombre": "Roma Sur",
-    "alcaldia": "Cuauhtémoc"
+    "alcaldia": "Cuauhtémoc",
+    "cp": [
+      "06760"
+    ]
   },
   {
     "slug": "san-angel",
     "nombre": "San Ángel",
-    "alcaldia": "Álvaro Obregón"
+    "alcaldia": "Álvaro Obregón",
+    "cp": [
+      "01000"
+    ]
   },
   {
     "slug": "santa-fe",
     "nombre": "Santa Fe",
-    "alcaldia": "Cuajimalpa de Morelos"
+    "alcaldia": "Cuajimalpa de Morelos",
+    "cp": [
+      "05348",
+      "05300"
+    ]
   }
 ]
