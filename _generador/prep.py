@@ -173,12 +173,26 @@ def normalize(images):
         # si no (dataset demo), elige del pool curado de Unsplash.
         fotos_real = p.get("fotos_real")
         if fotos_real:
+            # EasyBroker guarda rutas locales sin extensión (sync_easybroker.py
+            # genera un .jpg y un .webp reales para cada una); las fotos que
+            # sube un asesor desde el panel son URLs completas de Supabase
+            # Storage — ya vienen con su extensión y no existe una versión
+            # .webp real, así que no hay que tocarlas ni fingir que sí hay.
+            es_url_externa = fotos_real[0]["hero"].startswith("http")
             p["fotos_idx"] = []
-            p["fotos"] = [f["hero"] + ".jpg" for f in fotos_real]
-            p["fotos_webp"] = [f["hero"] + ".webp" for f in fotos_real]
-            p["fotos_thumb"] = [f["thumb"] + ".jpg" for f in fotos_real]
-            p["foto_card"] = fotos_real[0]["card"] + ".jpg"
-            p["foto_card_webp"] = fotos_real[0]["card"] + ".webp"
+            p["sin_webp"] = es_url_externa
+            if es_url_externa:
+                p["fotos"] = [f["hero"] for f in fotos_real]
+                p["fotos_webp"] = [f["hero"] for f in fotos_real]
+                p["fotos_thumb"] = [f["thumb"] for f in fotos_real]
+                p["foto_card"] = fotos_real[0]["card"]
+                p["foto_card_webp"] = fotos_real[0]["card"]
+            else:
+                p["fotos"] = [f["hero"] + ".jpg" for f in fotos_real]
+                p["fotos_webp"] = [f["hero"] + ".webp" for f in fotos_real]
+                p["fotos_thumb"] = [f["thumb"] + ".jpg" for f in fotos_real]
+                p["foto_card"] = fotos_real[0]["card"] + ".jpg"
+                p["foto_card_webp"] = fotos_real[0]["card"] + ".webp"
         else:
             es_casa = p["tipo"] in ("casa", "casa-en-condominio")
             es_terreno = p["tipo"] == "terreno"

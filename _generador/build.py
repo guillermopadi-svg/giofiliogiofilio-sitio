@@ -5,7 +5,7 @@ from datetime import date
 
 from render import (page, e, rel, icon, money, money_short, num, breadcrumb,
                     breadcrumb_schema, card_grid, pcard, searchbox, cta_band,
-                    faq_block, faq_schema, person_schema, canonical, SITE, slugify)
+                    faq_block, faq_schema, person_schema, canonical, SITE, slugify, full_url)
 from parts import (results_block, contact_form, gio_card, testimonial_block,
                    lightbox_markup, filters_html)
 from data_zonas import ALCALDIAS, COLONIAS, COLONIA_BY_SLUG, ALCALDIA_BY_SLUG, ALCALDIA_SLUG_BY_NOMBRE, MARCA
@@ -96,7 +96,7 @@ def listing_schema(p):
         "description": p["descripcion"].split("\n")[0],
         "datePosted": p["publicado"],
         "dateModified": p["actualizado"],
-        "image": [SITE + "/" + f for f in p["fotos"][:5]],
+        "image": [full_url(f) for f in p["fotos"][:5]],
         "provider": {"@id": SITE + "/#gio-filio"},
         "isPartOf": {"@type": "WebSite", "name": "Gio Filio — Tu espacio ideal", "url": SITE + "/"},
         "about": {
@@ -465,7 +465,7 @@ def build_property(p):
     <div class="gallery">
       <button type="button" class="g-main" data-lightbox="0" aria-label="Ver galería en pantalla completa">
         <picture>
-          <source type="image/webp" srcset="{R(p["fotos_webp"][0])}">
+          {'' if p.get("sin_webp") else f'<source type="image/webp" srcset="{R(p["fotos_webp"][0])}">'}
           <img src="{R(p["fotos"][0])}" alt="{e(p["titulo"])} — fotografía principal" fetchpriority="high" width="1440" height="1080">
         </picture>
       </button>

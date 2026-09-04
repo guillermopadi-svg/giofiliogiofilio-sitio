@@ -11,7 +11,11 @@ def e(s):
 
 def rel(from_path, to_path):
     """Devuelve una URL relativa entre dos rutas de salida (para que el sitio
-    funcione tanto en file:// como servido por HTTP)."""
+    funcione tanto en file:// como servido por HTTP). Una URL absoluta (fotos
+    subidas por asesores a Supabase Storage, por ejemplo) se deja tal cual —
+    nunca hay que "relativizarla"."""
+    if to_path.startswith("http://") or to_path.startswith("https://"):
+        return to_path
     to_path = to_path.lstrip("/")
     depth = from_path.count("/")
     prefix = "../" * depth if depth else ""
@@ -20,6 +24,14 @@ def rel(from_path, to_path):
 def base_of(from_path):
     depth = from_path.count("/")
     return "../" * depth if depth else "./"
+
+def full_url(u):
+    """URL absoluta para og:image/schema.org — si ya es absoluta (foto
+    subida por un asesor a Supabase Storage, por ejemplo) se deja tal cual
+    en vez de concatenarla con SITE."""
+    if u.startswith("http://") or u.startswith("https://"):
+        return u
+    return f"{SITE}/{u}"
 
 def canonical(path):
     p = path
@@ -298,12 +310,12 @@ def page(path, title, description, body, *, colonias, alcaldias, active="",
 <meta property="og:title" content="{e(full_title)}">
 <meta property="og:description" content="{e(description)}">
 <meta property="og:url" content="{canonical(path)}">
-<meta property="og:image" content="{SITE}/{og_image}">
+<meta property="og:image" content="{full_url(og_image)}">
 <meta property="og:image:alt" content="{e(title)}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{e(full_title)}">
 <meta name="twitter:description" content="{e(description)}">
-<meta name="twitter:image" content="{SITE}/{og_image}">
+<meta name="twitter:image" content="{full_url(og_image)}">
 <link rel="icon" type="image/png" sizes="32x32" href="{R("assets/img/brand/favicon-32.png")}">
 <link rel="apple-touch-icon" href="{R("assets/img/brand/favicon-180.png")}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -394,7 +406,7 @@ def pcard(path, p, no_cmp=False):
   <a class="pcard-link" href="{R(p["url"])}" data-track-select="{e(p["id"])}" aria-label="Ver {e(p["titulo"])}"></a>
   <div class="pcard-media">
     <picture>
-      <source type="image/webp" srcset="{R(p["foto_card_webp"])}">
+      {'' if p.get("sin_webp") else f'<source type="image/webp" srcset="{R(p["foto_card_webp"])}">'}
       <img src="{R(p["foto_card"])}" alt="{e(p["titulo"])} — {e(p["colonia_nombre"])}, {e(p["alcaldia_nombre"])}, {e(p.get("estado_nombre","Ciudad de México"))}" loading="lazy" decoding="async" width="640" height="480">
     </picture>
     <div class="pcard-badges">{badges}</div>
