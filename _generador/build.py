@@ -9,6 +9,7 @@ from render import (page, e, rel, icon, money, money_short, num, breadcrumb,
 from parts import (results_block, contact_form, gio_card, testimonial_block,
                    lightbox_markup, filters_html)
 from data_zonas import ALCALDIAS, COLONIAS, COLONIA_BY_SLUG, ALCALDIA_BY_SLUG, ALCALDIA_SLUG_BY_NOMBRE, MARCA
+from data_colonias_todas import COLONIAS_TODAS
 from data_props import TIPOS, TIPO_LABEL, TIPO_PLURAL, AMENIDAD_LABEL, ESTADOS_INMUEBLE, AMENIDADES
 from data_content import TESTIMONIOS, PROCESO, FAQS_GENERALES, BLOG, BLOG_CATEGORIAS
 import prep
@@ -1974,8 +1975,12 @@ def build_admin_data():
     usan los filtros del sitio."""
     os.makedirs(os.path.join(OUT, "assets/data"), exist_ok=True)
 
+    # Catálogo completo (~1500 colonias de CDMX vía SEPOMEX, cruzado con las
+    # 19 curadas) — así el asesor siempre selecciona, nunca escribe el
+    # nombre de la colonia a mano. Ver data_colonias_todas.py.
     colonias = sorted(
-        ({"slug": c["slug"], "nombre": c["nombre"], "alcaldia": c["alcaldia"], "cp": c.get("cp", [])} for c in COLONIAS),
+        ({"slug": c["slug"], "nombre": c["nombre"], "alcaldia": c["alcaldia_nombre"],
+          "cp": c["cp"], "tiene_pagina": c["tiene_pagina"]} for c in COLONIAS_TODAS),
         key=lambda c: c["nombre"],
     )
     with open(os.path.join(OUT, "assets/data/colonias.json"), "w", encoding="utf-8") as f:

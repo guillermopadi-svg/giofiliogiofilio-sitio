@@ -17,7 +17,7 @@ from datetime import date
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
-from data_zonas import COLONIA_BY_SLUG
+from data_colonias_todas import COLONIA_TODAS_BY_SLUG
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
@@ -63,7 +63,7 @@ def main():
 
     props, warnings = [], []
     for row in rows:
-        colonia = COLONIA_BY_SLUG.get(row.get("colonia_slug"))
+        colonia = COLONIA_TODAS_BY_SLUG.get(row.get("colonia_slug"))
         if not colonia:
             warnings.append(f"{row['id']}: colonia_slug '{row.get('colonia_slug')}' no existe en el catálogo — se omite")
             continue
@@ -92,9 +92,9 @@ def main():
             tipo=tipo,
             colonia=colonia["slug"],
             colonia_nombre_real=colonia["nombre"],
-            alcaldia_real=colonia["alcaldia"],
+            alcaldia_real=colonia["alcaldia_nombre"],
             estado_real="",
-            sin_pagina=False,
+            sin_pagina=not colonia["tiene_pagina"],
             fuera_cdmx=False,
             precio=row.get("precio") or 0,
             moneda="MXN",

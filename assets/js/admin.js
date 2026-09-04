@@ -73,9 +73,19 @@
           '</label>'
         );
       }).join('');
+      // ~1500 colonias — se agrupan por alcaldía (<optgroup>) para que el
+      // <select> nativo siga siendo navegable en vez de una lista plana.
+      var porAlcaldia = {};
+      COLONIAS.forEach(function (c) {
+        (porAlcaldia[c.alcaldia] = porAlcaldia[c.alcaldia] || []).push(c);
+      });
+      var alcaldias = Object.keys(porAlcaldia).sort();
       var sel = $('#f_colonia');
-      sel.innerHTML = '<option value="">Selecciona una colonia…</option>' + COLONIAS.map(function (c) {
-        return '<option value="' + c.slug + '">' + esc(c.nombre) + ' — ' + esc(c.alcaldia) + '</option>';
+      sel.innerHTML = '<option value="">Selecciona una colonia…</option>' + alcaldias.map(function (alc) {
+        var opciones = porAlcaldia[alc].map(function (c) {
+          return '<option value="' + c.slug + '">' + esc(c.nombre) + '</option>';
+        }).join('');
+        return '<optgroup label="' + esc(alc) + '">' + opciones + '</optgroup>';
       }).join('');
     });
   }
