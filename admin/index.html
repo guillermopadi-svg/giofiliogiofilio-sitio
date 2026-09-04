@@ -95,10 +95,6 @@
       <input type="hidden" id="f_operacion" value="venta">
 
       <div class="section-label">Datos generales</div>
-      <div class="field">
-        <label for="f_titulo">Título de la propiedad</label>
-        <input type="text" id="f_titulo" placeholder="Ej. Departamento con terraza en Polanco">
-      </div>
       <div class="field-grid">
         <div class="field">
           <label for="f_tipo">Tipo</label>
@@ -127,6 +123,13 @@
           <label for="f_colonia">Colonia</label>
           <select id="f_colonia"><option value="">Selecciona una colonia…</option></select>
         </div>
+      </div>
+
+      <div class="field">
+        <label for="f_detalle">Detalle (opcional)</label>
+        <input type="text" id="f_detalle" placeholder="con terraza y vista al parque">
+        <div class="field-hint">El título se arma solo con tipo, operación y colonia — esto solo agrega un detalle corto al final.</div>
+        <div class="field-hint" id="tituloPreview" style="font-weight:600;color:var(--navy);margin-top:.5rem;"></div>
       </div>
 
       <div class="section-label">Características</div>

@@ -227,18 +227,40 @@
   }
 
   // --------------------------------------------------------------- MODAL / FORM
+  // El título siempre se arma solo (tipo + operación + colonia) en vez de
+  // dejarlo como texto libre — evita que cada asesor titule sus fichas de
+  // forma distinta ("depa", "departamentito", "bello departamento"...).
+  // "Detalle" es el único texto libre, y se pega al final.
+  function tituloAuto() {
+    var tipoSel = $('#f_tipo');
+    var tipoLabel = tipoSel.options[tipoSel.selectedIndex] ? tipoSel.options[tipoSel.selectedIndex].text : '';
+    var operacionTexto = $('#f_operacion').value === 'renta' ? 'renta' : 'venta';
+    var coloniaSel = $('#f_colonia');
+    var coloniaNombre = coloniaSel.selectedIndex > 0 && coloniaSel.options[coloniaSel.selectedIndex]
+      ? coloniaSel.options[coloniaSel.selectedIndex].text : '';
+    if (!coloniaNombre) return '';
+    var detalle = $('#f_detalle').value.trim();
+    return tipoLabel + ' en ' + operacionTexto + ' en ' + coloniaNombre + (detalle ? ' ' + detalle : '');
+  }
+
+  function actualizarPreview() {
+    var t = tituloAuto();
+    $('#tituloPreview').textContent = t ? '"' + t + '"' : '';
+  }
+
   function setOperacion(op) {
     $$('.op-toggle button').forEach(function (b) {
       b.classList.toggle('is-active', b.dataset.op === op);
     });
     $('#f_operacion').value = op;
+    actualizarPreview();
   }
 
   function openModal(prop) {
     STATE.editingId = prop ? prop.id : null;
     STATE.fotos = prop && prop.fotos ? prop.fotos.slice() : [];
     $('#modalTitle').textContent = prop ? 'Editar propiedad' : 'Nueva propiedad';
-    $('#f_titulo').value = prop ? prop.titulo : '';
+    $('#f_detalle').value = prop ? prop.detalle || '' : '';
     $('#f_tipo').value = prop ? prop.tipo : 'departamento';
     $('#f_precio').value = prop ? prop.precio : '';
     $('#f_cp').value = '';
@@ -352,7 +374,8 @@
   function collectForm() {
     var amenidades = $$('input[name="amenidad"]:checked').map(function (c) { return c.value; });
     return {
-      titulo: $('#f_titulo').value.trim(),
+      titulo: tituloAuto(),
+      detalle: $('#f_detalle').value.trim(),
       operacion: $('#f_operacion').value,
       tipo: $('#f_tipo').value,
       precio: Number($('#f_precio').value) || 0,
@@ -377,13 +400,13 @@
   }
 
   function saveProperty(publicar) {
-    var data = collectForm();
-    if (!data.titulo || !data.precio) {
-      toast('Falta título o precio', 'err');
+    if (!$('#f_colonia').value) {
+      toast('Elige la colonia de la propiedad', 'err');
       return;
     }
-    if (!data.colonia_slug) {
-      toast('Elige la colonia de la propiedad', 'err');
+    var data = collectForm();
+    if (!data.precio) {
+      toast('Falta el precio', 'err');
       return;
     }
     if (publicar && !data.fotos.length) {
@@ -450,7 +473,12 @@
       } else {
         hint.textContent = 'CP no encontrado en el catálogo — elige la colonia manualmente.';
       }
+      actualizarPreview();
     });
+
+    $('#f_tipo').addEventListener('change', actualizarPreview);
+    $('#f_colonia').addEventListener('change', actualizarPreview);
+    $('#f_detalle').addEventListener('input', actualizarPreview);
 
     $$('.op-toggle button').forEach(function (b) {
       b.addEventListener('click', function () { setOperacion(b.dataset.op); });

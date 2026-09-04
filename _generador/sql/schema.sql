@@ -65,11 +65,12 @@ create trigger on_auth_user_created
 create table if not exists propiedades_manual (
   id uuid primary key default gen_random_uuid(),
   asesor_id uuid not null references auth.users(id) on delete cascade,
-  titulo text not null,
+  titulo text not null,                -- armado por el panel (tipo+operacion+colonia+detalle), no texto libre
+  detalle text not null default '',    -- unico texto libre del titulo, para poder editarlo despues
   operacion text not null check (operacion in ('venta', 'renta')),
   tipo text not null,
   precio numeric not null default 0,
-  colonia_slug text not null,          -- debe existir en data_zonas.COLONIAS
+  colonia_slug text not null,          -- ver _generador/data_colonias_todas.py (catalogo completo de CDMX)
   rec int not null default 0,
   ban int not null default 0,
   medios int not null default 0,
