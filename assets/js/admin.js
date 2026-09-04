@@ -336,8 +336,24 @@
   // sin problema en un <img>, así que se aprovecha eso para convertirlo a
   // JPEG en el momento; donde no se puede (Chrome, Firefox, Android) se
   // avisa claro en vez de subir un archivo que se verá roto en el sitio.
-  function esHeic(file) {
+  function esHeicPorNombre(file) {
     return /\.(heic|heif)$/i.test(file.name) || /^image\/(heic|heif)/i.test(file.type);
+  }
+
+  // Algunas apps (incluyendo la de Fotos de iPhone en ciertos flujos de
+  // exportar/compartir) renombran el archivo a ".jpg" sin convertirlo de
+  // verdad — el nombre y el tipo dicen "jpg" pero el contenido real sigue
+  // siendo HEIC, así que hay que revisar los bytes del archivo, no confiar
+  // en su nombre.
+  function detectarHeicPorContenido(file) {
+    return file.slice(0, 12).arrayBuffer().then(function (buf) {
+      var b = new Uint8Array(buf);
+      if (b.length < 12) return false;
+      var caja = String.fromCharCode(b[4], b[5], b[6], b[7]);
+      if (caja !== 'ftyp') return false;
+      var marca = String.fromCharCode(b[8], b[9], b[10], b[11]);
+      return ['heic', 'heix', 'hevc', 'heim', 'heis', 'hevx', 'mif1', 'msf1'].indexOf(marca) !== -1;
+    }).catch(function () { return false; });
   }
 
   function convertirHeicAJpeg(file) {
@@ -372,7 +388,7 @@
 
   function handleFiles(files) {
     if (!SUPABASE_READY) { toast('Conecta Supabase para poder subir fotos', 'err'); return; }
-    var lista = Array.prototype.filter.call(files, function (f) { return /^image\//.test(f.type) || esHeic(f); });
+    var lista = Array.prototype.filter.call(files, function (f) { return /^image\//.test(f.type) || esHeicPorNombre(f); });
     if (!lista.length) return;
     avisoFoto(null);
     STATE._subiendo = true;
@@ -380,17 +396,19 @@
 
     var carpeta = STATE.session.user.id + '/' + (STATE.editingId || ('tmp-' + Date.now()));
     Promise.all(lista.map(function (file) {
-      var prep = esHeic(file)
-        ? convertirHeicAJpeg(file).catch(function () {
-            avisoFoto(
-              'No pudimos abrir "' + file.name + '" — tu celular la guardó en un formato (HEIC) que este navegador no reconoce. ' +
-              'Solución más fácil: en tu iPhone ve a Ajustes → Cámara → Formatos, y cambia a "Más compatible" — así las fotos nuevas ya se guardan en JPG y este problema no vuelve a pasar. ' +
-              'Para esta foto en particular, ábrela en Fotos, toca Compartir → Guardar imagen (o mándatela por WhatsApp) para que se convierta, y vuelve a subirla aquí.'
-            );
-            return null;
-          })
-        : Promise.resolve(file);
-      return prep.then(function (f) {
+      return detectarHeicPorContenido(file).then(function (esHeicReal) {
+        var prep = esHeicReal
+          ? convertirHeicAJpeg(file).catch(function () {
+              avisoFoto(
+                'No pudimos abrir "' + file.name + '" — el archivo sigue siendo HEIC por dentro aunque su nombre diga .jpg (pasa cuando la app de Fotos solo lo renombra, sin convertirlo de verdad), y este navegador no puede leerlo. ' +
+                'Solución más fácil: en tu iPhone ve a Ajustes → Cámara → Formatos, y cambia a "Más compatible" — así las fotos nuevas ya se guardan en JPG real y este problema no vuelve a pasar. ' +
+                'Para esta foto en particular, mándatela por WhatsApp y descarga la que te llega (esa sí queda convertida), y vuelve a subirla aquí.'
+              );
+              return null;
+            })
+          : Promise.resolve(file);
+        return prep;
+      }).then(function (f) {
         if (!f) return null;
         var ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
         var ruta = carpeta + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;

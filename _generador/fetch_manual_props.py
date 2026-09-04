@@ -46,6 +46,27 @@ def sb_get(path, params=None):
         sys.exit(f"Supabase respondió {e.code} en {path}: {body[:300]}")
 
 
+_MARCAS_HEIC = (b"heic", b"heix", b"hevc", b"heim", b"heis", b"hevx", b"mif1", b"msf1")
+
+
+def es_heic_real(url):
+    """Algunas apps renombran un HEIC a '.jpg' sin convertirlo de verdad —
+    el nombre y hasta el Content-Type dicen 'jpg' pero el contenido sigue
+    siendo HEIC. Se revisan los primeros bytes (caja ISOBMFF 'ftyp') en vez
+    de confiar en la extensión. Solo pide los primeros 16 bytes (Range),
+    y si la petición falla por lo que sea, se asume que la foto está bien
+    (no vale la pena tumbar todo el sync por un problema de red puntual)."""
+    try:
+        req = Request(url, headers={"Range": "bytes=0-15"})
+        with urlopen(req, timeout=15) as r:
+            head = r.read(16)
+    except Exception:
+        return False
+    if len(head) < 12 or head[4:8] != b"ftyp":
+        return False
+    return head[8:12] in _MARCAS_HEIC
+
+
 def main():
     if not SUPABASE_URL or not SERVICE_KEY:
         # Todavía no hay proyecto de Supabase conectado — no es un error,
@@ -78,7 +99,10 @@ def main():
         # el respaldo del lado del servidor por si algo se cuela de todas
         # formas (ej. una fila vieja de antes de ese fix).
         FORMATOS_WEB = (".jpg", ".jpeg", ".png", ".webp", ".gif")
-        fotos = [u for u in (row.get("fotos") or []) if u.lower().split("?")[0].endswith(FORMATOS_WEB)]
+        fotos_candidatas = [u for u in (row.get("fotos") or []) if u.lower().split("?")[0].endswith(FORMATOS_WEB)]
+        fotos = [u for u in fotos_candidatas if not es_heic_real(u)]
+        if len(fotos) < len(fotos_candidatas):
+            warnings.append(f"{row['id']}: {len(fotos_candidatas) - len(fotos)} foto(s) son HEIC real aunque digan .jpg — se omiten")
         if not fotos:
             # Sin al menos una foto válida, build.py no tiene de dónde sacar
             # la imagen de portada/galería/schema.org de la ficha — se omite
