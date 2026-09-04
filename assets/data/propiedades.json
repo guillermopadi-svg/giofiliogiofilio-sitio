@@ -3,7 +3,7 @@
     "demo": false,
     "ciudad": "Ciudad de México",
     "generado": "2026-08-16",
-    "total": 30
+    "total": 31
   },
   "propiedades": [
     {
@@ -1369,6 +1369,53 @@
       "foto_card": "assets/img/properties/eb-eb-vy7191-00-card.jpg",
       "precio_m2": 1740,
       "estado": "disponible"
+    },
+    {
+      "id": "GF-b9344332",
+      "titulo": "Loft en renta en Anáhuac II Sección, la colina",
+      "titulo_wa": "la propiedad en Anáhuac II Sección",
+      "url": "propiedad/loft-anahuac-ii-seccion-gfb9344332/",
+      "operacion": "renta",
+      "tipo": "loft",
+      "tipo_label": "Loft",
+      "precio": 500000,
+      "mantenimiento": 0,
+      "colonia": "anahuac-ii-seccion",
+      "colonia_nombre": "Anáhuac II Sección",
+      "alcaldia": "miguel-hidalgo",
+      "alcaldia_nombre": "Miguel Hidalgo",
+      "alcaldia_tiene_pagina": true,
+      "estado_nombre": "Ciudad de México",
+      "sin_pagina": true,
+      "calle": "",
+      "cp": "",
+      "lat": 19.4326,
+      "lng": -99.195,
+      "rec": 2,
+      "ban": 2,
+      "medios": 0,
+      "est": 2,
+      "m2c": 100,
+      "m2t": 79,
+      "antig": 0,
+      "piso": "",
+      "estado_inm": "excelente",
+      "amenidades": [
+        "jardin",
+        "terraza",
+        "balcon",
+        "cuarto-servicio"
+      ],
+      "badges": [
+        "exclusiva"
+      ],
+      "destacada": false,
+      "exclusiva": true,
+      "publicado": "2026-09-04",
+      "actualizado": "2026-09-04",
+      "foto_card": "https://vjhchuofznfupkpkepky.supabase.co/storage/v1/object/public/propiedades-manual/84b22bee-271f-4460-b881-df0443188707/tmp-1788501500345/1788501500351-8zjz5t.jpg",
+      "precio_m2": 5000,
+      "estado": "disponible"
     }
   ],
   "colonias": [
@@ -1730,6 +1777,10 @@
   ],
   "calles": [
     {
+      "calle": "",
+      "colonia": "Anáhuac II Sección"
+    },
+    {
       "calle": "Alicama",
       "colonia": "Lomas de Chapultepec"
     },
@@ -1862,7 +1913,7 @@
     "bodega": "Bodega",
     "cuarto-servicio": "Cuarto de servicio",
     "home-office": "Home office",
-    "pet-friendly": "Pet friendly",
+    "pet-friendly": "Mascotas",
     "amueblado": "Amueblado",
     "accesibilidad": "Accesibilidad",
     "estacionamiento-visitas": "Estacionamiento de visitas",
