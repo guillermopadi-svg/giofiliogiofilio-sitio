@@ -172,6 +172,33 @@
     return c ? c.nombre : slug;
   }
 
+  // Reproduce el mismo slug que arma _generador/prep.py (normalize()) para
+  // poder enlazar directo a la ficha en giofilio.com sin ir y venir con el
+  // sitio en cada publicación. Si esa lógica cambia allá, hay que
+  // actualizarla aquí también.
+  var TIPO_LABEL_ADMIN = {
+    'departamento': 'Departamento', 'casa': 'Casa', 'casa-en-condominio': 'Casa en condominio',
+    'penthouse': 'Penthouse', 'loft': 'Loft', 'terreno': 'Terreno', 'oficina': 'Oficina',
+    'local-comercial': 'Local comercial'
+  };
+  function slugifyPy(s) {
+    s = s.toLowerCase();
+    var rep = { 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ü': 'u', 'ñ': 'n' };
+    for (var k in rep) s = s.split(k).join(rep[k]);
+    return s.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+  function urlPublicacion(p) {
+    var detalleParte = '';
+    if (p.titulo && p.titulo.indexOf(' con ') !== -1) {
+      var partes = p.titulo.split(' con ');
+      detalleParte = partes[partes.length - 1];
+    }
+    var base = slugifyPy((TIPO_LABEL_ADMIN[p.tipo] || p.tipo) + ' ' + coloniaLabel(p.colonia_slug) + ' ' + detalleParte);
+    var visto = {}, dedup = [];
+    base.split('-').forEach(function (w) { if (!visto[w]) { visto[w] = true; dedup.push(w); } });
+    return 'https://www.giofilio.com/propiedad/' + dedup.join('-') + '-gf' + p.id.slice(0, 8).toLowerCase() + '/';
+  }
+
   function pcardHtml(p) {
     var meta = [];
     if (p.rec) meta.push(p.rec + ' rec');
@@ -182,6 +209,12 @@
       ? '<span class="pcard-badge">' + (p.operacion === 'renta' ? 'Renta' : 'Venta') + '</span>'
       : '<span class="pcard-badge borrador">' + (p.estado === 'pausada' ? 'Pausada' : 'Borrador') + '</span>';
     var foto = (p.fotos && p.fotos[0]) || '';
+    var togglePausa = p.estado !== 'borrador'
+      ? '<button class="btn btn--ghost" data-toggle-pausa="' + p.id + '">' + (p.estado === 'pausada' ? 'Activar' : 'Pausar') + '</button>'
+      : '';
+    var verLink = p.estado === 'disponible'
+      ? '<a class="btn btn--ghost" href="' + esc(urlPublicacion(p)) + '" target="_blank" rel="noopener">Ver</a>'
+      : '';
     return (
       '<div class="pcard" data-id="' + p.id + '">' +
         '<div class="pcard-media">' + badge +
@@ -192,6 +225,8 @@
           '<div class="pcard-title">' + esc(p.titulo || 'Sin título') + '</div>' +
           '<div class="pcard-meta"><span>' + esc(coloniaLabel(p.colonia_slug)) + '</span><span>' + meta.join(' · ') + '</span></div>' +
           '<div class="pcard-actions">' +
+            verLink +
+            togglePausa +
             '<button class="btn btn--ghost" data-edit="' + p.id + '">Editar</button>' +
             '<button class="btn btn--danger" data-del="' + p.id + '">Eliminar</button>' +
           '</div>' +
@@ -434,6 +469,21 @@
     });
   }
 
+  function togglePausa(id) {
+    var p = STATE.propiedades.filter(function (x) { return x.id === id; })[0];
+    if (!p) return;
+    var nuevoEstado = p.estado === 'pausada' ? 'disponible' : 'pausada';
+    sb.from('propiedades_manual').update({ estado: nuevoEstado }).eq('id', id).then(function (res) {
+      if (res.error) {
+        toast('No se pudo actualizar: ' + res.error.message, 'err');
+        return;
+      }
+      toast(nuevoEstado === 'pausada' ? 'Propiedad pausada' : 'Propiedad activada de nuevo');
+      cargarPropiedades();
+      avisarRebuild();
+    });
+  }
+
   function deleteProperty(id) {
     if (!confirm('¿Eliminar esta propiedad? Esta acción no se puede deshacer.')) return;
     sb.from('propiedades_manual').delete().eq('id', id).then(function (res) {
@@ -487,11 +537,14 @@
     $('#grid').addEventListener('click', function (e) {
       var editId = e.target.dataset.edit;
       var delId = e.target.dataset.del;
+      var pausaId = e.target.dataset.togglePausa;
       if (editId) {
         var p = STATE.propiedades.filter(function (x) { return x.id === editId; })[0];
         openModal(p);
       } else if (delId) {
         deleteProperty(delId);
+      } else if (pausaId) {
+        togglePausa(pausaId);
       }
     });
 
