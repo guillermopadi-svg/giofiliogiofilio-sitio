@@ -3,7 +3,7 @@
     "demo": false,
     "ciudad": "Ciudad de México",
     "generado": "2026-08-16",
-    "total": 30
+    "total": 31
   },
   "propiedades": [
     {
@@ -1369,6 +1369,61 @@
       "foto_card": "assets/img/properties/eb-eb-vy7191-00-card.jpg",
       "precio_m2": 1740,
       "estado": "disponible"
+    },
+    {
+      "id": "GF-363f6b30",
+      "titulo": "Departamento en renta en Anzures, Skyview polanco",
+      "titulo_wa": "la propiedad en Anzures",
+      "url": "propiedad/departamento-anzures-gf363f6b30/",
+      "operacion": "renta",
+      "tipo": "departamento",
+      "tipo_label": "Departamento",
+      "precio": 25000,
+      "mantenimiento": 0,
+      "colonia": "anzures",
+      "colonia_nombre": "Anzures",
+      "alcaldia": "miguel-hidalgo",
+      "alcaldia_nombre": "Miguel Hidalgo",
+      "alcaldia_tiene_pagina": true,
+      "estado_nombre": "Ciudad de México",
+      "sin_pagina": false,
+      "calle": "",
+      "cp": "11590",
+      "lat": 19.429,
+      "lng": -99.177,
+      "rec": 2,
+      "ban": 3,
+      "medios": 0,
+      "est": 2,
+      "m2c": 120,
+      "m2t": 120,
+      "antig": 0,
+      "piso": "",
+      "estado_inm": "excelente",
+      "amenidades": [
+        "seguridad",
+        "elevador",
+        "alberca",
+        "gimnasio",
+        "salon-eventos",
+        "terraza",
+        "cuarto-servicio",
+        "home-office",
+        "amueblado",
+        "accesibilidad",
+        "estacionamiento-visitas",
+        "planta-emergencia"
+      ],
+      "badges": [
+        "exclusiva"
+      ],
+      "destacada": false,
+      "exclusiva": true,
+      "publicado": "2026-09-04",
+      "actualizado": "2026-09-04",
+      "foto_card": "https://vjhchuofznfupkpkepky.supabase.co/storage/v1/object/public/propiedades-manual/84b22bee-271f-4460-b881-df0443188707/363f6b30-bf7f-46d7-bb3d-dc08e4b9750f/1788486084872-wpmv4p.jpg.jpg",
+      "precio_m2": 208,
+      "estado": "disponible"
     }
   ],
   "colonias": [
@@ -1729,6 +1784,10 @@
     }
   ],
   "calles": [
+    {
+      "calle": "",
+      "colonia": "Anzures"
+    },
     {
       "calle": "Alicama",
       "colonia": "Lomas de Chapultepec"

@@ -72,13 +72,20 @@ def main():
         if row.get("tipo") not in TIPO_VALIDOS:
             warnings.append(f"{row['id']}: tipo '{row.get('tipo')}' desconocido — se usó 'departamento'")
 
-        fotos = row.get("fotos") or []
+        # Formatos que ningún navegador (fuera de Safari) ni WhatsApp/redes
+        # sociales pueden mostrar al compartir el link — el panel ya
+        # convierte HEIC a JPG solo (o avisa) antes de subir, pero esto es
+        # el respaldo del lado del servidor por si algo se cuela de todas
+        # formas (ej. una fila vieja de antes de ese fix).
+        FORMATOS_WEB = (".jpg", ".jpeg", ".png", ".webp", ".gif")
+        fotos = [u for u in (row.get("fotos") or []) if u.lower().split("?")[0].endswith(FORMATOS_WEB)]
         if not fotos:
-            # Sin al menos una foto, build.py no tiene de dónde sacar la
-            # imagen de portada/galería/schema.org de la ficha — se omite
-            # hasta que el asesor suba una (el panel ya no debería dejar
-            # publicar sin fotos, esto es un respaldo).
-            warnings.append(f"{row['id']}: sin fotos — se omite hasta que se suba al menos una")
+            # Sin al menos una foto válida, build.py no tiene de dónde sacar
+            # la imagen de portada/galería/schema.org de la ficha — se omite
+            # hasta que el asesor suba una en un formato compatible.
+            hay_invalidas = bool(row.get("fotos"))
+            motivo = "las fotos están en un formato no compatible (¿HEIC?)" if hay_invalidas else "sin fotos"
+            warnings.append(f"{row['id']}: {motivo} — se omite hasta que se suba una foto válida (jpg/png/webp)")
             continue
         fotos_real = [{"card": u, "hero": u, "thumb": u} for u in fotos]
 
