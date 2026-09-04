@@ -27,7 +27,7 @@ AMENIDADES = [
     ("gimnasio", "Gimnasio"), ("roof-garden", "Roof garden"), ("salon-eventos", "Salón de eventos"),
     ("jardin", "Jardín"), ("terraza", "Terraza"), ("balcon", "Balcón"),
     ("bodega", "Bodega"), ("cuarto-servicio", "Cuarto de servicio"), ("home-office", "Home office"),
-    ("pet-friendly", "Pet friendly"), ("amueblado", "Amueblado"), ("accesibilidad", "Accesibilidad"),
+    ("pet-friendly", "Mascotas"), ("amueblado", "Amueblado"), ("accesibilidad", "Accesibilidad"),
     ("estacionamiento-visitas", "Estacionamiento de visitas"), ("area-juegos", "Área de juegos"),
     ("cisterna", "Cisterna"), ("planta-emergencia", "Planta de emergencia"), ("asador", "Área de asadores"),
 ]
