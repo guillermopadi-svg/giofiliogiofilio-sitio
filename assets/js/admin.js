@@ -275,7 +275,7 @@
       ? coloniaSel.options[coloniaSel.selectedIndex].text : '';
     if (!coloniaNombre) return '';
     var detalle = $('#f_detalle').value.trim();
-    return tipoLabel + ' en ' + operacionTexto + ' en ' + coloniaNombre + (detalle ? ' ' + detalle : '');
+    return tipoLabel + ' en ' + operacionTexto + ' en ' + coloniaNombre + (detalle ? ', ' + detalle : '');
   }
 
   function actualizarPreview() {
