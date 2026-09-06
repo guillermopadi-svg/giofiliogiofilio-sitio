@@ -806,7 +806,7 @@
   function loadGoogle(host) {
     if (window.google && window.google.maps) { setupGoogle(host); return; }
     var s = document.createElement('script');
-    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(CFG.googleMapsKey) + '&libraries=marker&loading=async&language=es&region=MX';
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(CFG.googleMapsKey) + '&loading=async&language=es&region=MX';
     s.async = true; s.defer = true;
     s.onerror = function () { console.warn('[Gio] Google Maps no cargó. Usando mapa de respaldo.'); buildFallback(host); };
     window.gfInitGoogle = function () { setupGoogle(host); };
