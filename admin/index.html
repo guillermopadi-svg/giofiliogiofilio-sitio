@@ -38,6 +38,30 @@
   </div>
 </div>
 
+<!-- --------------------------------------------------- CREAR CONTRASEÑA (invitación/recuperación) --------------------------------------------------- -->
+<div class="gate" id="setPasswordGate" hidden>
+  <div class="gate-card">
+    <div class="gate-logo">
+      <img src="../assets/img/brand/isotipo-gf.png" alt="Gio Filio">
+    </div>
+    <p class="gate-eyebrow">Panel de asesores Gio Filio</p>
+    <h1 class="gate-title">Bienvenido al equipo.</h1>
+    <p class="gate-sub">Crea tu contraseña para entrar al panel</p>
+    <div class="error-msg" id="setPasswordError"></div>
+    <form id="setPasswordForm" novalidate>
+      <div class="field">
+        <label for="newPass">Nueva contraseña</label>
+        <input type="password" id="newPass" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required minlength="8">
+      </div>
+      <div class="field">
+        <label for="newPass2">Confirmar contraseña</label>
+        <input type="password" id="newPass2" autocomplete="new-password" placeholder="Repite tu contraseña" required minlength="8">
+      </div>
+      <button type="submit" class="btn btn--block">Entrar al panel</button>
+    </form>
+  </div>
+</div>
+
 <!-- ---------------------------------------------------------- APP ---------------------------------------------------------- -->
 <div class="app" id="app">
   <header class="topbar">
@@ -52,9 +76,15 @@
     </div>
   </header>
 
+  <div class="greeting-bar">
+    <h2 id="greetingSaludo">Hola</h2>
+    <p id="greetingMsg"></p>
+  </div>
+
   <nav class="tabbar">
     <button type="button" class="tabbar-btn is-active" id="tabPropiedades" data-view="propiedades">Propiedades</button>
     <button type="button" class="tabbar-btn" id="tabContactos" data-view="contactos">Contactos<span class="tabbar-badge" id="tabContactosBadge" hidden>0</span></button>
+    <button type="button" class="tabbar-btn" id="tabEquipo" data-view="equipo" hidden>Equipo</button>
   </nav>
 
   <main class="shell" id="viewPropiedades">
@@ -116,7 +146,56 @@
     </div>
   </main>
 
+  <main class="shell" id="viewEquipo" hidden>
+    <div class="shell-head">
+      <div>
+        <h1>Equipo</h1>
+        <p>Asesores con acceso al panel — solo tú (admin) puedes invitar, cambiar roles o desactivar a alguien.</p>
+      </div>
+      <button class="btn btn--gold" id="addAsesorBtn">+ Invitar asesor</button>
+    </div>
+
+    <div class="stats-grouped">
+      <div class="stat-group">
+        <div class="stat-group-head">EQUIPO</div>
+        <div class="stat-group-nums">
+          <div class="stat-group-item"><div class="num" id="statAsesoresActivos">0</div><div class="lbl">Activos</div></div>
+          <div class="stat-group-item"><div class="num" id="statAsesoresInactivos">0</div><div class="lbl">Desactivados</div></div>
+          <div class="stat-group-item"><div class="num" id="statInvitacionesPendientes">0</div><div class="lbl">Invitaciones pendientes</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="team-list" id="equipoLista"></div>
+  </main>
+
   <button class="btn btn--gold fab" id="addPropBtnFab" style="display:none">+ Nueva propiedad</button>
+</div>
+
+<!-- ---------------------------------------------------------- MODAL: INVITAR ASESOR ---------------------------------------------------------- -->
+<div class="modal-backdrop" id="inviteModalBackdrop">
+  <div class="modal modal--sm">
+    <div class="modal-head">
+      <h2>Invitar asesor</h2>
+      <button class="modal-close" id="inviteModalClose" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="error-msg" id="inviteError"></div>
+      <div class="field">
+        <label for="inv_nombre">Nombre</label>
+        <input type="text" id="inv_nombre" placeholder="Nombre del asesor">
+      </div>
+      <div class="field">
+        <label for="inv_email">Correo</label>
+        <input type="email" id="inv_email" placeholder="asesor@correo.com" required>
+      </div>
+      <div class="field-hint">Le llega un correo de Supabase con un link para crear su contraseña y entrar al panel.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn--ghost btn--sm" id="inviteCancelBtn" onclick="document.getElementById('inviteModalBackdrop').classList.remove('is-open')">Cancelar</button>
+      <button class="btn btn--gold" id="inviteSendBtn">Enviar invitación</button>
+    </div>
+  </div>
 </div>
 
 <!-- ---------------------------------------------------------- MODAL: LEAD ---------------------------------------------------------- -->

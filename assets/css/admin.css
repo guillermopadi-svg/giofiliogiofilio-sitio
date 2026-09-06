@@ -115,6 +115,10 @@ button{ font-family:inherit; cursor:pointer; }
   width:32px; height:32px; border-radius:50%; background:var(--navy-050); color:var(--navy);
   display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem;
 }
+.greeting-bar{ max-width:1180px; margin:0 auto; padding:1.6rem 1.6rem 0; }
+.greeting-bar h2{ font-size:1.5rem; }
+.greeting-bar p{ color:var(--ink-50); margin:.25rem 0 0; font-size:.92rem; font-style:italic; }
+
 .tabbar{
   display:flex; gap:.4rem; max-width:1180px; margin:0 auto; padding:.9rem 1.6rem 0;
 }
@@ -164,6 +168,57 @@ button{ font-family:inherit; cursor:pointer; }
 .pcard-meta{ display:flex; gap:.7rem; font-size:.78rem; color:var(--ink-50); margin-bottom:.8rem; }
 .pcard-actions{ display:flex; flex-wrap:wrap; gap:.5rem; }
 .pcard-actions .btn{ flex:1 1 calc(50% - .25rem); min-width:0; padding:.5rem .6rem; font-size:.78rem; white-space:nowrap; }
+
+/* -------------------------------------------------------------- STATS AGRUPADOS (Equipo) */
+.stats-grouped{ display:flex; flex-wrap:wrap; gap:.9rem; margin-bottom:2rem; }
+.stat-group{
+  background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg);
+  padding:1.1rem 1.3rem; flex:1 1 260px;
+}
+.stat-group-head{
+  font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--gold-ink); margin-bottom:.8rem;
+}
+.stat-group-nums{ display:flex; gap:1.4rem; flex-wrap:wrap; }
+.stat-group-item{ padding-right:1.4rem; border-right:1px solid var(--line); }
+.stat-group-item:last-child{ border-right:none; padding-right:0; }
+.stat-group-item .num{ font-family:var(--font-display); font-size:1.7rem; color:var(--navy); }
+.stat-group-item .lbl{ font-size:.78rem; color:var(--ink-50); margin-top:.2rem; white-space:nowrap; }
+
+/* -------------------------------------------------------------- EQUIPO */
+.team-list{ display:flex; flex-direction:column; gap:.7rem; }
+.team-row{
+  background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg);
+  padding:.9rem 1.2rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;
+}
+.team-row.is-inactivo{ opacity:.55; }
+.team-row-id{ display:flex; align-items:center; gap:.7rem; flex:1 1 220px; min-width:0; }
+.team-row-id .avatar{ flex-shrink:0; }
+.team-row-name{ font-weight:700; color:var(--navy); font-size:.92rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.team-row-email{ font-size:.78rem; color:var(--ink-50); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.team-row-badge{
+  font-size:.68rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+  padding:.28rem .6rem; border-radius:var(--r-full); background:var(--navy-050); color:var(--navy-300);
+  white-space:nowrap;
+}
+.team-row-badge.is-pendiente{ background:var(--gold-050); color:var(--gold-ink); }
+.team-row-props{ font-size:.78rem; color:var(--ink-50); white-space:nowrap; }
+.team-row-actions{ display:flex; align-items:center; gap:.6rem; margin-left:auto; flex-wrap:wrap; }
+.team-role-select{
+  padding:.45rem .7rem; border:1.5px solid var(--line); border-radius:var(--r-sm);
+  font-family:inherit; font-size:.82rem; font-weight:600; color:var(--navy); background:var(--white);
+}
+.switch{ position:relative; display:inline-flex; align-items:center; gap:.5rem; cursor:pointer; font-size:.78rem; color:var(--ink-50); }
+.switch input{ position:absolute; opacity:0; width:1px; height:1px; }
+.switch-track{
+  width:36px; height:20px; border-radius:var(--r-full); background:var(--line); position:relative; transition:background .16s var(--ease);
+}
+.switch-track::after{
+  content:''; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%;
+  background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .16s var(--ease);
+}
+.switch input:checked + .switch-track{ background:var(--ok); }
+.switch input:checked + .switch-track::after{ transform:translateX(16px); }
 
 /* -------------------------------------------------------------- KANBAN (Contactos) */
 .kanban{ display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; align-items:start; }

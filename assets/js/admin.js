@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], editingId: null, editingLeadId: null, fotos: [], session: null, perfil: null };
+  var STATE = { propiedades: [], leads: [], equipo: [], editingId: null, editingLeadId: null, fotos: [], session: null, perfil: null };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -90,19 +90,47 @@
     });
   }
 
+  // --------------------------------------------------------------- SALUDO
+  function saludoPorHora() {
+    var h = new Date().getHours();
+    if (h < 12) return 'Buenos días';
+    if (h < 19) return 'Buenas tardes';
+    return 'Buenas noches';
+  }
+  var MENSAJES_BIENVENIDA = [
+    'Sigamos haciendo que este sea tu mejor mes.',
+    'Cada propiedad que subes es un paso más cerca de tu próxima venta.',
+    'Un contacto bien atendido hoy es una firma mañana.',
+    'Gracias por ser una pieza clave de este equipo.',
+    'Vamos por más — tú puedes con esto.',
+    'Hoy es un buen día para cerrar algo grande.',
+  ];
+  function actualizarSaludo() {
+    var nombre = (STATE.perfil && STATE.perfil.nombre) || (STATE.session && STATE.session.user.email) || 'Asesor';
+    var primerNombre = nombre.trim().split(' ')[0];
+    $('#greetingSaludo').textContent = saludoPorHora() + ', ' + primerNombre + '.';
+    $('#greetingMsg').textContent = MENSAJES_BIENVENIDA[Math.floor(Math.random() * MENSAJES_BIENVENIDA.length)];
+  }
+
   // --------------------------------------------------------------- AUTH
   function showApp() {
     var nombre = (STATE.perfil && STATE.perfil.nombre) || (STATE.session && STATE.session.user.email) || 'Asesor';
     $('#gate').style.display = 'none';
+    $('#setPasswordGate').hidden = true;
     $('#app').classList.add('is-visible');
     $('#userName').textContent = nombre;
     $('#userAvatar').textContent = nombre.trim().charAt(0).toUpperCase();
+    actualizarSaludo();
+    var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
+    $('#tabEquipo').hidden = !esAdmin;
     cargarPropiedades();
     cargarLeads();
+    if (esAdmin) cargarEquipo();
   }
 
   function showGate() {
     $('#app').classList.remove('is-visible');
+    $('#setPasswordGate').hidden = true;
     $('#gate').style.display = 'flex';
   }
 
@@ -141,8 +169,19 @@
   }
 
   function cargarPerfilYMostrar() {
-    sb.from('perfiles').select('nombre, rol').eq('id', STATE.session.user.id).single().then(function (res) {
+    sb.from('perfiles').select('nombre, rol, activo').eq('id', STATE.session.user.id).single().then(function (res) {
       STATE.perfil = res.data || null;
+      if (STATE.perfil && STATE.perfil.activo === false) {
+        sb.auth.signOut().then(function () {
+          STATE.session = null;
+          STATE.perfil = null;
+          showGate();
+          var errBox = $('#loginError');
+          errBox.textContent = 'Tu acceso al panel fue desactivado — contacta a Gio.';
+          errBox.classList.add('show');
+        });
+        return;
+      }
       showApp();
     });
   }
@@ -154,6 +193,43 @@
       showGate();
       $('#loginEmail').value = '';
       $('#loginPass').value = '';
+    });
+  }
+
+  // ------------------------------------------------------ CREAR CONTRASEÑA (invitación)
+  // El link del correo de invitación trae el token en el hash de la URL
+  // (#access_token=...&type=invite); supabase-js ya lo detecta solo y deja
+  // la sesión lista (detectSessionInUrl, activo por default) -- aquí solo se
+  // detecta el caso para mostrar "crea tu contraseña" en vez del login normal.
+  function esFlujoDeContrasena() {
+    return /type=invite|type=recovery/.test(location.hash || '');
+  }
+
+  function handleSetPassword(e) {
+    e.preventDefault();
+    var p1 = $('#newPass').value, p2 = $('#newPass2').value;
+    var errBox = $('#setPasswordError');
+    errBox.classList.remove('show');
+    if (p1.length < 8) { errBox.textContent = 'La contraseña debe tener al menos 8 caracteres.'; errBox.classList.add('show'); return; }
+    if (p1 !== p2) { errBox.textContent = 'Las contraseñas no coinciden.'; errBox.classList.add('show'); return; }
+
+    var btn = $('#setPasswordForm button[type="submit"]');
+    setBusy(btn, true, 'Guardando…');
+    sb.auth.updateUser({ password: p1 }).then(function (res) {
+      if (res.error) {
+        setBusy(btn, false);
+        errBox.textContent = res.error.message;
+        errBox.classList.add('show');
+        return;
+      }
+      sb.auth.getSession().then(function (sessionRes) {
+        STATE.session = sessionRes.data.session;
+        history.replaceState(null, '', location.pathname);
+        sb.from('perfiles').update({ activado_en: new Date().toISOString() }).eq('id', STATE.session.user.id).then(function () {
+          setBusy(btn, false);
+          cargarPerfilYMostrar();
+        });
+      });
     });
   }
 
@@ -507,9 +583,131 @@
   function setView(view) {
     $('#viewPropiedades').hidden = view !== 'propiedades';
     $('#viewContactos').hidden = view !== 'contactos';
+    $('#viewEquipo').hidden = view !== 'equipo';
     $('#tabPropiedades').classList.toggle('is-active', view === 'propiedades');
     $('#tabContactos').classList.toggle('is-active', view === 'contactos');
+    $('#tabEquipo').classList.toggle('is-active', view === 'equipo');
     $('#addPropBtnFab').style.display = view === 'propiedades' && STATE.propiedades.length ? 'inline-flex' : 'none';
+  }
+
+  // --------------------------------------------------------------- EQUIPO (solo admin)
+  function contarPropiedadesActivas(asesorId) {
+    return STATE.propiedades.filter(function (p) { return p.asesor_id === asesorId && p.estado === 'disponible'; }).length;
+  }
+
+  function teamRowHtml(p) {
+    var inicial = (p.nombre || p.email || '?').trim().charAt(0).toUpperCase();
+    var pendiente = !p.activado_en;
+    var esUnoMismo = !!(STATE.session && p.id === STATE.session.user.id);
+    var n = contarPropiedadesActivas(p.id);
+    return (
+      '<div class="team-row' + (p.activo ? '' : ' is-inactivo') + '">' +
+        '<div class="team-row-id">' +
+          '<div class="avatar">' + esc(inicial) + '</div>' +
+          '<div><div class="team-row-name">' + esc(p.nombre || 'Sin nombre') + '</div>' +
+          '<div class="team-row-email">' + esc(p.email || '') + '</div></div>' +
+        '</div>' +
+        (pendiente ? '<span class="team-row-badge is-pendiente">Invitación pendiente</span>' : '') +
+        '<span class="team-row-props">' + n + ' propiedad' + (n === 1 ? '' : 'es') + ' activa' + (n === 1 ? '' : 's') + '</span>' +
+        '<div class="team-row-actions">' +
+          '<select class="team-role-select" data-rol-id="' + p.id + '"' + (esUnoMismo ? ' disabled title="No puedes cambiar tu propio rol"' : '') + '>' +
+            '<option value="asesor"' + (p.rol === 'asesor' ? ' selected' : '') + '>Asesor</option>' +
+            '<option value="admin"' + (p.rol === 'admin' ? ' selected' : '') + '>Admin</option>' +
+          '</select>' +
+          '<label class="switch">' +
+            '<input type="checkbox" data-activo-id="' + p.id + '"' + (p.activo ? ' checked' : '') + (esUnoMismo ? ' disabled title="No puedes desactivarte a ti mismo"' : '') + '>' +
+            '<span class="switch-track"></span>' + (p.activo ? 'Activo' : 'Desactivado') +
+          '</label>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderEquipo() {
+    $('#equipoLista').innerHTML = STATE.equipo.map(teamRowHtml).join('');
+    $('#statAsesoresActivos').textContent = STATE.equipo.filter(function (p) { return p.activo; }).length;
+    $('#statAsesoresInactivos').textContent = STATE.equipo.filter(function (p) { return !p.activo; }).length;
+    $('#statInvitacionesPendientes').textContent = STATE.equipo.filter(function (p) { return !p.activado_en; }).length;
+  }
+
+  function cargarEquipo() {
+    sb.from('perfiles').select('*').order('creado_en', { ascending: true }).then(function (res) {
+      if (res.error) {
+        console.warn('[Panel] no se pudo cargar el equipo:', res.error.message);
+        return;
+      }
+      STATE.equipo = res.data || [];
+      renderEquipo();
+    });
+  }
+
+  function openInviteModal() {
+    $('#inv_nombre').value = '';
+    $('#inv_email').value = '';
+    $('#inviteError').classList.remove('show');
+    $('#inviteModalBackdrop').classList.add('is-open');
+  }
+
+  function closeInviteModal() {
+    $('#inviteModalBackdrop').classList.remove('is-open');
+  }
+
+  function enviarInvitacion() {
+    var nombre = $('#inv_nombre').value.trim();
+    var email = $('#inv_email').value.trim();
+    var errBox = $('#inviteError');
+    errBox.classList.remove('show');
+    if (!email) {
+      errBox.textContent = 'Ingresa un correo.';
+      errBox.classList.add('show');
+      return;
+    }
+    var btn = $('#inviteSendBtn');
+    setBusy(btn, true, 'Enviando…');
+    fetch('/api/invitar-asesor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + STATE.session.access_token },
+      body: JSON.stringify({ nombre: nombre, email: email }),
+    }).then(function (r) {
+      return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+    }).then(function (res) {
+      setBusy(btn, false);
+      if (!res.ok || !res.data.ok) {
+        var mensajes = {
+          correo_invalido: 'Ese correo no es válido.',
+          solo_un_admin_puede_invitar: 'Solo un admin puede invitar asesores.',
+          supabase_no_configurado: 'Falta configurar Supabase en el servidor.',
+          sesion_invalida: 'Tu sesión expiró, vuelve a iniciar sesión.',
+        };
+        var codigo = res.data && res.data.error;
+        errBox.textContent = mensajes[codigo] || codigo || 'No se pudo enviar la invitación.';
+        errBox.classList.add('show');
+        return;
+      }
+      closeInviteModal();
+      toast('Invitación enviada a ' + email);
+      cargarEquipo();
+    }).catch(function () {
+      setBusy(btn, false);
+      errBox.textContent = 'No se pudo conectar con el servidor.';
+      errBox.classList.add('show');
+    });
+  }
+
+  function cambiarRolAsesor(id, rol) {
+    sb.from('perfiles').update({ rol: rol }).eq('id', id).then(function (res) {
+      if (res.error) { toast('No se pudo cambiar el rol: ' + res.error.message, 'err'); cargarEquipo(); return; }
+      toast('Rol actualizado');
+      cargarEquipo();
+    });
+  }
+
+  function cambiarActivoAsesor(id, activo) {
+    sb.from('perfiles').update({ activo: activo }).eq('id', id).then(function (res) {
+      if (res.error) { toast('No se pudo actualizar: ' + res.error.message, 'err'); cargarEquipo(); return; }
+      toast(activo ? 'Asesor activado' : 'Asesor desactivado');
+      cargarEquipo();
+    });
   }
 
   // --------------------------------------------------------------- CONTACTOS (leads)
@@ -653,6 +851,20 @@
 
     $('#tabPropiedades').addEventListener('click', function () { setView('propiedades'); });
     $('#tabContactos').addEventListener('click', function () { setView('contactos'); });
+    $('#tabEquipo').addEventListener('click', function () { setView('equipo'); });
+
+    $('#addAsesorBtn').addEventListener('click', openInviteModal);
+    $('#inviteModalClose').addEventListener('click', closeInviteModal);
+    $('#inviteModalBackdrop').addEventListener('click', function (e) { if (e.target.id === 'inviteModalBackdrop') closeInviteModal(); });
+    $('#inviteSendBtn').addEventListener('click', enviarInvitacion);
+    $('#equipoLista').addEventListener('change', function (e) {
+      var rolId = e.target.dataset.rolId;
+      var activoId = e.target.dataset.activoId;
+      if (rolId) cambiarRolAsesor(rolId, e.target.value);
+      else if (activoId) cambiarActivoAsesor(activoId, e.target.checked);
+    });
+
+    $('#setPasswordForm').addEventListener('submit', handleSetPassword);
 
     $('#kanban').addEventListener('dragstart', function (e) {
       var card = e.target.closest && e.target.closest('.lead-card');
@@ -756,7 +968,13 @@
 
     sb.auth.getSession().then(function (res) {
       STATE.session = res.data.session;
-      if (STATE.session) cargarPerfilYMostrar();
+      if (!STATE.session) return;
+      if (esFlujoDeContrasena()) {
+        $('#gate').style.display = 'none';
+        $('#setPasswordGate').hidden = false;
+      } else {
+        cargarPerfilYMostrar();
+      }
     });
   });
 })();

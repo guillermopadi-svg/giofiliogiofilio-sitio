@@ -1,5 +1,7 @@
 -- Gio Filio — Panel de asesores (carga manual de propiedades)
--- Correr una sola vez en Supabase: Dashboard → SQL Editor → New query → pegar todo → Run.
+-- Supabase: Dashboard → SQL Editor → New query → pegar TODO el archivo → Run.
+-- Es seguro volver a correrlo completo cada vez que este archivo cambie
+-- (todo usa "if not exists"/"or replace"/"drop ... if exists" antes de crear).
 
 -- ------------------------------------------------------------------ perfiles
 -- Un renglón por usuario de auth.users, con su rol. Se crea automáticamente
@@ -7,9 +9,18 @@
 create table if not exists perfiles (
   id uuid primary key references auth.users(id) on delete cascade,
   nombre text not null default '',
+  email text,                    -- copia de auth.users.email (no es consultable via REST) para mostrarlo en "Equipo"
   rol text not null default 'asesor' check (rol in ('admin', 'asesor')),
+  activo boolean not null default true,     -- false = Gio lo desactivo, ya no puede entrar al panel
+  activado_en timestamptz,                  -- se llena cuando el invitado crea su contraseña -- null = invitacion pendiente
   creado_en timestamptz not null default now()
 );
+
+-- Si la tabla ya existia de antes de este cambio (proyectos ya en produccion).
+alter table perfiles add column if not exists email text;
+alter table perfiles add column if not exists activo boolean not null default true;
+alter table perfiles add column if not exists activado_en timestamptz;
+update perfiles set email = (select u.email from auth.users u where u.id = perfiles.id) where email is null;
 
 alter table perfiles enable row level security;
 
@@ -35,21 +46,46 @@ $$;
 
 grant execute on function is_admin() to authenticated;
 
+drop policy if exists "cada quien lee su propio perfil, admin lee todos" on perfiles;
 create policy "cada quien lee su propio perfil, admin lee todos"
   on perfiles for select
   using (auth.uid() = id or is_admin());
 
-create policy "cada quien edita su propio perfil"
+drop policy if exists "cada quien edita su propio perfil" on perfiles;
+drop policy if exists "cada quien edita su propio perfil, admin edita cualquiera" on perfiles;
+create policy "cada quien edita su propio perfil, admin edita cualquiera"
   on perfiles for update
-  using (auth.uid() = id);
+  using (auth.uid() = id or is_admin());
+
+-- La policy de arriba deja que cada quien haga UPDATE de su propio renglon
+-- (por ejemplo para su "nombre" o para poner activado_en al crear su
+-- contraseña), pero rol/activo son sensibles -- sin este trigger, cualquier
+-- asesor podria auto-ascenderse a admin llamando la REST API directo con su
+-- propio id (pasaria la policy porque auth.uid() = id es cierto). El trigger
+-- corre para TODOS los UPDATE sin importar la policy, y tira error si
+-- alguien que no sea admin intenta tocar esas dos columnas.
+create or replace function proteger_rol_perfil()
+returns trigger as $$
+begin
+  if not is_admin() and (new.rol is distinct from old.rol or new.activo is distinct from old.activo) then
+    raise exception 'solo un admin puede cambiar el rol o el estado activo de un asesor';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+drop trigger if exists on_perfil_updated on perfiles;
+create trigger on_perfil_updated
+  before update on perfiles
+  for each row execute function proteger_rol_perfil();
 
 -- Crea el perfil automáticamente al primer login (rol asesor por default;
 -- Gio se sube a 'admin' a mano una sola vez, ver instrucciones al final).
 create or replace function handle_new_user()
 returns trigger as $$
 begin
-  insert into public.perfiles (id, nombre)
-  values (new.id, coalesce(new.raw_user_meta_data->>'nombre', split_part(new.email, '@', 1)));
+  insert into public.perfiles (id, nombre, email)
+  values (new.id, coalesce(new.raw_user_meta_data->>'nombre', split_part(new.email, '@', 1)), new.email);
   return new;
 end;
 $$ language plpgsql security definer set search_path = public;
@@ -91,18 +127,22 @@ alter table propiedades_manual enable row level security;
 grant select, insert, update, delete on propiedades_manual to authenticated;
 grant select on propiedades_manual to service_role;
 
+drop policy if exists "todos ven las publicadas, cada quien ve tambien las suyas" on propiedades_manual;
 create policy "todos ven las publicadas, cada quien ve tambien las suyas"
   on propiedades_manual for select
   using (estado = 'disponible' or asesor_id = auth.uid() or is_admin());
 
+drop policy if exists "cada asesor crea sus propias fichas" on propiedades_manual;
 create policy "cada asesor crea sus propias fichas"
   on propiedades_manual for insert
   with check (asesor_id = auth.uid());
 
+drop policy if exists "cada asesor edita las suyas, admin edita todas" on propiedades_manual;
 create policy "cada asesor edita las suyas, admin edita todas"
   on propiedades_manual for update
   using (asesor_id = auth.uid() or is_admin());
 
+drop policy if exists "cada asesor borra las suyas, admin borra todas" on propiedades_manual;
 create policy "cada asesor borra las suyas, admin borra todas"
   on propiedades_manual for delete
   using (asesor_id = auth.uid() or is_admin());
@@ -126,14 +166,17 @@ insert into storage.buckets (id, name, public)
 values ('propiedades-manual', 'propiedades-manual', true)
 on conflict (id) do nothing;
 
+drop policy if exists "cualquiera puede ver las fotos (bucket publico)" on storage.objects;
 create policy "cualquiera puede ver las fotos (bucket publico)"
   on storage.objects for select
   using (bucket_id = 'propiedades-manual');
 
+drop policy if exists "un asesor autenticado puede subir sus fotos" on storage.objects;
 create policy "un asesor autenticado puede subir sus fotos"
   on storage.objects for insert
   with check (bucket_id = 'propiedades-manual' and auth.role() = 'authenticated');
 
+drop policy if exists "un asesor autenticado puede borrar fotos que subio" on storage.objects;
 create policy "un asesor autenticado puede borrar fotos que subio"
   on storage.objects for delete
   using (bucket_id = 'propiedades-manual' and auth.uid() = owner);
@@ -173,11 +216,13 @@ grant select, update on leads to authenticated;
 
 -- Bandeja compartida: cualquier asesor autenticado ve y puede tomar/mover
 -- cualquier lead (equipo chico, sin territorios asignados por ahora).
+drop policy if exists "todo asesor autenticado ve todos los leads" on leads;
 create policy "todo asesor autenticado ve todos los leads"
   on leads for select
   to authenticated
   using (true);
 
+drop policy if exists "todo asesor autenticado puede tomar/mover cualquier lead" on leads;
 create policy "todo asesor autenticado puede tomar/mover cualquier lead"
   on leads for update
   to authenticated
