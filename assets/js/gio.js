@@ -823,7 +823,7 @@
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
-      styles: GMAP_STYLE
+      mapId: 'e3ec18c168b0c646af205dcb'
     });
     MAP.gmap.addListener('idle', function () {
       var b = $('#mapSearchArea'); if (b) b.style.display = 'inline-flex';
@@ -1025,7 +1025,7 @@
   }
 
   function drawGoogleMarkers(list) {
-    MAP.markers.forEach(function (m) { m.setMap && m.setMap(null); });
+    MAP.markers.forEach(function (m) { m.map = null; });
     MAP.markers = [];
     if (!list.length) return;
     var bounds = new google.maps.LatLngBounds();
@@ -1033,15 +1033,18 @@
     list.forEach(function (p) {
       var pos = { lat: p.lat, lng: p.lng };
       bounds.extend(pos);
-      var mk = new google.maps.Marker({
-        position: pos, map: MAP.gmap, title: p.titulo,
-        label: { text: moneyShort(p.precio), fontFamily: 'Jost, sans-serif', fontSize: '11px', fontWeight: '600', color: '#071F4A' },
-        icon: {
-          url: PIN_ICON_PNG_URL,
-          scaledSize: new google.maps.Size(34, 42),
-          anchor: new google.maps.Point(17, 41),
-          labelOrigin: new google.maps.Point(17, -8)
-        }
+
+      var content = document.createElement('div');
+      content.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer';
+      var price = document.createElement('div');
+      price.textContent = moneyShort(p.precio);
+      price.style.cssText = 'background:#fff;color:#071F4A;font-family:Jost,sans-serif;font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;box-shadow:0 1px 4px rgba(7,31,74,.25);white-space:nowrap;margin-bottom:2px';
+      content.appendChild(price);
+      var pin = new google.maps.marker.PinElement();
+      content.appendChild(pin.element);
+
+      var mk = new google.maps.marker.AdvancedMarkerElement({
+        position: pos, map: MAP.gmap, title: p.titulo, content: content
       });
       mk.addListener('click', function () {
         info.setContent('<div style="max-width:250px;font-family:Inter,sans-serif">' +
@@ -1049,7 +1052,7 @@
           '<div style="font-family:Jost,sans-serif;font-size:16px;color:#071F4A">' + money(p.precio) + '</div>' +
           '<div style="font-size:13px;color:#4A5468;line-height:1.35">' + esc(p.titulo) + '</div>' +
           '<a href="' + url(p.url) + '" style="display:inline-block;margin-top:8px;font-size:13px;color:#071F4A;font-weight:600">Ver propiedad →</a></div>');
-        info.open(MAP.gmap, mk);
+        info.open({ map: MAP.gmap, anchor: mk });
         track('select_property', propParams(p, { list_name: 'mapa' }));
       });
       MAP.markers.push(mk);
