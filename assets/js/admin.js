@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], equipo: [], editingId: null, editingLeadId: null, fotos: [], session: null, perfil: null };
+  var STATE = { propiedades: [], leads: [], equipo: [], invitaciones: [], editingId: null, editingLeadId: null, fotos: [], session: null, perfil: null };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -116,7 +116,6 @@
   function showApp() {
     var nombre = (STATE.perfil && STATE.perfil.nombre) || (STATE.session && STATE.session.user.email) || 'Asesor';
     $('#gate').style.display = 'none';
-    $('#setPasswordGate').style.display = 'none';
     $('#app').classList.add('is-visible');
     $('#userName').textContent = nombre;
     $('#userAvatar').textContent = nombre.trim().charAt(0).toUpperCase();
@@ -130,42 +129,36 @@
 
   function showGate() {
     $('#app').classList.remove('is-visible');
-    $('#setPasswordGate').style.display = 'none';
     $('#gate').style.display = 'flex';
   }
 
-  function handleLogin(e) {
-    e.preventDefault();
-    var email = $('#loginEmail').value.trim();
-    var pass = $('#loginPass').value;
-    var errBox = $('#loginError');
-    var submitBtn = $('#loginForm button[type="submit"]');
-    errBox.classList.remove('show');
-
-    if (!email || !pass) {
-      errBox.textContent = 'Ingresa tu correo y contraseña.';
-      errBox.classList.add('show');
-      return;
-    }
+  // Login es solo con Google -- sin contraseñas que puedan filtrarse,
+  // reusarse de otro sitio, o forzarse por fuerza bruta. Quién puede
+  // entrar de verdad lo decide `invitaciones`/`perfiles` del lado del
+  // servidor (ver handle_new_user() en schema.sql), no este botón.
+  function handleGoogleLogin() {
     if (!SUPABASE_READY) {
+      var errBox = $('#loginError');
       errBox.textContent = 'Panel en construcción: la conexión con Supabase todavía no está configurada.';
       errBox.classList.add('show');
       return;
     }
-
-    setBusy(submitBtn, true, 'Entrando…');
-    sb.auth.signInWithPassword({ email: email, password: pass }).then(function (res) {
-      setBusy(submitBtn, false);
-      if (res.error) {
-        errBox.textContent = res.error.message === 'Invalid login credentials'
-          ? 'Correo o contraseña incorrectos.'
-          : res.error.message;
-        errBox.classList.add('show');
-        return;
-      }
-      STATE.session = res.data.session;
-      cargarPerfilYMostrar();
+    sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: location.origin + location.pathname },
     });
+  }
+
+  // Si Google redirige de vuelta con un error en el hash (p. ej. porque el
+  // trigger handle_new_user() rechazó el correo por no estar invitado), se
+  // muestra un aviso claro en vez de dejar la URL con un error crudo.
+  function mostrarErrorDeAuthSiHay() {
+    if (!/error=/.test(location.hash || '')) return false;
+    var errBox = $('#loginError');
+    errBox.textContent = 'No pudimos iniciar tu sesión. Si tu correo no ha sido invitado, pídele a Gio que te agregue primero en "Equipo".';
+    errBox.classList.add('show');
+    history.replaceState(null, '', location.pathname);
+    return true;
   }
 
   function cargarPerfilYMostrar() {
@@ -191,45 +184,6 @@
       STATE.session = null;
       STATE.perfil = null;
       showGate();
-      $('#loginEmail').value = '';
-      $('#loginPass').value = '';
-    });
-  }
-
-  // ------------------------------------------------------ CREAR CONTRASEÑA (invitación)
-  // El link del correo de invitación trae el token en el hash de la URL
-  // (#access_token=...&type=invite); supabase-js ya lo detecta solo y deja
-  // la sesión lista (detectSessionInUrl, activo por default) -- aquí solo se
-  // detecta el caso para mostrar "crea tu contraseña" en vez del login normal.
-  function esFlujoDeContrasena() {
-    return /type=invite|type=recovery/.test(location.hash || '');
-  }
-
-  function handleSetPassword(e) {
-    e.preventDefault();
-    var p1 = $('#newPass').value, p2 = $('#newPass2').value;
-    var errBox = $('#setPasswordError');
-    errBox.classList.remove('show');
-    if (p1.length < 8) { errBox.textContent = 'La contraseña debe tener al menos 8 caracteres.'; errBox.classList.add('show'); return; }
-    if (p1 !== p2) { errBox.textContent = 'Las contraseñas no coinciden.'; errBox.classList.add('show'); return; }
-
-    var btn = $('#setPasswordForm button[type="submit"]');
-    setBusy(btn, true, 'Guardando…');
-    sb.auth.updateUser({ password: p1 }).then(function (res) {
-      if (res.error) {
-        setBusy(btn, false);
-        errBox.textContent = res.error.message;
-        errBox.classList.add('show');
-        return;
-      }
-      sb.auth.getSession().then(function (sessionRes) {
-        STATE.session = sessionRes.data.session;
-        history.replaceState(null, '', location.pathname);
-        sb.from('perfiles').update({ activado_en: new Date().toISOString() }).eq('id', STATE.session.user.id).then(function () {
-          setBusy(btn, false);
-          cargarPerfilYMostrar();
-        });
-      });
     });
   }
 
@@ -595,9 +549,16 @@
     return STATE.propiedades.filter(function (p) { return p.asesor_id === asesorId && p.estado === 'disponible'; }).length;
   }
 
+  var ROL_LABEL = { admin: 'Admin', asesor: 'Asesor', administrativo: 'Administrativo' };
+
+  function rolOptionsHtml(rolActual) {
+    return ['asesor', 'administrativo', 'admin'].map(function (r) {
+      return '<option value="' + r + '"' + (r === rolActual ? ' selected' : '') + '>' + ROL_LABEL[r] + '</option>';
+    }).join('');
+  }
+
   function teamRowHtml(p) {
     var inicial = (p.nombre || p.email || '?').trim().charAt(0).toUpperCase();
-    var pendiente = !p.activado_en;
     var esUnoMismo = !!(STATE.session && p.id === STATE.session.user.id);
     var n = contarPropiedadesActivas(p.id);
     return (
@@ -607,12 +568,10 @@
           '<div><div class="team-row-name">' + esc(p.nombre || 'Sin nombre') + '</div>' +
           '<div class="team-row-email">' + esc(p.email || '') + '</div></div>' +
         '</div>' +
-        (pendiente ? '<span class="team-row-badge is-pendiente">Invitación pendiente</span>' : '') +
         '<span class="team-row-props">' + n + ' propiedad' + (n === 1 ? '' : 'es') + ' activa' + (n === 1 ? '' : 's') + '</span>' +
         '<div class="team-row-actions">' +
           '<select class="team-role-select" data-rol-id="' + p.id + '"' + (esUnoMismo ? ' disabled title="No puedes cambiar tu propio rol"' : '') + '>' +
-            '<option value="asesor"' + (p.rol === 'asesor' ? ' selected' : '') + '>Asesor</option>' +
-            '<option value="admin"' + (p.rol === 'admin' ? ' selected' : '') + '>Admin</option>' +
+            rolOptionsHtml(p.rol) +
           '</select>' +
           '<label class="switch">' +
             '<input type="checkbox" data-activo-id="' + p.id + '"' + (p.activo ? ' checked' : '') + (esUnoMismo ? ' disabled title="No puedes desactivarte a ti mismo"' : '') + '>' +
@@ -623,20 +582,45 @@
     );
   }
 
+  // Un renglón "pendiente" es de `invitaciones` -- todavía no existe como
+  // usuario real, así que no tiene rol-select ni switch de activo, solo
+  // cancelar (borra el renglón de invitaciones, nunca podrá entrar).
+  function invitacionRowHtml(inv) {
+    var inicial = (inv.nombre || inv.email || '?').trim().charAt(0).toUpperCase();
+    return (
+      '<div class="team-row is-inactivo">' +
+        '<div class="team-row-id">' +
+          '<div class="avatar">' + esc(inicial) + '</div>' +
+          '<div><div class="team-row-name">' + esc(inv.nombre || 'Sin nombre') + '</div>' +
+          '<div class="team-row-email">' + esc(inv.email || '') + '</div></div>' +
+        '</div>' +
+        '<span class="team-row-badge is-pendiente">Invitación pendiente · ' + esc(ROL_LABEL[inv.rol] || inv.rol) + '</span>' +
+        '<div class="team-row-actions">' +
+          '<button class="btn btn--ghost btn--sm" data-cancelar-invitacion="' + esc(inv.email) + '">Cancelar invitación</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   function renderEquipo() {
-    $('#equipoLista').innerHTML = STATE.equipo.map(teamRowHtml).join('');
+    $('#equipoLista').innerHTML =
+      STATE.equipo.map(teamRowHtml).join('') +
+      STATE.invitaciones.map(invitacionRowHtml).join('');
     $('#statAsesoresActivos').textContent = STATE.equipo.filter(function (p) { return p.activo; }).length;
     $('#statAsesoresInactivos').textContent = STATE.equipo.filter(function (p) { return !p.activo; }).length;
-    $('#statInvitacionesPendientes').textContent = STATE.equipo.filter(function (p) { return !p.activado_en; }).length;
+    $('#statInvitacionesPendientes').textContent = STATE.invitaciones.length;
   }
 
   function cargarEquipo() {
-    sb.from('perfiles').select('*').order('creado_en', { ascending: true }).then(function (res) {
-      if (res.error) {
-        console.warn('[Panel] no se pudo cargar el equipo:', res.error.message);
-        return;
-      }
-      STATE.equipo = res.data || [];
+    Promise.all([
+      sb.from('perfiles').select('*').order('creado_en', { ascending: true }),
+      sb.from('invitaciones').select('*').order('creado_en', { ascending: true }),
+    ]).then(function (res) {
+      var perfilesRes = res[0], invRes = res[1];
+      if (perfilesRes.error) console.warn('[Panel] no se pudo cargar el equipo:', perfilesRes.error.message);
+      if (invRes.error) console.warn('[Panel] no se pudieron cargar las invitaciones:', invRes.error.message);
+      STATE.equipo = perfilesRes.data || [];
+      STATE.invitaciones = invRes.data || [];
       renderEquipo();
     });
   }
@@ -644,6 +628,7 @@
   function openInviteModal() {
     $('#inv_nombre').value = '';
     $('#inv_email').value = '';
+    $('#inv_rol').value = 'asesor';
     $('#inviteError').classList.remove('show');
     $('#inviteModalBackdrop').classList.add('is-open');
   }
@@ -654,7 +639,8 @@
 
   function enviarInvitacion() {
     var nombre = $('#inv_nombre').value.trim();
-    var email = $('#inv_email').value.trim();
+    var email = $('#inv_email').value.trim().toLowerCase();
+    var rol = $('#inv_rol').value;
     var errBox = $('#inviteError');
     errBox.classList.remove('show');
     if (!email) {
@@ -662,35 +648,36 @@
       errBox.classList.add('show');
       return;
     }
+    var yaEsDelEquipo = STATE.equipo.some(function (p) { return (p.email || '').toLowerCase() === email; });
+    if (yaEsDelEquipo) {
+      errBox.textContent = 'Ese correo ya es parte del equipo.';
+      errBox.classList.add('show');
+      return;
+    }
+
     var btn = $('#inviteSendBtn');
-    setBusy(btn, true, 'Enviando…');
-    fetch('/api/invitar-asesor', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + STATE.session.access_token },
-      body: JSON.stringify({ nombre: nombre, email: email }),
-    }).then(function (r) {
-      return r.json().then(function (data) { return { ok: r.ok, data: data }; });
-    }).then(function (res) {
+    setBusy(btn, true, 'Guardando…');
+    sb.from('invitaciones').insert({ nombre: nombre, email: email, rol: rol }).then(function (res) {
       setBusy(btn, false);
-      if (!res.ok || !res.data.ok) {
-        var mensajes = {
-          correo_invalido: 'Ese correo no es válido.',
-          solo_un_admin_puede_invitar: 'Solo un admin puede invitar asesores.',
-          supabase_no_configurado: 'Falta configurar Supabase en el servidor.',
-          sesion_invalida: 'Tu sesión expiró, vuelve a iniciar sesión.',
-        };
-        var codigo = res.data && res.data.error;
-        errBox.textContent = mensajes[codigo] || codigo || 'No se pudo enviar la invitación.';
+      if (res.error) {
+        errBox.textContent = res.error.code === '23505'
+          ? 'Ese correo ya está invitado.'
+          : 'No se pudo invitar: ' + res.error.message;
         errBox.classList.add('show');
         return;
       }
       closeInviteModal();
-      toast('Invitación enviada a ' + email);
+      toast('Invitación guardada — puede entrar con Google en cuanto quiera');
       cargarEquipo();
-    }).catch(function () {
-      setBusy(btn, false);
-      errBox.textContent = 'No se pudo conectar con el servidor.';
-      errBox.classList.add('show');
+    });
+  }
+
+  function cancelarInvitacion(email) {
+    if (!confirm('¿Cancelar la invitación de ' + email + '?')) return;
+    sb.from('invitaciones').delete().eq('email', email).then(function (res) {
+      if (res.error) { toast('No se pudo cancelar: ' + res.error.message, 'err'); return; }
+      toast('Invitación cancelada');
+      cargarEquipo();
     });
   }
 
@@ -843,7 +830,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     cargarCatalogos();
 
-    $('#loginForm').addEventListener('submit', handleLogin);
+    $('#googleLoginBtn').addEventListener('click', handleGoogleLogin);
     $('#logoutBtn').addEventListener('click', handleLogout);
     $('#addPropBtn').addEventListener('click', function () { openModal(null); });
     $('#emptyAddBtn').addEventListener('click', function () { openModal(null); });
@@ -863,8 +850,10 @@
       if (rolId) cambiarRolAsesor(rolId, e.target.value);
       else if (activoId) cambiarActivoAsesor(activoId, e.target.checked);
     });
-
-    $('#setPasswordForm').addEventListener('submit', handleSetPassword);
+    $('#equipoLista').addEventListener('click', function (e) {
+      var email = e.target.dataset.cancelarInvitacion;
+      if (email) cancelarInvitacion(email);
+    });
 
     $('#kanban').addEventListener('dragstart', function (e) {
       var card = e.target.closest && e.target.closest('.lead-card');
@@ -966,15 +955,11 @@
       return;
     }
 
+    if (mostrarErrorDeAuthSiHay()) return;
+
     sb.auth.getSession().then(function (res) {
       STATE.session = res.data.session;
-      if (!STATE.session) return;
-      if (esFlujoDeContrasena()) {
-        $('#gate').style.display = 'none';
-        $('#setPasswordGate').style.display = 'flex';
-      } else {
-        cargarPerfilYMostrar();
-      }
+      if (STATE.session) cargarPerfilYMostrar();
     });
   });
 })();

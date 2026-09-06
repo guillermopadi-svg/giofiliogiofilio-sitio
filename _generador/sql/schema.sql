@@ -10,17 +10,44 @@ create table if not exists perfiles (
   id uuid primary key references auth.users(id) on delete cascade,
   nombre text not null default '',
   email text,                    -- copia de auth.users.email (no es consultable via REST) para mostrarlo en "Equipo"
-  rol text not null default 'asesor' check (rol in ('admin', 'asesor')),
+  rol text not null default 'asesor' check (rol in ('admin', 'asesor', 'administrativo')),
   activo boolean not null default true,     -- false = Gio lo desactivo, ya no puede entrar al panel
-  activado_en timestamptz,                  -- se llena cuando el invitado crea su contraseña -- null = invitacion pendiente
   creado_en timestamptz not null default now()
 );
 
 -- Si la tabla ya existia de antes de este cambio (proyectos ya en produccion).
 alter table perfiles add column if not exists email text;
 alter table perfiles add column if not exists activo boolean not null default true;
-alter table perfiles add column if not exists activado_en timestamptz;
+alter table perfiles drop column if exists activado_en; -- ya no aplica: login es solo con Google, no hay "crear contraseña" que marcar
+alter table perfiles drop constraint if exists perfiles_rol_check;
+alter table perfiles add constraint perfiles_rol_check check (rol in ('admin', 'asesor', 'administrativo'));
 update perfiles set email = (select u.email from auth.users u where u.id = perfiles.id) where email is null;
+
+-- ------------------------------------------------------------- invitaciones
+-- Lista de correos autorizados a entrar al panel -- login es solo con Google
+-- (sin contraseñas que puedan ser hackeadas/phisheadas), pero no cualquiera
+-- con cuenta de Google puede entrar: solo quien Gio ya puso aqui. Puede ser
+-- su correo de Google Workspace o un Gmail personal (asesores externos).
+-- El trigger handle_new_user() (abajo) consume el renglon la primera vez
+-- que esa persona inicia sesion -- de ahi en adelante ya vive en `perfiles`.
+create table if not exists invitaciones (
+  email text primary key,
+  nombre text not null default '',
+  rol text not null default 'asesor' check (rol in ('admin', 'asesor', 'administrativo')),
+  invitado_por uuid references auth.users(id) on delete set null,
+  creado_en timestamptz not null default now()
+);
+
+alter table invitaciones enable row level security;
+
+grant select, insert, delete on invitaciones to authenticated;
+
+drop policy if exists "solo un admin ve y gestiona invitaciones" on invitaciones;
+create policy "solo un admin ve y gestiona invitaciones"
+  on invitaciones for all
+  to authenticated
+  using (is_admin())
+  with check (is_admin());
 
 alter table perfiles enable row level security;
 
@@ -79,13 +106,31 @@ create trigger on_perfil_updated
   before update on perfiles
   for each row execute function proteger_rol_perfil();
 
--- Crea el perfil automáticamente al primer login (rol asesor por default;
--- Gio se sube a 'admin' a mano una sola vez, ver instrucciones al final).
+-- Crea el perfil automáticamente al primer login CON GOOGLE -- pero solo si
+-- ese correo ya estaba en `invitaciones` (puesto ahi por un admin desde el
+-- panel). Si no, se aborta la creacion del usuario por completo (la
+-- excepcion revierte todo, incluyendo el insert en auth.users que dispara
+-- este trigger) -- asi cualquiera con cuenta de Google que NO fue invitado
+-- se queda afuera, sin importar que intente entrar directo a la API.
 create or replace function handle_new_user()
 returns trigger as $$
+declare
+  inv invitaciones%rowtype;
 begin
-  insert into public.perfiles (id, nombre, email)
-  values (new.id, coalesce(new.raw_user_meta_data->>'nombre', split_part(new.email, '@', 1)), new.email);
+  select * into inv from invitaciones where lower(email) = lower(new.email);
+  if inv.email is null then
+    raise exception 'correo_no_autorizado: % no esta en la lista de invitaciones', new.email;
+  end if;
+
+  insert into public.perfiles (id, nombre, rol, email)
+  values (
+    new.id,
+    coalesce(nullif(inv.nombre, ''), new.raw_user_meta_data->>'nombre', split_part(new.email, '@', 1)),
+    inv.rol,
+    new.email
+  );
+
+  delete from invitaciones where email = inv.email;
   return new;
 end;
 $$ language plpgsql security definer set search_path = public;
@@ -238,13 +283,24 @@ create trigger on_lead_updated
   for each row execute function set_actualizado_en();
 
 -- ------------------------------------------------------------------ NOTAS
--- 1. Después de correr este script, crea el primer usuario (Gio) en
---    Authentication → Users → Add user (con su correo real).
--- 2. Súbelo a admin corriendo, en el SQL Editor:
---      update perfiles set rol = 'admin' where id =
---        (select id from auth.users where email = 'gio@giofilio.com');
--- 3. Para dar de alta a un nuevo asesor: Authentication → Users → Add user.
---    Entra como 'asesor' por default — solo ve y edita sus propias fichas.
+-- 1. Login es SOLO con Google (sin contraseñas). Antes de que nadie pueda
+--    entrar, hay que activar el proveedor de Google en Supabase:
+--      a. Google Cloud Console → crea un OAuth Client ID (tipo "Web
+--         application"). En "Authorized redirect URIs" pon EXACTAMENTE:
+--         https://vjhchuofznfupkpkepky.supabase.co/auth/v1/callback
+--      b. Supabase Dashboard → Authentication → Providers → Google → pega
+--         el Client ID y Client Secret de arriba → Enable → Save.
+-- 2. Después de correr este script, invita a Gio como primer admin (correr
+--    en el SQL Editor, con su correo real de Google):
+--      insert into invitaciones (email, nombre, rol)
+--      values ('CORREO-REAL-DE-GIO@gmail.com', 'Gio Filio', 'admin');
+--    Con eso, la próxima vez que Gio entre al panel y de clic en "Iniciar
+--    sesión con Google" con ese correo, su cuenta se crea sola como admin.
+-- 3. De ahí en adelante, invitar a alguien más ya no requiere SQL — se hace
+--    desde el panel, pestaña "Equipo" → "+ Invitar asesor" (cualquier admin
+--    puede hacerlo).
 -- 4. Para que "Contactos" reciba leads reales, agrega en Vercel (Project
 --    Settings → Environment Variables) las mismas SUPABASE_URL y
 --    SUPABASE_SERVICE_ROLE_KEY que ya usa el GitHub Action de sync-manual.
+--    (Invitar asesores ya NO necesita esto -- es un insert normal a la
+--    tabla `invitaciones`, protegido por RLS con is_admin().)

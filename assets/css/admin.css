@@ -92,6 +92,8 @@ button{ font-family:inherit; cursor:pointer; }
 .btn--danger:hover{ background:#FBEDEA; border-color:#E3B3A8; }
 .btn--gold{ --btn-bg:var(--gold); --btn-fg:#fff; --btn-bd:var(--gold); }
 .btn--gold:hover{ background:var(--gold-ink); border-color:var(--gold-ink); }
+.btn--google{ --btn-bg:#fff; --btn-fg:#3c4043; --btn-bd:var(--line); font-weight:600; }
+.btn--google:hover{ background:#f8f8f8; border-color:var(--line); transform:translateY(-1px); box-shadow:var(--sh-2); }
 
 .error-msg{
   background:#FBEDEA; color:var(--danger); border:1px solid #E3B3A8; border-radius:var(--r-sm);
