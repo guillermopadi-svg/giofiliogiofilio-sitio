@@ -1034,13 +1034,7 @@
       var pos = { lat: p.lat, lng: p.lng };
       bounds.extend(pos);
       var mk = new google.maps.Marker({
-        position: pos, map: MAP.gmap, title: p.titulo,
-        icon: {
-          url: PIN_ICON_PNG_URL,
-          scaledSize: new google.maps.Size(34, 42),
-          anchor: new google.maps.Point(17, 41),
-          labelOrigin: new google.maps.Point(17, -8)
-        }
+        position: pos, map: MAP.gmap, title: p.titulo
       });
       mk.addListener('click', function () {
         info.setContent('<div style="max-width:250px;font-family:Inter,sans-serif">' +
