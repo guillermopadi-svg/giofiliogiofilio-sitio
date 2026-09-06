@@ -129,6 +129,12 @@ button{ font-family:inherit; cursor:pointer; }
   padding:.6rem 1rem; border-radius:var(--r-full); display:inline-flex; align-items:center; gap:.4rem;
   transition:all .16s var(--ease);
 }
+/* display:inline-flex de arriba, al ser una regla del autor, le gana al
+   display:none del navegador para [hidden] (misma especificidad, pero el
+   origen "autor" siempre gana sobre "user agent") -- sin esto, un tab con
+   el atributo hidden (como #tabEquipo para un asesor normal) se veía igual
+   de visible que uno sin ese atributo. */
+.tabbar-btn[hidden]{ display:none; }
 .tabbar-btn:hover{ background:var(--navy-050); color:var(--navy); }
 .tabbar-btn.is-active{ background:var(--navy); color:#fff; }
 .tabbar-badge{
