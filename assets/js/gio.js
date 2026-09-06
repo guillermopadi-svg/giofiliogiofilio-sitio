@@ -1035,7 +1035,6 @@
       bounds.extend(pos);
       var mk = new google.maps.Marker({
         position: pos, map: MAP.gmap, title: p.titulo,
-        label: { text: moneyShort(p.precio), fontFamily: 'Jost, sans-serif', fontSize: '11px', fontWeight: '600', color: '#071F4A' },
         icon: {
           url: PIN_ICON_PNG_URL,
           scaledSize: new google.maps.Size(34, 42),
