@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], equipo: [], invitaciones: [], editingId: null, editingLeadId: null, fotos: [], session: null, perfil: null };
+  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], editingId: null, editingLeadId: null, fotos: [], session: null, perfil: null };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -124,6 +124,7 @@
     $('#tabEquipo').hidden = !esAdmin;
     cargarPropiedades();
     cargarLeads();
+    cargarTareas();
     if (esAdmin) cargarEquipo();
   }
 
@@ -537,11 +538,133 @@
   function setView(view) {
     $('#viewPropiedades').hidden = view !== 'propiedades';
     $('#viewContactos').hidden = view !== 'contactos';
+    $('#viewTareas').hidden = view !== 'tareas';
     $('#viewEquipo').hidden = view !== 'equipo';
     $('#tabPropiedades').classList.toggle('is-active', view === 'propiedades');
     $('#tabContactos').classList.toggle('is-active', view === 'contactos');
+    $('#tabTareas').classList.toggle('is-active', view === 'tareas');
     $('#tabEquipo').classList.toggle('is-active', view === 'equipo');
     $('#addPropBtnFab').style.display = view === 'propiedades' && STATE.propiedades.length ? 'inline-flex' : 'none';
+  }
+
+  // --------------------------------------------------------------- TAREAS
+  function tareaVencidaP(t) {
+    return t.estado === 'pendiente' && t.vence && new Date(t.vence) < new Date(new Date().toDateString());
+  }
+
+  function formatFechaCorta(iso) {
+    var d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+  }
+
+  function taskRowHtml(t) {
+    var vencida = tareaVencidaP(t);
+    var hecha = t.estado === 'hecha';
+    return (
+      '<div class="task-row' + (hecha ? ' is-hecha' : '') + '">' +
+        '<button type="button" class="task-check' + (hecha ? ' is-checked' : '') + '" data-toggle-tarea="' + t.id + '" title="' + (hecha ? 'Marcar como pendiente' : 'Marcar como hecha') + '">' +
+          (hecha ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>' : '') +
+        '</button>' +
+        '<div class="task-body">' +
+          '<div class="task-titulo">' + esc(t.titulo) + '</div>' +
+          (t.descripcion ? '<div class="task-desc">' + esc(t.descripcion) + '</div>' : '') +
+        '</div>' +
+        (t.vence ? '<span class="task-vence' + (vencida ? ' is-vencida' : '') + '">' + (vencida ? 'Venció ' : '') + formatFechaCorta(t.vence) + '</span>' : '') +
+        '<button type="button" class="task-del" data-del-tarea="' + t.id + '" title="Eliminar">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>' +
+        '</button>' +
+      '</div>'
+    );
+  }
+
+  function renderTareas() {
+    var lista = STATE.tareas;
+    $('#tareasEmptyState').style.display = lista.length ? 'none' : 'block';
+    $('#tareasLista').style.display = lista.length ? 'flex' : 'none';
+    $('#tareasLista').innerHTML = lista.map(taskRowHtml).join('');
+    var pendientes = lista.filter(function (t) { return t.estado === 'pendiente'; });
+    $('#statTareasPendientes').textContent = pendientes.length;
+    $('#statTareasVencidas').textContent = pendientes.filter(tareaVencidaP).length;
+    $('#statTareasHechas').textContent = lista.filter(function (t) { return t.estado === 'hecha'; }).length;
+    var badge = $('#tabTareasBadge');
+    badge.textContent = pendientes.length;
+    badge.hidden = !pendientes.length;
+  }
+
+  function cargarTareas() {
+    var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
+    var q = sb.from('tareas').select('*').order('vence', { ascending: true, nullsFirst: false }).order('creado_en', { ascending: true });
+    if (!esAdmin) q = q.eq('asesor_id', STATE.session.user.id);
+    q.then(function (res) {
+      if (res.error) { console.warn('[Panel] no se pudieron cargar las tareas:', res.error.message); return; }
+      // Pendientes primero (vencidas arriba de todas), hechas al final.
+      var data = res.data || [];
+      data.sort(function (a, b) {
+        if ((a.estado === 'hecha') !== (b.estado === 'hecha')) return a.estado === 'hecha' ? 1 : -1;
+        return 0;
+      });
+      STATE.tareas = data;
+      renderTareas();
+    });
+  }
+
+  function openTareaModal() {
+    $('#tarea_titulo').value = '';
+    $('#tarea_vence').value = '';
+    $('#tarea_descripcion').value = '';
+    $('#tareaError').classList.remove('show');
+    $('#tareaModalBackdrop').classList.add('is-open');
+  }
+
+  function closeTareaModal() {
+    $('#tareaModalBackdrop').classList.remove('is-open');
+  }
+
+  function guardarTarea() {
+    var titulo = $('#tarea_titulo').value.trim();
+    var errBox = $('#tareaError');
+    errBox.classList.remove('show');
+    if (!titulo) {
+      errBox.textContent = 'Ponle un título a la tarea.';
+      errBox.classList.add('show');
+      return;
+    }
+    var btn = $('#tareaGuardarBtn');
+    setBusy(btn, true, 'Guardando…');
+    sb.from('tareas').insert({
+      asesor_id: STATE.session.user.id,
+      titulo: titulo,
+      descripcion: $('#tarea_descripcion').value.trim(),
+      vence: $('#tarea_vence').value || null,
+    }).then(function (res) {
+      setBusy(btn, false);
+      if (res.error) {
+        errBox.textContent = 'No se pudo guardar: ' + res.error.message;
+        errBox.classList.add('show');
+        return;
+      }
+      closeTareaModal();
+      toast('Tarea guardada');
+      cargarTareas();
+    });
+  }
+
+  function toggleTarea(id) {
+    var t = STATE.tareas.filter(function (x) { return x.id === id; })[0];
+    if (!t) return;
+    var nuevoEstado = t.estado === 'hecha' ? 'pendiente' : 'hecha';
+    sb.from('tareas').update({ estado: nuevoEstado }).eq('id', id).then(function (res) {
+      if (res.error) { toast('No se pudo actualizar: ' + res.error.message, 'err'); return; }
+      cargarTareas();
+    });
+  }
+
+  function eliminarTarea(id) {
+    if (!confirm('¿Eliminar esta tarea?')) return;
+    sb.from('tareas').delete().eq('id', id).then(function (res) {
+      if (res.error) { toast('No se pudo eliminar: ' + res.error.message, 'err'); return; }
+      cargarTareas();
+    });
   }
 
   // --------------------------------------------------------------- EQUIPO (solo admin)
@@ -838,7 +961,20 @@
 
     $('#tabPropiedades').addEventListener('click', function () { setView('propiedades'); });
     $('#tabContactos').addEventListener('click', function () { setView('contactos'); });
+    $('#tabTareas').addEventListener('click', function () { setView('tareas'); });
     $('#tabEquipo').addEventListener('click', function () { setView('equipo'); });
+
+    $('#addTareaBtn').addEventListener('click', openTareaModal);
+    $('#tareasEmptyAddBtn').addEventListener('click', openTareaModal);
+    $('#tareaModalClose').addEventListener('click', closeTareaModal);
+    $('#tareaModalBackdrop').addEventListener('click', function (e) { if (e.target.id === 'tareaModalBackdrop') closeTareaModal(); });
+    $('#tareaGuardarBtn').addEventListener('click', guardarTarea);
+    $('#tareasLista').addEventListener('click', function (e) {
+      var toggleId = e.target.closest && e.target.closest('[data-toggle-tarea]');
+      var delId = e.target.closest && e.target.closest('[data-del-tarea]');
+      if (toggleId) toggleTarea(toggleId.dataset.toggleTarea);
+      else if (delId) eliminarTarea(delId.dataset.delTarea);
+    });
 
     $('#addAsesorBtn').addEventListener('click', openInviteModal);
     $('#inviteModalClose').addEventListener('click', closeInviteModal);

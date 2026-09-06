@@ -54,6 +54,7 @@
   <nav class="tabbar">
     <button type="button" class="tabbar-btn is-active" id="tabPropiedades" data-view="propiedades">Propiedades</button>
     <button type="button" class="tabbar-btn" id="tabContactos" data-view="contactos">Contactos<span class="tabbar-badge" id="tabContactosBadge" hidden>0</span></button>
+    <button type="button" class="tabbar-btn" id="tabTareas" data-view="tareas">Tareas<span class="tabbar-badge" id="tabTareasBadge" hidden>0</span></button>
     <button type="button" class="tabbar-btn" id="tabEquipo" data-view="equipo" hidden>Equipo</button>
   </nav>
 
@@ -116,6 +117,30 @@
     </div>
   </main>
 
+  <main class="shell" id="viewTareas" hidden>
+    <div class="shell-head">
+      <div>
+        <h1>Tareas</h1>
+        <p>Tus pendientes y recordatorios — solo tú ves los tuyos (Gio ve los de todo el equipo).</p>
+      </div>
+      <button class="btn btn--gold" id="addTareaBtn">+ Nueva tarea</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card"><div class="num" id="statTareasPendientes">0</div><div class="lbl">Pendientes</div></div>
+      <div class="stat-card"><div class="num" id="statTareasVencidas">0</div><div class="lbl">Vencidas</div></div>
+      <div class="stat-card"><div class="num" id="statTareasHechas">0</div><div class="lbl">Hechas</div></div>
+    </div>
+
+    <div class="task-list" id="tareasLista"></div>
+
+    <div class="empty" id="tareasEmptyState" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <p>No tienes tareas pendientes.</p>
+      <button class="btn btn--gold" id="tareasEmptyAddBtn">Agregar la primera</button>
+    </div>
+  </main>
+
   <main class="shell" id="viewEquipo" hidden>
     <div class="shell-head">
       <div>
@@ -140,6 +165,35 @@
   </main>
 
   <button class="btn btn--gold fab" id="addPropBtnFab" style="display:none">+ Nueva propiedad</button>
+</div>
+
+<!-- ---------------------------------------------------------- MODAL: TAREA ---------------------------------------------------------- -->
+<div class="modal-backdrop" id="tareaModalBackdrop">
+  <div class="modal modal--sm">
+    <div class="modal-head">
+      <h2>Nueva tarea</h2>
+      <button class="modal-close" id="tareaModalClose" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="error-msg" id="tareaError"></div>
+      <div class="field">
+        <label for="tarea_titulo">Título</label>
+        <input type="text" id="tarea_titulo" placeholder="Llamar a Ana Torres" required>
+      </div>
+      <div class="field">
+        <label for="tarea_vence">Fecha límite (opcional)</label>
+        <input type="date" id="tarea_vence">
+      </div>
+      <div class="field">
+        <label for="tarea_descripcion">Notas (opcional)</label>
+        <textarea id="tarea_descripcion" rows="3" placeholder="Detalles del pendiente…"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn--ghost btn--sm" id="tareaCancelBtn" onclick="document.getElementById('tareaModalBackdrop').classList.remove('is-open')">Cancelar</button>
+      <button class="btn btn--gold" id="tareaGuardarBtn">Guardar tarea</button>
+    </div>
+  </div>
 </div>
 
 <!-- ---------------------------------------------------------- MODAL: INVITAR ASESOR ---------------------------------------------------------- -->

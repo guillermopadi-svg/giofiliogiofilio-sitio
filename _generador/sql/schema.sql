@@ -282,6 +282,53 @@ create trigger on_lead_updated
   before update on leads
   for each row execute function set_actualizado_en();
 
+-- ------------------------------------------------------------------ tareas
+-- Pendientes/recordatorios de cada asesor (llamar a alguien, subir fotos,
+-- dar seguimiento...). Ligados opcionalmente a un contacto o propiedad,
+-- pero funcionan igual de bien sueltos -- no todo pendiente tiene un
+-- contacto o propiedad detrás.
+create table if not exists tareas (
+  id uuid primary key default gen_random_uuid(),
+  asesor_id uuid not null references auth.users(id) on delete cascade,
+  titulo text not null,
+  descripcion text not null default '',
+  vence timestamptz,
+  estado text not null default 'pendiente' check (estado in ('pendiente', 'hecha')),
+  lead_id uuid references leads(id) on delete set null,
+  propiedad_id uuid references propiedades_manual(id) on delete set null,
+  creado_en timestamptz not null default now(),
+  actualizado_en timestamptz not null default now()
+);
+
+alter table tareas enable row level security;
+
+grant select, insert, update, delete on tareas to authenticated;
+
+drop policy if exists "cada quien ve y gestiona sus propias tareas, admin ve todas" on tareas;
+create policy "cada quien ve y gestiona sus propias tareas, admin ve todas"
+  on tareas for select
+  using (asesor_id = auth.uid() or is_admin());
+
+drop policy if exists "cada quien crea sus propias tareas" on tareas;
+create policy "cada quien crea sus propias tareas"
+  on tareas for insert
+  with check (asesor_id = auth.uid());
+
+drop policy if exists "cada quien edita/borra sus propias tareas, admin todas (upd)" on tareas;
+create policy "cada quien edita/borra sus propias tareas, admin todas (upd)"
+  on tareas for update
+  using (asesor_id = auth.uid() or is_admin());
+
+drop policy if exists "cada quien edita/borra sus propias tareas, admin todas (del)" on tareas;
+create policy "cada quien edita/borra sus propias tareas, admin todas (del)"
+  on tareas for delete
+  using (asesor_id = auth.uid() or is_admin());
+
+drop trigger if exists on_tarea_updated on tareas;
+create trigger on_tarea_updated
+  before update on tareas
+  for each row execute function set_actualizado_en();
+
 -- ------------------------------------------------------------------ NOTAS
 -- 1. Login es SOLO con Google (sin contraseñas). Antes de que nadie pueda
 --    entrar, hay que activar el proveedor de Google en Supabase:

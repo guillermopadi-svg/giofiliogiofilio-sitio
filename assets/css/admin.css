@@ -187,6 +187,33 @@ button{ font-family:inherit; cursor:pointer; }
 .stat-group-item .num{ font-family:var(--font-display); font-size:1.7rem; color:var(--navy); }
 .stat-group-item .lbl{ font-size:.78rem; color:var(--ink-50); margin-top:.2rem; white-space:nowrap; }
 
+/* -------------------------------------------------------------- TAREAS */
+.task-list{ display:flex; flex-direction:column; gap:.6rem; }
+.task-row{
+  background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg);
+  padding:.9rem 1.2rem; display:flex; align-items:center; gap:1rem;
+}
+.task-row.is-hecha{ opacity:.55; }
+.task-row.is-hecha .task-titulo{ text-decoration:line-through; }
+.task-check{
+  width:24px; height:24px; border-radius:50%; border:1.5px solid var(--line);
+  flex-shrink:0; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  background:var(--white); color:#fff; transition:all .15s var(--ease);
+}
+.task-check:hover{ border-color:var(--gold); }
+.task-check.is-checked{ background:var(--ok); border-color:var(--ok); }
+.task-check svg{ width:14px; height:14px; }
+.task-body{ flex:1; min-width:0; }
+.task-titulo{ font-weight:700; color:var(--navy); font-size:.92rem; }
+.task-desc{ font-size:.8rem; color:var(--ink-50); margin-top:.15rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.task-vence{ font-size:.76rem; color:var(--ink-50); white-space:nowrap; }
+.task-vence.is-vencida{ color:var(--danger); font-weight:700; }
+.task-del{
+  width:28px; height:28px; border-radius:50%; border:none; background:var(--navy-050); color:var(--ink-50);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.task-del:hover{ background:#FBEDEA; color:var(--danger); }
+
 /* -------------------------------------------------------------- EQUIPO */
 .team-list{ display:flex; flex-direction:column; gap:.7rem; }
 .team-row{
