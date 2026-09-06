@@ -116,7 +116,7 @@
   function showApp() {
     var nombre = (STATE.perfil && STATE.perfil.nombre) || (STATE.session && STATE.session.user.email) || 'Asesor';
     $('#gate').style.display = 'none';
-    $('#setPasswordGate').hidden = true;
+    $('#setPasswordGate').style.display = 'none';
     $('#app').classList.add('is-visible');
     $('#userName').textContent = nombre;
     $('#userAvatar').textContent = nombre.trim().charAt(0).toUpperCase();
@@ -130,7 +130,7 @@
 
   function showGate() {
     $('#app').classList.remove('is-visible');
-    $('#setPasswordGate').hidden = true;
+    $('#setPasswordGate').style.display = 'none';
     $('#gate').style.display = 'flex';
   }
 
@@ -971,7 +971,7 @@
       if (!STATE.session) return;
       if (esFlujoDeContrasena()) {
         $('#gate').style.display = 'none';
-        $('#setPasswordGate').hidden = false;
+        $('#setPasswordGate').style.display = 'flex';
       } else {
         cargarPerfilYMostrar();
       }
