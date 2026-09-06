@@ -1031,7 +1031,7 @@
         label: { text: moneyShort(p.precio), fontFamily: 'Jost, sans-serif', fontSize: '11px', fontWeight: '600', color: '#071F4A' },
         icon: {
           url: PIN_ICON_SVG_URL,
-          scaledSize: new google.maps.Size(34, 42),
+          size: new google.maps.Size(34, 42),
           anchor: new google.maps.Point(17, 41),
           labelOrigin: new google.maps.Point(17, -8)
         }
