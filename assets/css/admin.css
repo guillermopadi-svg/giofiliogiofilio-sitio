@@ -40,8 +40,8 @@ button{ font-family:inherit; cursor:pointer; }
   width:100%; max-width:380px; background:var(--white); border-radius:var(--r-xl);
   box-shadow:var(--sh-4); padding:2.4rem 2rem 2rem;
 }
-.gate-logo{ display:flex; justify-content:center; margin-bottom:1.1rem; }
-.gate-logo img{ height:40px; width:auto; }
+.gate-logo{ display:flex; justify-content:center; margin-bottom:.6rem; }
+.gate-logo img{ height:120px; width:auto; }
 .gate-eyebrow{
   text-align:center; font-size:.7rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
   color:var(--gold-ink); margin:0 0 .5rem;
