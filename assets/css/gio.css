@@ -86,6 +86,11 @@ img,svg,video{ max-width:100%; display:block; }
 /* Tamaño por defecto de los iconos SVG en línea (las reglas de componente lo sobrescriben) */
 svg{ width:1.15em; height:1.15em; flex:0 0 auto; }
 img{ height:auto; background:var(--navy-050); }
+/* Google Maps dibuja sus propios <img> (tiles, iconos de marker) dentro de
+   #map con estilos inline en px exactos -- el reset de arriba (max-width:100%,
+   height:auto) puede interferir con como Maps calcula/pinta esas imagenes.
+   Se anula solo dentro del mapa, sin tocar el resto del sitio. */
+#map img{ max-width:none !important; }
 a{ color:var(--navy); text-decoration:none; }
 a:hover{ color:var(--navy-deep); }
 button,input,select,textarea{ font:inherit; color:inherit; }
