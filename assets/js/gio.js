@@ -1218,7 +1218,11 @@
         track(evt, propParams(p, {
           form_name: form.dataset.formName || 'contacto',
           lead_source: lead.fuente,
-          city: 'Ciudad de México'
+          city: 'Ciudad de México',
+          // Meta Advanced Matching (via GTM) hashea esto en el navegador antes
+          // de mandarlo -- nunca viaja en texto plano a Meta.
+          email: lead.email || '',
+          telefono: lead.telefono || ''
         }));
         goToGracias(form.dataset.formName || 'contacto', lead.fuente, p ? p.precio : null);
       });
