@@ -673,6 +673,8 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
   width:100px; height:34px; border:1px solid var(--line); border-radius:var(--r-full);
   padding:0 .7rem; font-size:var(--step--2); color:var(--ink-70);
 }
+.map-filters .map-back{ margin-left:auto; flex:0 0 auto; }
+.map-filters .map-back button{ padding:.4rem .7rem; font-size:var(--step--2); white-space:nowrap; }
 .map-toolbar{ position:absolute; top:4.5rem; left:50%; transform:translateX(-50%); z-index:40; display:flex; gap:.5rem; }
 .map-toolbar .btn{ box-shadow:var(--sh-3); }
 .map-note{
