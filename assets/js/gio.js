@@ -445,7 +445,7 @@
   // ============================================================ RESULTADOS
   var RES = {
     filtros: {},
-    orden: 'recomendadas',
+    orden: 'recientes',
     view: 'split',
     lista: []
   };
@@ -472,7 +472,7 @@
       if (v == null || v === '' || (Array.isArray(v) && !v.length)) return;
       q.set(k, Array.isArray(v) ? v.join(',') : v);
     });
-    if (RES.orden !== 'recomendadas') q.set('orden', RES.orden);
+    if (RES.orden !== 'recientes') q.set('orden', RES.orden);
     if (RES.view !== 'split') q.set('view', RES.view);
     var s = q.toString();
     history[replace ? 'replaceState' : 'pushState']({}, '', location.pathname + (s ? '?' + s : ''));
@@ -521,16 +521,12 @@
   function sortList(list, orden) {
     var l = list.slice();
     switch (orden) {
-      case 'recientes': l.sort(function (a, b) { return (b.publicado || '').localeCompare(a.publicado || ''); }); break;
       case 'precio-asc': l.sort(function (a, b) { return a.precio - b.precio; }); break;
       case 'precio-desc': l.sort(function (a, b) { return b.precio - a.precio; }); break;
       case 'superficie': l.sort(function (a, b) { return (b.m2c || b.m2t) - (a.m2c || a.m2t); }); break;
       case 'm2': l.sort(function (a, b) { return precioM2(a) - precioM2(b); }); break;
       default:
-        l.sort(function (a, b) {
-          var s = (b.destacada ? 2 : 0) + (b.exclusiva ? 1 : 0) - ((a.destacada ? 2 : 0) + (a.exclusiva ? 1 : 0));
-          return s !== 0 ? s : (b.publicado || '').localeCompare(a.publicado || '');
-        });
+        l.sort(function (a, b) { return (b.publicado || '').localeCompare(a.publicado || ''); });
     }
     return l;
   }
@@ -620,7 +616,7 @@
     }
 
     function clearAll() {
-      RES.filtros = {}; RES.orden = 'recomendadas';
+      RES.filtros = {}; RES.orden = 'recientes';
       syncControls(); apply(true);
       track('filter_property', { action: 'clear_all' });
       toast('Filtros limpiados');

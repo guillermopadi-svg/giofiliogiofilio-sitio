@@ -112,7 +112,6 @@ def filters_html(idsuf="", incluir_mascotas=True):
 
 
 SORT_OPTS = [
-    ("recomendadas", "Recomendadas por Gio"),
     ("recientes", "Más recientes"),
     ("precio-asc", "Menor precio"),
     ("precio-desc", "Mayor precio"),
