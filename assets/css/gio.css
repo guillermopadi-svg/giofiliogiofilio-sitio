@@ -655,7 +655,25 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .mcl-row:hover{ background:var(--navy-050); }
 .mcl-price{ font-family:var(--font-display); font-weight:600; color:var(--navy); font-size:var(--step--1); flex:0 0 auto; }
 .mcl-t{ font-size:var(--step--2); color:var(--ink-70); line-height:1.3; }
-.map-toolbar{ position:absolute; top:1rem; left:50%; transform:translateX(-50%); z-index:40; display:flex; gap:.5rem; }
+.map-filters{
+  position:absolute; top:1rem; left:1rem; right:3.75rem; z-index:41;
+  display:flex; align-items:center; gap:.5rem; overflow-x:auto;
+  background:rgba(255,255,255,.94); backdrop-filter:blur(10px); box-shadow:var(--sh-3);
+  border-radius:var(--r-full); padding:.35rem .5rem;
+}
+.map-filters::-webkit-scrollbar{ display:none; }
+.map-filters .seg--sm{ flex:0 0 auto; border:none; padding:0; gap:1px; }
+.map-filters .seg--sm button{ padding:.4rem .6rem; font-size:var(--step--2); white-space:nowrap; }
+.map-filters-select{
+  flex:0 0 auto; height:34px; border:1px solid var(--line); border-radius:var(--r-full);
+  padding:0 .7rem; font-size:var(--step--2); color:var(--ink-70); background:#fff;
+}
+.map-filters-precio{ display:flex; gap:.35rem; flex:0 0 auto; }
+.map-filters-precio input{
+  width:100px; height:34px; border:1px solid var(--line); border-radius:var(--r-full);
+  padding:0 .7rem; font-size:var(--step--2); color:var(--ink-70);
+}
+.map-toolbar{ position:absolute; top:4.5rem; left:50%; transform:translateX(-50%); z-index:40; display:flex; gap:.5rem; }
 .map-toolbar .btn{ box-shadow:var(--sh-3); }
 .map-note{
   position:absolute; bottom:.6rem; left:.75rem; z-index:35; font-size:11px; color:var(--ink-50);
