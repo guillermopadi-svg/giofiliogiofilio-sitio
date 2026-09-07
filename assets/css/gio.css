@@ -585,7 +585,7 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 
 /* Barra flotante móvil */
 .mobile-actions{
-  position:fixed; left:0; right:0; bottom:0; z-index:120; display:none;
+  position:fixed; left:0; right:0; bottom:0; z-index:160; display:none;
   padding:.65rem 1rem calc(.65rem + env(safe-area-inset-bottom));
   background:rgba(255,255,255,.94); backdrop-filter:blur(10px); border-top:1px solid var(--line-soft);
   gap:.5rem;

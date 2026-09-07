@@ -656,6 +656,8 @@
       $$('[data-sort]').forEach(function (s) { s.value = RES.orden; });
       $$('.view-switch button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === RES.view)); });
       var lay = $('.results-layout'); if (lay) lay.dataset.view = RES.view;
+      var mmb = $('#mobileMapBtn');
+      if (mmb) mmb.innerHTML = mmb.querySelector('svg').outerHTML + (RES.view === 'mapa' ? ' Ver lista' : ' Ver mapa');
     }
 
     function updateFilterCounts() {
@@ -739,7 +741,6 @@
     on($('#mobileMapBtn'), 'click', function () {
       RES.view = RES.view === 'mapa' ? 'lista' : 'mapa';
       syncControls();
-      this.innerHTML = RES.view === 'mapa' ? 'Ver lista' : 'Ver mapa';
       requestAnimationFrame(function () { requestAnimationFrame(function () {
         ensureMapReady(); drawMap(RES.lista);
       }); });
