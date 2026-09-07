@@ -658,23 +658,32 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .map-filters{
   position:absolute; top:1rem; left:1rem; right:3.75rem; z-index:41;
   display:flex; align-items:center; gap:.5rem; overflow-x:auto;
-  background:rgba(255,255,255,.94); backdrop-filter:blur(10px); box-shadow:var(--sh-3);
+  background:#fff; border:1px solid var(--line); box-shadow:var(--sh-4);
   border-radius:var(--r-full); padding:.35rem .5rem;
+  font-family:var(--font-body);
 }
 .map-filters::-webkit-scrollbar{ display:none; }
 .map-filters .seg--sm{ flex:0 0 auto; border:none; padding:0; gap:1px; }
-.map-filters .seg--sm button{ padding:.4rem .6rem; font-size:var(--step--2); white-space:nowrap; }
+.map-filters .seg--sm button{
+  padding:.4rem .7rem; font-size:var(--step--2); white-space:nowrap;
+  font-family:var(--font-body); font-weight:600; color:var(--ink-70);
+}
 .map-filters-select{
   flex:0 0 auto; height:34px; border:1px solid var(--line); border-radius:var(--r-full);
-  padding:0 .7rem; font-size:var(--step--2); color:var(--ink-70); background:#fff;
+  padding:0 .7rem; font-size:var(--step--2); font-weight:600; color:var(--ink-70); background:#fff;
 }
 .map-filters-precio{ display:flex; gap:.35rem; flex:0 0 auto; }
 .map-filters-precio input{
   width:100px; height:34px; border:1px solid var(--line); border-radius:var(--r-full);
-  padding:0 .7rem; font-size:var(--step--2); color:var(--ink-70);
+  padding:0 .7rem; font-size:var(--step--2); font-weight:600; color:var(--ink-70);
 }
-.map-filters .map-back{ margin-left:auto; flex:0 0 auto; }
-.map-filters .map-back button{ padding:.4rem .7rem; font-size:var(--step--2); white-space:nowrap; }
+.map-filters-precio input::placeholder{ color:var(--ink-50); font-weight:400; }
+.map-filters .map-back{ margin-left:auto; flex:0 0 auto; border-radius:var(--r-full); background:var(--navy-050); }
+.map-filters .map-back button{
+  padding:.4rem .8rem; font-size:var(--step--2); font-weight:600; white-space:nowrap;
+  font-family:var(--font-body); color:var(--navy);
+}
+.map-filters .map-back button:hover{ background:var(--navy-100); }
 .map-toolbar{ position:absolute; top:4.5rem; left:50%; transform:translateX(-50%); z-index:40; display:flex; gap:.5rem; }
 .map-toolbar .btn{ box-shadow:var(--sh-3); }
 .map-note{
