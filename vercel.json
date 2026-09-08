@@ -7,6 +7,21 @@
       "source": "/propiedad/local-comercial-roma-norte-ebwd4874/",
       "destination": "/propiedad/local-comercial-roma-norte-ebwa8714/",
       "permanent": true
+    },
+    {
+      "source": "/propiedad/departamento-jesus-del-monte-eboc7208/",
+      "destination": "/propiedad/departamento-jesus-del-monte-balcon-las-vistas-interlomas-eboc7208/",
+      "permanent": true
+    },
+    {
+      "source": "/propiedad/departamento-jesus-del-monte-ebri6583/",
+      "destination": "/propiedad/departamento-jesus-del-monte-balcon-las-vistas-interlomas-ebri6583/",
+      "permanent": true
+    },
+    {
+      "source": "/propiedad/terreno-el-rocio-ebuz8084/",
+      "destination": "/propiedad/terreno-el-rocio-casa-en-obra-gris-yautepec-morelos-ebuz8084/",
+      "permanent": true
     }
   ],
   "headers": [
