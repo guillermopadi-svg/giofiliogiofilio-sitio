@@ -39,18 +39,19 @@ def canonical(path):
         p = p[: -len("index.html")]
     return SITE.rstrip("/") + "/" + p.lstrip("/")
 
-def money(n):
-    return "$" + f"{int(round(n)):,}".replace(",", ",") + " MXN"
+def money(n, moneda="MXN"):
+    return "$" + f"{int(round(n)):,}".replace(",", ",") + " " + moneda
 
-def money_short(n):
+def money_short(n, moneda="MXN"):
     n = float(n)
+    suf = " USD" if moneda == "USD" else ""
     if n >= 1e6:
         m = n / 1e6
         s = f"{m:.1f}" if m < 10 else f"{m:.1f}"
-        return "$" + s.rstrip("0").rstrip(".") + " M"
+        return "$" + s.rstrip("0").rstrip(".") + " M" + suf
     if n >= 1e3:
-        return "$" + str(int(round(n / 1e3))) + " K"
-    return "$" + f"{int(n):,}"
+        return "$" + str(int(round(n / 1e3))) + " K" + suf
+    return "$" + f"{int(n):,}" + suf
 
 def num(n):
     return f"{int(round(n)):,}"
@@ -397,7 +398,8 @@ def pcard(path, p, no_cmp=False):
     if p["est"]: specs.append(f'<span aria-label="{p["est"]} estacionamientos">{icon("car")}{p["est"]}</span>')
     if p["m2c"]: specs.append(f'<span aria-label="{num(p["m2c"])} metros cuadrados de construcción">{icon("area")}{num(p["m2c"])} m²</span>')
     elif p["m2t"]: specs.append(f'<span aria-label="{num(p["m2t"])} metros cuadrados de terreno">{icon("area")}{num(p["m2t"])} m² terreno</span>')
-    precio = money(p["precio"]).replace(" MXN", "")
+    moneda_p = p.get("moneda", "MXN")
+    precio = money(p["precio"], moneda_p).replace(" MXN", "").replace(" USD", "")
     per = ' <span class="per">/mes</span>' if p["operacion"] == "renta" else ""
     cmp_html = "" if no_cmp else f'<label class="pcard-cmp"><input type="checkbox" data-id="{e(p["id"])}"> Comparar</label>'
     wa_txt = f'Hola Gio, estoy interesado en {p["titulo_wa"]} con ID {p["id"]}. ¿Podrías darme más información?'
@@ -414,7 +416,7 @@ def pcard(path, p, no_cmp=False):
     <button type="button" class="pcard-fav" data-id="{e(p["id"])}" aria-pressed="false" aria-label="Guardar en favoritos">{icon("heart")}</button>
   </div>
   <div class="pcard-body">
-    <div class="pcard-price">{precio}{per} <span class="cur">MXN</span></div>
+    <div class="pcard-price">{precio}{per} <span class="cur">{moneda_p}</span></div>
     <h3 class="pcard-title">{e(p["titulo"])}</h3>
     <p class="pcard-loc">{icon("pin")}{e(p["colonia_nombre"])}, {e(p["alcaldia_nombre"])}, {e(p.get("estado_nombre","CDMX") if p.get("estado_nombre","Ciudad de México") != "Ciudad de México" else "CDMX")}</p>
     <div class="pcard-specs">{"".join(specs)}</div>

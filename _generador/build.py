@@ -123,13 +123,13 @@ def listing_schema(p):
         "offers": {
             "@type": "Offer",
             "price": p["precio"],
-            "priceCurrency": "MXN",
+            "priceCurrency": p.get("moneda", "MXN"),
             "availability": "https://schema.org/InStock",
             "businessFunction": "https://schema.org/Sell" if p["operacion"] == "venta" else "https://schema.org/LeaseOut",
             "url": canonical(p["url"]),
             "seller": {"@id": SITE + "/#gio-filio"},
             **({"priceSpecification": {"@type": "UnitPriceSpecification",
-                "price": p["precio"], "priceCurrency": "MXN",
+                "price": p["precio"], "priceCurrency": p.get("moneda", "MXN"),
                 "unitCode": "MON", "billingIncrement": 1}} if p["operacion"] == "renta" else {}),
         },
     }
@@ -426,8 +426,8 @@ def build_property(p):
         avaluo = 9500
         total = isai + notaria + avaluo
         fin_rows = f'''
-      <tr><th>Precio de lista</th><td>{money(p["precio"])}</td></tr>
-      <tr><th>Precio por m²</th><td>{money(p["precio_m2"])}</td></tr>
+      <tr><th>Precio de lista</th><td>{money(p["precio"], p.get("moneda","MXN"))}</td></tr>
+      <tr><th>Precio por m²</th><td>{money(p["precio_m2"], p.get("moneda","MXN"))}</td></tr>
       <tr><th>Mantenimiento mensual</th><td>{money(p["mantenimiento"]) if p["mantenimiento"] else "Sin cuota"}</td></tr>
       <tr><th>ISAI estimado (4.5%)</th><td>{money(isai)}</td></tr>
       <tr><th>Honorarios notariales estimados</th><td>{money(notaria)}</td></tr>
@@ -438,8 +438,8 @@ def build_property(p):
         dep = p["precio"]
         anual = p["precio"] * 12
         fin_rows = f'''
-      <tr><th>Renta mensual</th><td>{money(p["precio"])}</td></tr>
-      <tr><th>Renta por m² al mes</th><td>{money(p["precio_m2"])}</td></tr>
+      <tr><th>Renta mensual</th><td>{money(p["precio"], p.get("moneda","MXN"))}</td></tr>
+      <tr><th>Renta por m² al mes</th><td>{money(p["precio_m2"], p.get("moneda","MXN"))}</td></tr>
       <tr><th>Depósito en garantía</th><td>{money(dep)}</td></tr>
       <tr><th>Desembolso inicial estimado</th><td>{money(dep * 2)}</td></tr>
       <tr><th>Costo anual del contrato</th><td>{money(anual)}</td></tr>
@@ -491,8 +491,8 @@ def build_property(p):
             <p class="pcard-loc" style="font-size:var(--step-0)">{icon("pin")}{e(p["calle"])}, {e(p["colonia_nombre"])}, {e(p["alcaldia_nombre"])}, {e(p.get("estado_nombre","Ciudad de México"))} · CP {e(p["cp"])}</p>
           </div>
           <div style="text-align:right">
-            <div class="prop-price">{money(p["precio"]).replace(" MXN","")} <span class="cur">MXN{" /mes" if p["operacion"]=="renta" else ""}</span></div>
-            <div class="prop-price-sub">{money(p["precio_m2"])} por m²{" al mes" if p["operacion"]=="renta" else ""}</div>
+            <div class="prop-price">{money(p["precio"], p.get("moneda","MXN")).replace(" " + p.get("moneda","MXN"),"")} <span class="cur">{p.get("moneda","MXN")}{" /mes" if p["operacion"]=="renta" else ""}</span></div>
+            <div class="prop-price-sub">{money(p["precio_m2"], p.get("moneda","MXN"))} por m²{" al mes" if p["operacion"]=="renta" else ""}</div>
             <div class="prop-price-sub">ID {e(p["id"])} · Actualizada el {e(p["actualizado"])}</div>
           </div>
         </div>
@@ -560,14 +560,14 @@ def build_property(p):
     # titulo generico de EasyBroker y precio identico (visto en Santa Fe con
     # dos oficinas a $16K), lo que producia <title> duplicados.
     m2_suffix = f' · {num(p["m2_ref"])} m²' if p.get("m2_ref") else ''
-    seo_title = f'{p["titulo"]} | {money_short(p["precio"])}{m2_suffix}'
+    seo_title = f'{p["titulo"]} | {money_short(p["precio"], p.get("moneda","MXN"))}{m2_suffix}'
     if len(seo_title) > 68:
-        seo_title = f'{p["tipo_label"]} {op_label} en {p["colonia_nombre"]} | {money_short(p["precio"])}{m2_suffix}'
+        seo_title = f'{p["tipo_label"]} {op_label} en {p["colonia_nombre"]} | {money_short(p["precio"], p.get("moneda","MXN"))}{m2_suffix}'
     if len(seo_title) > 68:
-        seo_title = f'{p["tipo_label"]} {op_label} en {p["colonia_nombre"]} | {money_short(p["precio"])}'
+        seo_title = f'{p["tipo_label"]} {op_label} en {p["colonia_nombre"]} | {money_short(p["precio"], p.get("moneda","MXN"))}'
     write(path, page(path, seo_title,
         f'{p["tipo_label"]} {op_label} en {p["colonia_nombre"]}, {p["alcaldia_nombre"]}, {p.get("estado_nombre","CDMX")}. '
-        f'{p["rec"] or "—"} recámaras, {p["ban"] or "—"} baños, {num(p["m2_ref"])} m². {money(p["precio"])}. Asesoría de Gio Filio.',
+        f'{p["rec"] or "—"} recámaras, {p["ban"] or "—"} baños, {num(p["m2_ref"])} m². {money(p["precio"], p.get("moneda","MXN"))}. Asesoría de Gio Filio.',
         body, schema=[listing_schema(p), breadcrumb_schema(crumbs), person_schema()],
         og_image=p["fotos"][0], body_attrs=f'data-property-id="{e(p["id"])}"',
         page_type="property_detail", extra_js=extra_js, **K()))

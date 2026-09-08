@@ -66,13 +66,20 @@
 
   var nfMXN = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 });
   var nfNum = new Intl.NumberFormat('es-MX');
-  function money(n) { return nfMXN.format(n || 0).replace('$', '$'); }
-  function moneyShort(n) {
-    n = Number(n) || 0;
-    if (n >= 1e6) { var m = n / 1e6; return '$' + (m >= 10 ? m.toFixed(1) : m.toFixed(2)).replace(/\.?0+$/, '') + ' M'; }
-    if (n >= 1e3) return '$' + Math.round(n / 1e3) + ' K';
-    return '$' + nfNum.format(n);
+  function money(n, moneda) {
+    n = n || 0;
+    if (moneda === 'USD') return '$' + nfNum.format(Math.round(n)) + ' USD';
+    return nfMXN.format(n).replace('$', '$');
   }
+  function moneyShort(n, moneda) {
+    n = Number(n) || 0;
+    var suf = moneda === 'USD' ? ' USD' : '';
+    if (n >= 1e6) { var m = n / 1e6; return '$' + (m >= 10 ? m.toFixed(1) : m.toFixed(2)).replace(/\.?0+$/, '') + ' M' + suf; }
+    if (n >= 1e3) return '$' + Math.round(n / 1e3) + ' K' + suf;
+    return '$' + nfNum.format(n) + suf;
+  }
+  function moneyP(p) { return money(p.precio, p.moneda); }
+  function moneyShortP(p) { return moneyShort(p.precio, p.moneda); }
   function num(n) { return nfNum.format(Math.round(Number(n) || 0)); }
 
   // ------------------------------------------------------- ANALÍTICA
@@ -247,9 +254,10 @@
     if (p.m2c) specs.push('<span aria-label="' + num(p.m2c) + ' metros cuadrados de construcción">' + ICON.area + num(p.m2c) + ' m²</span>');
     else if (p.m2t) specs.push('<span aria-label="' + num(p.m2t) + ' metros cuadrados de terreno">' + ICON.area + num(p.m2t) + ' m² terreno</span>');
 
+    var precioBase = money(p.precio, p.moneda).replace(' USD', '');
     var precio = p.operacion === 'renta'
-      ? money(p.precio) + '<span class="per"> /mes</span>'
-      : money(p.precio);
+      ? precioBase + '<span class="per"> /mes</span>'
+      : precioBase;
 
     return '' +
       '<article class="pcard" data-id="' + esc(p.id) + '">' +
@@ -260,7 +268,7 @@
           '<button type="button" class="pcard-fav" data-id="' + esc(p.id) + '" aria-pressed="false" aria-label="Guardar en favoritos">' + ICON.heart + '</button>' +
         '</div>' +
         '<div class="pcard-body">' +
-          '<div class="pcard-price">' + precio + ' <span class="cur">MXN</span></div>' +
+          '<div class="pcard-price">' + precio + ' <span class="cur">' + (p.moneda === 'USD' ? 'USD' : 'MXN') + '</span></div>' +
           '<h3 class="pcard-title">' + esc(p.titulo) + '</h3>' +
           '<p class="pcard-loc">' + ICON.pin + esc(p.colonia_nombre) + ', ' + esc(p.alcaldia_nombre) + ', ' + esc((p.estado_nombre && p.estado_nombre !== 'Ciudad de México') ? p.estado_nombre : 'CDMX') + '</p>' +
           '<div class="pcard-specs">' + specs.join('') + '</div>' +
@@ -944,9 +952,9 @@
         b.type = 'button';
         b.className = 'map-pin' + (fav.indexOf(p.id) > -1 ? ' is-fav' : '');
         b.style.left = c.x + '%'; b.style.top = c.y + '%';
-        b.innerHTML = '<img src="data:image/png;base64,' + ISOTIPO_B64 + '" alt="" width="13" height="13">' + '<span>' + moneyShort(p.precio) + '</span>';
+        b.innerHTML = '<img src="data:image/png;base64,' + ISOTIPO_B64 + '" alt="" width="13" height="13">' + '<span>' + moneyShortP(p) + '</span>';
         b.dataset.id = p.id;
-        b.setAttribute('aria-label', p.titulo + ' — ' + money(p.precio));
+        b.setAttribute('aria-label', p.titulo + ' — ' + moneyP(p));
         on(b, 'mouseenter', function () { showPreview(p, c); b.classList.add('is-active'); });
         on(b, 'mouseleave', function () { hidePreview(); b.classList.remove('is-active'); });
         on(b, 'focus', function () { showPreview(p, c); });
@@ -974,7 +982,7 @@
     var mc = $('#mapMiniCard'); if (!mc) return;
     var rows = items.slice(0, 8).map(function (p) {
       return '<a class="mcl-row" href="' + url(p.url) + '">' +
-        '<span class="mcl-price">' + moneyShort(p.precio) + '</span>' +
+        '<span class="mcl-price">' + moneyShortP(p) + '</span>' +
         '<span class="mcl-t">' + esc(p.titulo) + '</span></a>';
     }).join('');
     var more = items.length > 8
@@ -990,7 +998,7 @@
   function showPreview(p, pt) {
     var mp = $('#mapPreview'); if (!mp) return;
     mp.innerHTML = '<img src="' + url(p.foto_card) + '" alt=""><div class="mp-body">' +
-      '<div class="mp-price">' + money(p.precio) + (p.operacion === 'renta' ? ' <span style="font-size:.7em">/mes</span>' : '') + '</div>' +
+      '<div class="mp-price">' + moneyP(p) + (p.operacion === 'renta' ? ' <span style="font-size:.7em">/mes</span>' : '') + '</div>' +
       '<div class="mp-t">' + esc(p.titulo) + '</div></div>';
     mp.style.left = pt.x + '%'; mp.style.top = pt.y + '%';
     mp.classList.add('is-on');
@@ -1034,7 +1042,7 @@
       var content = document.createElement('div');
       content.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer';
       var price = document.createElement('div');
-      price.textContent = moneyShort(p.precio);
+      price.textContent = moneyShortP(p);
       price.style.cssText = 'background:#fff;color:#071F4A;font-family:Jost,sans-serif;font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;box-shadow:0 1px 4px rgba(7,31,74,.25);white-space:nowrap;margin-bottom:2px';
       content.appendChild(price);
       var pin = new google.maps.marker.PinElement();
@@ -1046,7 +1054,7 @@
       mk.addListener('click', function () {
         info.setContent('<div style="max-width:250px;font-family:Inter,sans-serif">' +
           '<img src="' + url(p.foto_card) + '" alt="" style="width:100%;border-radius:6px;margin-bottom:6px">' +
-          '<div style="font-family:Jost,sans-serif;font-size:16px;color:#071F4A">' + money(p.precio) + '</div>' +
+          '<div style="font-family:Jost,sans-serif;font-size:16px;color:#071F4A">' + moneyP(p) + '</div>' +
           '<div style="font-size:13px;color:#4A5468;line-height:1.35">' + esc(p.titulo) + '</div>' +
           '<a href="' + url(p.url) + '" style="display:inline-block;margin-top:8px;font-size:13px;color:#071F4A;font-weight:600">Ver propiedad →</a></div>');
         info.open({ map: MAP.gmap, anchor: mk });
@@ -1148,7 +1156,7 @@
       formulario: form.dataset.formName || 'contacto',
       propiedad_id: pid || null,
       propiedad_titulo: p ? p.titulo : null,
-      propiedad_precio: p ? money(p.precio) + (p.operacion === 'renta' ? ' /mes' : '') : null,
+      propiedad_precio: p ? moneyP(p) + (p.operacion === 'renta' ? ' /mes' : '') : null,
       propiedad_recamaras: p ? (p.rec || null) : null,
       propiedad_banos: p ? (p.ban ? (p.ban + (p.medios ? '.' + p.medios : '')) : null) : null,
       propiedad_estacionamientos: p ? (p.est || null) : null,
@@ -1297,10 +1305,10 @@
         return;
       }
       var rows = [
-        ['Precio', function (p) { return money(p.precio) + (p.operacion === 'renta' ? ' /mes' : ''); }, 'min', function (p) { return p.precio; }],
+        ['Precio', function (p) { return moneyP(p) + (p.operacion === 'renta' ? ' /mes' : ''); }, 'min', function (p) { return p.precio; }],
         ['Operación', function (p) { return p.operacion === 'venta' ? 'Venta' : 'Renta'; }],
         ['Tipo', function (p) { return p.tipo_label; }],
-        ['Precio por m²', function (p) { return precioM2(p) ? money(precioM2(p)) : '—'; }, 'min', function (p) { return precioM2(p) || Infinity; }],
+        ['Precio por m²', function (p) { return precioM2(p) ? money(precioM2(p), p.moneda) : '—'; }, 'min', function (p) { return precioM2(p) || Infinity; }],
         ['Colonia', function (p) { return p.colonia_nombre; }],
         ['Alcaldía', function (p) { return p.alcaldia_nombre; }],
         ['Superficie construida', function (p) { return p.m2c ? num(p.m2c) + ' m²' : '—'; }, 'max', function (p) { return p.m2c || 0; }],
@@ -1317,7 +1325,7 @@
       list.forEach(function (p) {
         html += '<th scope="col"><div class="cmp-head-card">' +
           '<a href="' + url(p.url) + '"><img src="' + url(p.foto_card) + '" alt="' + esc(p.titulo) + '"></a>' +
-          '<div class="ch-price">' + money(p.precio) + '</div>' +
+          '<div class="ch-price">' + moneyP(p) + '</div>' +
           '<div class="ch-t">' + esc(p.titulo) + '</div>' +
           '<button type="button" class="cmp-remove" data-rm="' + esc(p.id) + '">Quitar</button>' +
           '</div></th>';

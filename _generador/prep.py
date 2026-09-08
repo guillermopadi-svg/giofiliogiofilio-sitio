@@ -267,7 +267,7 @@ def emit_data_js(props, colonias, alcaldias, path=os.path.join(OUT, "assets/data
         slim.append({
             "id": p["id"], "titulo": p["titulo"], "titulo_wa": p["titulo_wa"], "url": p["url"],
             "operacion": p["operacion"], "tipo": p["tipo"], "tipo_label": p["tipo_label"],
-            "precio": p["precio"], "mantenimiento": p["mantenimiento"],
+            "precio": p["precio"], "moneda": p.get("moneda", "MXN"), "mantenimiento": p["mantenimiento"],
             "colonia": p["colonia_slug"], "colonia_nombre": p["colonia_nombre"],
             "alcaldia": p["alcaldia"], "alcaldia_nombre": p["alcaldia_nombre"],
             "alcaldia_tiene_pagina": bool(p.get("alcaldia_tiene_pagina")),

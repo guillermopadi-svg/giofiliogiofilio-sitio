@@ -335,6 +335,50 @@ def main():
     DUPLICADOS = {"EB-WD4874"}
     props = [p for p in props if p["id"] not in DUPLICADOS]
 
+    # -- Guardrail: precio/m2 muy fuera del rango de su colonia -----------
+    # Detectado al investigar EB-VS5968 ($2,000,000 USD en Polanco IV Seccion):
+    # el precio en si era correcto, el bug real era que el sitio nunca
+    # distinguia MXN de USD (ya corregido en render.py/gio.js/build.py). Este
+    # guardrail se deja como red de seguridad para errores de captura reales
+    # (precio o m2 mal tecleados en EasyBroker), agrupando por colonia+
+    # operacion+moneda para no comparar precios de distinta divisa entre si
+    # (umbral generoso -- 25% a 400% de la mediana del grupo -- para no
+    # descartar gangas reales).
+    from statistics import median as _median
+    from collections import defaultdict as _defaultdict
+    _precio_m2 = {}
+    _grupos = _defaultdict(list)
+    for p in props:
+        m2 = p.get("m2c") or p.get("m2t") or 0
+        if m2 and p["precio"]:
+            pm2 = p["precio"] / m2
+            _precio_m2[p["id"]] = pm2
+            _grupos[(p["colonia"], p["operacion"], p["moneda"])].append(pm2)
+
+    fuera_de_rango = []
+    for p in props:
+        pm2 = _precio_m2.get(p["id"])
+        if pm2 is None:
+            continue
+        grupo = _grupos[(p["colonia"], p["operacion"], p["moneda"])]
+        if len(grupo) < 3:
+            continue  # sin suficientes referencias en esta colonia para comparar
+        med = _median(grupo)
+        if pm2 < med * 0.25 or pm2 > med * 4:
+            fuera_de_rango.append((p, pm2, med))
+
+    if fuera_de_rango:
+        warnings.append(
+            f"{len(fuera_de_rango)} ficha(s) con precio/m2 muy fuera del rango de su "
+            f"colonia -- se excluyen del sitio hasta corregirse en EasyBroker:"
+        )
+        for p, pm2, med in fuera_de_rango:
+            warnings.append(
+                f"  {p['id']}: {p['titulo'][:50]} -- ${pm2:,.0f}/m2 vs "
+                f"mediana ${med:,.0f}/m2 en {p['colonia_nombre_real']}"
+            )
+    props = [p for p in props if p["id"] not in {x[0]["id"] for x in fuera_de_rango}]
+
     fuera = [p for p in props if p.get("fuera_cdmx")]
     if fuera:
         print(f"\n{len(fuera)} propiedades fuera de CDMX se publican con su ubicación real:")
