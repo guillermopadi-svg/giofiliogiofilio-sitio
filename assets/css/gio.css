@@ -690,9 +690,22 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
   font-family:var(--font-body); color:var(--navy);
 }
 .map-filters .map-back button:hover{ background:var(--navy-100); }
+.map-filters-precio-btn{
+  display:none; align-items:center; gap:.3rem; flex:0 0 auto; height:34px;
+  padding:0 .8rem; border:1px solid var(--line); border-radius:var(--r-full);
+  font-size:var(--step--2); font-weight:600; color:var(--ink-70); background:#fff; white-space:nowrap;
+}
+.map-filters-precio-btn svg{ width:14px; height:14px; }
 @media (max-width:640px){
   .map-filters{ overflow-x:visible; justify-content:space-between; }
   .map-filters-precio{ display:none; }
+  .map-filters-precio-btn{
+    display:inline-flex; width:34px; height:34px; padding:0; justify-content:center;
+  }
+  .map-filters-precio-btn span{ display:none; }
+  .map-filters-precio-btn svg{ width:16px; height:16px; }
+  .map-filters .seg--sm button{ padding:.4rem .45rem; }
+  .map-filters-select{ max-width:78px; padding-right:1.3rem; }
 }
 .map-toolbar{ position:absolute; top:4.5rem; left:50%; transform:translateX(-50%); z-index:40; display:flex; gap:.5rem; }
 .map-toolbar .btn{ box-shadow:var(--sh-3); }
@@ -987,7 +1000,14 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .site-footer{ background:var(--navy); color:rgba(255,255,255,.72); padding-block:var(--sp-8) var(--sp-5); font-size:var(--step--1); }
 .footer-grid{ display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:var(--sp-6); }
 @media (max-width:900px){ .footer-grid{ grid-template-columns:1fr 1fr; } }
-@media (max-width:560px){ .footer-grid{ grid-template-columns:1fr; } }
+@media (max-width:560px){
+  .footer-grid{ grid-template-columns:1fr 1fr; gap:var(--sp-5) var(--sp-4); }
+  .footer-grid > div:first-child{ grid-column:1 / -1; text-align:center; margin-bottom:var(--sp-3); }
+  .footer-logo{ display:flex; justify-content:center; }
+  .footer-grid > div:first-child p{ margin-inline:auto; }
+  .footer-social{ justify-content:center; }
+  .footer-newsletter{ max-width:340px; margin-inline:auto; }
+}
 .site-footer h4{ color:#fff; font-size:var(--step--1); letter-spacing:.14em; text-transform:uppercase; margin-bottom:var(--sp-4); font-family:var(--font-body); font-weight:600; }
 .site-footer a{ color:rgba(255,255,255,.72); }
 .site-footer a:hover{ color:var(--gold-soft); }

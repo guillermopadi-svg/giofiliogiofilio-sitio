@@ -175,6 +175,7 @@ def results_block(path, titulo, intro="", incluir_mascotas=True):
             <input type="number" inputmode="numeric" min="0" step="50000" placeholder="Precio mín" aria-label="Precio mínimo" data-f-input="precioMin">
             <input type="number" inputmode="numeric" min="0" step="50000" placeholder="Precio máx" aria-label="Precio máximo" data-f-input="precioMax">
           </div>
+          <button type="button" class="map-filters-precio-btn" data-open-drawer="filtersDrawer" aria-label="Filtrar por precio">{icon("filter")}<span> Precio</span></button>
           <div class="view-switch map-back" role="group" aria-label="Volver a la lista">
             <button type="button" data-view="split" aria-pressed="false">← Ver lista</button>
           </div>
