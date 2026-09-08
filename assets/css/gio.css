@@ -510,7 +510,10 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .map-col{ position:sticky; top:var(--header-h); height:calc(100vh - var(--header-h)); background:var(--navy-050); }
 @media (max-width:1080px){
   .results-layout{ grid-template-columns:1fr; }
-  .map-col{ display:none; position:fixed; inset:var(--header-h) 0 0; height:auto; z-index:150; }
+  .map-col{
+    display:none; position:fixed; inset:calc(var(--header-h) + .6rem) .6rem .6rem; height:auto;
+    z-index:150; border-radius:var(--r-lg); overflow:hidden; box-shadow:var(--sh-4);
+  }
   .results-layout[data-view="mapa"] .map-col{ display:block; }
 }
 .results-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:var(--sp-4); flex-wrap:wrap; margin-bottom:var(--sp-4); }
@@ -545,6 +548,8 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
   font-size:var(--step--1); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-50);
   margin-bottom:.7rem; font-weight:600; font-family:var(--font-body);
 }
+.filter-group select[data-f-select],
+.filter-group input[data-f-input]{ font-size:var(--step--1); font-family:var(--font-body); color:var(--ink-70); }
 .seg{ display:flex; border:1px solid var(--line); border-radius:var(--r-full); padding:3px; gap:2px; }
 .seg button{ flex:1; padding:.5rem .5rem; border-radius:var(--r-full); font-size:var(--step--1); color:var(--ink-50); font-family:var(--font-display); }
 .seg button[aria-pressed="true"]{ background:var(--navy); color:#fff; }
@@ -754,6 +759,10 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .spec svg{ width:20px; height:20px; color:var(--gold); margin:0 auto .45rem; }
 .spec b{ display:block; font-family:var(--font-display); font-size:var(--step-1); color:var(--navy); font-weight:500; line-height:1.1; }
 .spec span{ font-size:var(--step--2); color:var(--ink-50); letter-spacing:.06em; text-transform:uppercase; }
+@media (max-width:640px){
+  .spec{ padding:.85rem .5rem; }
+  .spec span{ display:none; }
+}
 .prop-section{ padding-block:var(--sp-6); border-top:1px solid var(--line-soft); }
 .prop-section > h3{ font-size:var(--step-2); margin-bottom:var(--sp-4); }
 .feature-list{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.55rem 1.5rem; list-style:none; padding:0; }

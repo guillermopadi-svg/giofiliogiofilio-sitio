@@ -267,7 +267,7 @@ def build_home():
 
 <section class="section section--beige" id="vender-home">
   <div class="wrap">
-    <div class="gio-split" style="grid-template-columns:1.15fr .85fr">
+    <div class="gio-split gio-split--text-wide">
       <div>
         <p class="eyebrow">Vender</p>
         <h2>¿Quieres vender tu propiedad en CDMX?</h2>
@@ -501,7 +501,7 @@ def build_property(p):
 
         <div class="prop-section">
           <h3>Sobre esta propiedad</h3>
-          <div class="prose" style="font-size:var(--step-1);line-height:1.75;color:var(--ink-70)">{desc_html}</div>
+          <div class="prose" style="font-size:var(--step-1);line-height:1.75;color:var(--ink);text-align:justify">{desc_html}</div>
         </div>
 
         <div class="prop-section">

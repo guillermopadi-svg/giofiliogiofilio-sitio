@@ -80,6 +80,37 @@ def eb_detail(public_id):
     return eb_get(f"/properties/{public_id}")
 
 
+# ------------------------------------------------------- limpieza de titulo
+CONECTORES = {"de", "del", "la", "las", "el", "los", "en", "y", "con", "sin", "al", "a"}
+MAYUS_FIJAS = {"cdmx", "cp", "id", "sa", "s.a", "ph"}  # se dejan siempre en mayusculas
+
+def _capitaliza_palabra(w, es_primera):
+    core = re.sub(r"[^A-Za-zÀ-ÿ]", "", w)
+    if not core or core != core.upper() or core == core.lower():
+        return w  # no esta toda en mayusculas (o no tiene letras) -- no se toca
+    if re.fullmatch(r"[IVXLCDM]+", core) and len(core) <= 5:
+        return w  # numero romano (ej. "IV", "IX") -- se deja tal cual
+    if core.lower() in MAYUS_FIJAS:
+        return w  # sigla conocida (CDMX, CP, PH...) -- se deja en mayusculas
+    if not es_primera and core.lower() in CONECTORES:
+        return w.lower()
+    return w[0].upper() + w[1:].lower()
+
+def clean_titulo(s):
+    """Normaliza titulos capturados a mano en EasyBroker: corrige palabra por
+    palabra las que estan TODAS en mayusculas (deja intactas las que ya tienen
+    mayusculas/minusculas mezcladas, numeros romanos y siglas conocidas), y
+    agrega el espacio faltante entre letra y numero pegados
+    (ej. 'RENTA150M2' -> 'Renta 150M2')."""
+    if not s:
+        return s
+    s = re.sub(r"\s+,", ",", s)
+    s = re.sub(r"(?<=[A-Za-zÀ-ÿ])(?=\d{2,})", " ", s)  # ej. "RENTA150" -> "RENTA 150", pero no toca "M2"
+    s = re.sub(r"\s{2,}", " ", s).strip()
+    palabras = s.split(" ")
+    return " ".join(_capitaliza_palabra(w, i == 0) for i, w in enumerate(palabras))
+
+
 # --------------------------------------------------------- mapeo de colonia
 def _slug(s):
     s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode()
@@ -277,7 +308,7 @@ def main():
         if not fotos:
             warnings.append(f"{public_id}: sin fotografías — la ficha quedará sin imagen de portada")
 
-        titulo = p.get("title") or f"Propiedad en {colonia['nombre']}"
+        titulo = clean_titulo(p.get("title")) or f"Propiedad en {colonia['nombre']}"
         slug = _slug(titulo)[:60] or "propiedad"
 
         props.append(dict(
