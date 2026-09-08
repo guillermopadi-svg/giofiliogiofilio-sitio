@@ -690,6 +690,10 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
   font-family:var(--font-body); color:var(--navy);
 }
 .map-filters .map-back button:hover{ background:var(--navy-100); }
+@media (max-width:640px){
+  .map-filters{ overflow-x:visible; justify-content:space-between; }
+  .map-filters-precio{ display:none; }
+}
 .map-toolbar{ position:absolute; top:4.5rem; left:50%; transform:translateX(-50%); z-index:40; display:flex; gap:.5rem; }
 .map-toolbar .btn{ box-shadow:var(--sh-3); }
 .map-note{

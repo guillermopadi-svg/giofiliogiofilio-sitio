@@ -833,6 +833,18 @@
     MAP.gmap.addListener('idle', function () {
       var b = $('#mapSearchArea'); if (b) b.style.display = 'inline-flex';
     });
+    // Si el mapa arranca ya visible (ej. se entra directo por ?view=mapa),
+    // Maps a veces calcula su tamano interno con el layout todavia sin
+    // asentar -- se ve un mapa chiquito flotando en un marco mas grande.
+    // El doble requestAnimationFrame le da tiempo al layout de estabilizarse
+    // antes de pedirle que recalcule tamano (mismo patron que ya se usa al
+    // alternar entre vista de lista y mapa).
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        google.maps.event.trigger(MAP.gmap, 'resize');
+        MAP.gmap.setCenter({ lat: 19.404, lng: -99.175 });
+      });
+    });
     drawMap(RES.lista.length ? RES.lista : (D.propiedades || []));
   }
 

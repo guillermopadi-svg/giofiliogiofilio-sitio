@@ -259,7 +259,7 @@ def build_home():
 <section class="section" id="testimonios">
   <div class="wrap">
     <p class="eyebrow eyebrow--center center">Clientes</p>
-    <h2 class="center" style="margin-bottom:3rem">Lo que dicen quienes ya encontraron su espacio</h2>
+    <h2 class="center" style="margin-bottom:1.75rem;font-size:var(--step-3)">Lo que dicen quienes ya encontraron su espacio</h2>
     {testimonial_block(TESTIMONIOS, 3)}
     {'<p class="center small muted" style="margin-top:2rem">Testimonios ilustrativos incluidos en la versión de demostración del sitio.</p>' if prep.DATASET_ES_DEMO else ''}
   </div>

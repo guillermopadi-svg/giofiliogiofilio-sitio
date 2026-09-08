@@ -502,8 +502,8 @@ def faq_block(faqs, titulo="Preguntas frecuentes"):
     )
     return f'''<section class="section section--ivory"><div class="wrap-narrow">
   <p class="eyebrow">Dudas comunes</p>
-  <h2>{e(titulo)}</h2>
-  <div class="accordion" style="margin-top:2rem">{items}</div>
+  <h2 style="font-size:var(--step-3)">{e(titulo)}</h2>
+  <div class="accordion" style="margin-top:1rem">{items}</div>
 </div></section>'''
 
 
