@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registra tu propiedad — Gio Filio</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="../assets/img/brand/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"></noscript>
+<link rel="stylesheet" href="../assets/css/gio.css?v=1">
+<style>
+  body{ background:var(--ivory); }
+  .alta-wrap{ max-width:640px; margin:0 auto; padding:2.5rem 1.25rem 4rem; }
+  .alta-head{ text-align:center; margin-bottom:2rem; }
+  .alta-head img{ height:44px; width:auto; margin:0 auto 1.1rem; }
+  .alta-card{ background:#fff; border:1px solid var(--line); border-radius:var(--r-xl); box-shadow:var(--sh-3); padding:2rem 1.75rem; }
+  .alta-card h3{ font-size:var(--step-1); margin-bottom:1rem; }
+  .alta-section{ margin-bottom:1.8rem; padding-bottom:1.8rem; border-bottom:1px solid var(--line-soft); }
+  .alta-section:last-of-type{ border-bottom:none; margin-bottom:0; padding-bottom:0; }
+  .alta-check-grid{ display:grid; grid-template-columns:1fr 1fr; gap:.25rem .5rem; }
+  @media (max-width:480px){ .alta-check-grid{ grid-template-columns:1fr; } }
+  .alta-photos{ display:flex; flex-wrap:wrap; gap:.6rem; margin-top:.6rem; }
+  .alta-photo{ position:relative; width:76px; height:76px; border-radius:var(--r-sm); overflow:hidden; background:var(--navy-050); }
+  .alta-photo img{ width:100%; height:100%; object-fit:cover; }
+  .alta-photo button{ position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; background:rgba(7,31,74,.75); color:#fff; font-size:11px; line-height:1; display:grid; place-items:center; }
+  .alta-photo-add{ width:76px; height:76px; border-radius:var(--r-sm); border:1.5px dashed var(--line); display:grid; place-items:center; color:var(--ink-50); cursor:pointer; font-size:1.4rem; }
+  .alta-photo-add input{ display:none; }
+  .alta-cp-hint{ font-size:var(--step--2); color:var(--ink-50); margin-top:.3rem; }
+  .alta-cp-hint.is-ok{ color:var(--ok, #1E7A5A); }
+</style>
+</head>
+<body>
+
+<div class="alta-wrap">
+  <div class="alta-head">
+    <img src="../assets/img/brand/isotipo-gf.png" alt="Gio Filio">
+    <h1 style="font-size:var(--step-3)">Registra tu propiedad</h1>
+    <p class="lead" style="max-width:48ch;margin-inline:auto">Cuéntame los datos de tu propiedad y en menos de 48 horas te contacto para los siguientes pasos.</p>
+  </div>
+
+  <div class="alta-card">
+    <form id="altaForm" novalidate>
+
+      <div class="alta-section">
+        <h3>Tus datos</h3>
+        <div class="form-grid-2">
+          <div class="form-row"><label for="al-nombre">Nombre</label>
+            <input type="text" id="al-nombre" name="nombre" required autocomplete="given-name" placeholder="Tu nombre"><span class="err">Escribe tu nombre</span></div>
+          <div class="form-row"><label for="al-apellido">Apellido</label>
+            <input type="text" id="al-apellido" name="apellido" autocomplete="family-name" placeholder="Tu apellido"></div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row"><label for="al-tel">WhatsApp</label>
+            <input type="tel" id="al-tel" name="telefono" required autocomplete="tel" inputmode="tel" placeholder="55 1234 5678"><span class="err">Teléfono a 10 dígitos</span></div>
+          <div class="form-row"><label for="al-mail">Correo (opcional)</label>
+            <input type="email" id="al-mail" name="email" autocomplete="email" placeholder="tu@correo.com"><span class="err">Correo válido</span></div>
+        </div>
+      </div>
+
+      <div class="alta-section">
+        <h3>La propiedad</h3>
+        <div class="seg" role="group" aria-label="Operación" style="margin-bottom:.9rem;max-width:220px">
+          <button type="button" data-op="venta" aria-pressed="true">Vender</button>
+          <button type="button" data-op="renta" aria-pressed="false">Rentar</button>
+        </div>
+        <input type="hidden" id="al-operacion" name="operacion" value="venta">
+        <div class="form-grid-2">
+          <div class="form-row"><label for="al-tipo">Tipo de propiedad</label>
+            <select id="al-tipo" name="tipo" required><option value="">Selecciona</option><option value="departamento">Departamento</option><option value="casa">Casa</option><option value="casa-en-condominio">Casa en condominio</option><option value="penthouse">Penthouse</option><option value="loft">Loft</option><option value="terreno">Terreno</option><option value="oficina">Oficina</option><option value="local-comercial">Local comercial</option><option value="desarrollo">Desarrollo</option></select><span class="err">Elige el tipo</span></div>
+          <div class="form-row"><label for="al-precio">Precio esperado (MXN)</label>
+            <input type="number" id="al-precio" name="precio" min="0" step="10000" inputmode="numeric" placeholder="8,000,000"></div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row"><label for="al-m2c">m² construcción</label>
+            <input type="number" id="al-m2c" name="m2c" min="0" inputmode="numeric" placeholder="120"></div>
+          <div class="form-row"><label for="al-m2t">m² terreno</label>
+            <input type="number" id="al-m2t" name="m2t" min="0" inputmode="numeric" placeholder="150"></div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row"><label for="al-rec">Recámaras</label>
+            <input type="number" id="al-rec" name="rec" min="0" max="15" inputmode="numeric" placeholder="3"></div>
+          <div class="form-row"><label for="al-ban">Baños</label>
+            <input type="number" id="al-ban" name="ban" min="0" max="15" inputmode="numeric" placeholder="2"></div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row"><label for="al-est">Estacionamientos</label>
+            <input type="number" id="al-est" name="est" min="0" max="15" inputmode="numeric" placeholder="2"></div>
+          <div class="form-row"><label for="al-antig">Antigüedad (años)</label>
+            <input type="number" id="al-antig" name="antig" min="0" max="150" inputmode="numeric" placeholder="0 si es nueva"></div>
+        </div>
+      </div>
+
+      <div class="alta-section">
+        <h3>Ubicación</h3>
+        <div class="form-grid-2">
+          <div class="form-row"><label for="al-cp">Código postal</label>
+            <input type="text" id="al-cp" name="cp" inputmode="numeric" maxlength="5" placeholder="11550">
+            <span class="alta-cp-hint" id="al-cp-hint"></span></div>
+          <div class="form-row"><label for="al-num">Número exterior</label>
+            <input type="text" id="al-num" name="numero" placeholder="123"></div>
+        </div>
+        <div class="form-row"><label for="al-calle">Calle</label>
+          <input type="text" id="al-calle" name="calle" placeholder="Nombre de la calle"></div>
+        <div class="form-grid-2">
+          <div class="form-row"><label for="al-colonia">Colonia</label>
+            <select id="al-colonia" name="colonia"><option value="">Escribe el CP primero</option></select></div>
+          <div class="form-row"><label for="al-alcaldia">Alcaldía</label>
+            <input type="text" id="al-alcaldia" name="alcaldia" readonly placeholder="Se llena sola con el CP"></div>
+        </div>
+      </div>
+
+      <div class="alta-section">
+        <h3>Características (las que apliquen)</h3>
+        <div class="alta-check-grid">
+          <label class="check"><input type="checkbox" name="amenidad" value="seguridad"> Seguridad 24/7</label><label class="check"><input type="checkbox" name="amenidad" value="elevador"> Elevador</label><label class="check"><input type="checkbox" name="amenidad" value="alberca"> Alberca</label><label class="check"><input type="checkbox" name="amenidad" value="gimnasio"> Gimnasio</label><label class="check"><input type="checkbox" name="amenidad" value="roof-garden"> Roof garden</label><label class="check"><input type="checkbox" name="amenidad" value="salon-eventos"> Salón de eventos</label><label class="check"><input type="checkbox" name="amenidad" value="jardin"> Jardín</label><label class="check"><input type="checkbox" name="amenidad" value="terraza"> Terraza</label><label class="check"><input type="checkbox" name="amenidad" value="balcon"> Balcón</label><label class="check"><input type="checkbox" name="amenidad" value="bodega"> Bodega</label><label class="check"><input type="checkbox" name="amenidad" value="cuarto-servicio"> Cuarto de servicio</label><label class="check"><input type="checkbox" name="amenidad" value="home-office"> Home office</label><label class="check"><input type="checkbox" name="amenidad" value="pet-friendly"> Mascotas</label><label class="check"><input type="checkbox" name="amenidad" value="amueblado"> Amueblado</label><label class="check"><input type="checkbox" name="amenidad" value="accesibilidad"> Accesibilidad</label><label class="check"><input type="checkbox" name="amenidad" value="estacionamiento-visitas"> Estac. de visitas</label><label class="check"><input type="checkbox" name="amenidad" value="area-juegos"> Área de juegos</label><label class="check"><input type="checkbox" name="amenidad" value="cisterna"> Cisterna</label><label class="check"><input type="checkbox" name="amenidad" value="planta-emergencia"> Planta de emergencia</label><label class="check"><input type="checkbox" name="amenidad" value="asador"> Área de asadores</label>
+        </div>
+      </div>
+
+      <div class="alta-section">
+        <h3>Descripción y fotos</h3>
+        <div class="form-row"><label for="al-desc">Descripción</label>
+          <textarea id="al-desc" name="descripcion" placeholder="Cuéntame del estado del inmueble, si está habitado, remodelaciones recientes, por qué decides vender/rentar, etc."></textarea></div>
+        <div class="form-row">
+          <label>Fotografías</label>
+          <div class="alta-photos" id="altaPhotos">
+            <label class="alta-photo-add" id="altaPhotoAdd">+
+              <input type="file" id="altaFotoInput" accept="image/*,.heic,.heif" multiple>
+            </label>
+          </div>
+          <span class="alta-cp-hint" id="altaFotoAviso"></span>
+        </div>
+      </div>
+
+      <label class="form-consent"><input type="checkbox" name="consent" required>
+        <span>Acepto el <a href="../aviso-de-privacidad/" target="_blank">aviso de privacidad</a> y que Gio Filio me contacte para dar seguimiento.</span></label>
+
+      <div class="form-actions"><button type="submit" class="btn btn--lg btn--block" id="altaSubmitBtn">Enviar registro</button></div>
+    </form>
+
+    <div class="form-success" id="altaSuccess" role="status">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:38px;height:38px;color:var(--gold);margin:0 auto .6rem"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.4l2.4 2.4 4.6-5"/></svg>
+      <h4 style="margin-bottom:.35rem">¡Listo, registro recibido!</h4>
+      <p class="small">Gio revisa los datos de tu propiedad y te contacta en menos de 48 horas.</p>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/vendor/supabase.js"></script>
+<script src="../assets/js/vendor/heic2any.min.js"></script>
+<script src="../assets/data/cp-colonias.js"></script>
+<script src="../assets/js/admin-config.js"></script>
+<script src="../assets/js/alta.js"></script>
+</body>
+</html>

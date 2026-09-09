@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], editingId: null, editingLeadId: null, fotos: [], session: null, perfil: null };
+  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, editingId: null, editingLeadId: null, fotos: [], session: null, perfil: null };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -125,6 +125,7 @@
     cargarPropiedades();
     cargarLeads();
     cargarTareas();
+    cargarSolicitudes();
     if (esAdmin) cargarEquipo();
   }
 
@@ -539,10 +540,12 @@
     $('#viewPropiedades').hidden = view !== 'propiedades';
     $('#viewContactos').hidden = view !== 'contactos';
     $('#viewTareas').hidden = view !== 'tareas';
+    $('#viewSolicitudes').hidden = view !== 'solicitudes';
     $('#viewEquipo').hidden = view !== 'equipo';
     $('#tabPropiedades').classList.toggle('is-active', view === 'propiedades');
     $('#tabContactos').classList.toggle('is-active', view === 'contactos');
     $('#tabTareas').classList.toggle('is-active', view === 'tareas');
+    $('#tabSolicitudes').classList.toggle('is-active', view === 'solicitudes');
     $('#tabEquipo').classList.toggle('is-active', view === 'equipo');
     $('#addPropBtnFab').style.display = view === 'propiedades' && STATE.propiedades.length ? 'inline-flex' : 'none';
   }
@@ -665,6 +668,133 @@
       if (res.error) { toast('No se pudo eliminar: ' + res.error.message, 'err'); return; }
       cargarTareas();
     });
+  }
+
+  // --------------------------------------------------------- SOLICITUDES DE ALTA
+  // Vienen del formulario público /alta-propiedad/ -- cualquier visitante
+  // puede insertar (RLS abierta a anon solo para insert), pero solo el
+  // equipo autenticado puede verlas/editarlas. Ver schema.sql.
+  function solRowHtml(s) {
+    var lugar = [s.colonia, s.alcaldia].filter(Boolean).join(', ') || 'Sin ubicación';
+    var nueva = s.estado === 'nueva';
+    return (
+      '<div class="task-row" data-open-sol="' + s.id + '" style="cursor:pointer">' +
+        '<div class="task-check' + (nueva ? '' : ' is-checked') + '" style="pointer-events:none">' +
+          (nueva ? '' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>') +
+        '</div>' +
+        '<div class="task-body">' +
+          '<div class="task-titulo">' + esc(s.nombre) + ' ' + esc(s.apellido || '') + ' — ' + esc(TIPO_LABEL_SOL[s.tipo] || s.tipo) + ' en ' + (s.operacion === 'renta' ? 'renta' : 'venta') + '</div>' +
+          '<div class="task-desc">' + esc(lugar) + (s.precio ? ' · ' + nf.format(s.precio) : '') + '</div>' +
+        '</div>' +
+        '<span class="task-vence">' + formatFechaCorta(s.creado_en.slice(0, 10)) + '</span>' +
+      '</div>'
+    );
+  }
+
+  var TIPO_LABEL_SOL = {
+    departamento: 'Departamento', casa: 'Casa', 'casa-en-condominio': 'Casa en condominio',
+    penthouse: 'Penthouse', loft: 'Loft', terreno: 'Terreno', oficina: 'Oficina',
+    'local-comercial': 'Local comercial', desarrollo: 'Desarrollo',
+  };
+
+  function renderSolicitudes() {
+    var lista = STATE.solicitudes;
+    $('#solicitudesEmptyState').style.display = lista.length ? 'none' : 'block';
+    $('#altaLinkTexto').textContent = location.origin + '/alta-propiedad/';
+    $('#solicitudesLista').style.display = lista.length ? 'flex' : 'none';
+    $('#solicitudesLista').innerHTML = lista.map(solRowHtml).join('');
+    var nuevas = lista.filter(function (s) { return s.estado === 'nueva'; });
+    $('#statSolicitudesNuevas').textContent = nuevas.length;
+    $('#statSolicitudesRevisadas').textContent = lista.filter(function (s) { return s.estado === 'revisada' || s.estado === 'publicada'; }).length;
+    $('#statSolicitudesTotal').textContent = lista.length;
+    var badge = $('#tabSolicitudesBadge');
+    badge.textContent = nuevas.length;
+    badge.hidden = !nuevas.length;
+  }
+
+  function cargarSolicitudes() {
+    sb.from('solicitudes_alta').select('*').neq('estado', 'descartada').order('creado_en', { ascending: false }).then(function (res) {
+      if (res.error) { console.warn('[Panel] no se pudieron cargar las solicitudes:', res.error.message); return; }
+      STATE.solicitudes = res.data || [];
+      renderSolicitudes();
+    });
+  }
+
+  function openSolModal(id) {
+    var s = STATE.solicitudes.find(function (x) { return x.id === id; });
+    if (!s) return;
+    STATE.solEditando = s;
+    var fotosHtml = (s.fotos || []).map(function (u) {
+      return '<a href="' + esc(u) + '" target="_blank" rel="noopener"><img src="' + esc(u) + '" alt="" style="width:76px;height:76px;object-fit:cover;border-radius:8px"></a>';
+    }).join('');
+    $('#solModalBody').innerHTML =
+      '<div class="field-grid">' +
+        '<div class="field"><label>Contacto</label><div>' + esc(s.nombre) + ' ' + esc(s.apellido || '') + '</div></div>' +
+        '<div class="field"><label>Teléfono</label><div><a href="https://wa.me/52' + esc((s.telefono || '').replace(/\D/g, '')) + '" target="_blank" rel="noopener">' + esc(s.telefono) + '</a></div></div>' +
+      '</div>' +
+      (s.email ? '<div class="field"><label>Correo</label><div>' + esc(s.email) + '</div></div>' : '') +
+      '<hr>' +
+      '<div class="field-grid">' +
+        '<div class="field"><label>Tipo / operación</label><div>' + esc(TIPO_LABEL_SOL[s.tipo] || s.tipo) + ' · ' + (s.operacion === 'renta' ? 'Renta' : 'Venta') + '</div></div>' +
+        '<div class="field"><label>Precio</label><div>' + (s.precio ? nf.format(s.precio) : '—') + '</div></div>' +
+      '</div>' +
+      '<div class="field-grid-3">' +
+        '<div class="field"><label>m² construcción</label><div>' + (s.m2c || '—') + '</div></div>' +
+        '<div class="field"><label>m² terreno</label><div>' + (s.m2t || '—') + '</div></div>' +
+        '<div class="field"><label>Antigüedad</label><div>' + (s.antig || 'Nueva') + '</div></div>' +
+      '</div>' +
+      '<div class="field-grid-3">' +
+        '<div class="field"><label>Recámaras</label><div>' + (s.rec || '—') + '</div></div>' +
+        '<div class="field"><label>Baños</label><div>' + (s.ban || '—') + '</div></div>' +
+        '<div class="field"><label>Estacionamientos</label><div>' + (s.est || '—') + '</div></div>' +
+      '</div>' +
+      '<div class="field"><label>Ubicación (como la escribió)</label><div>' + esc([s.calle, s.numero].filter(Boolean).join(' ')) + ', ' + esc(s.colonia) + ', ' + esc(s.alcaldia) + (s.cp ? ' · CP ' + esc(s.cp) : '') + '</div></div>' +
+      (s.amenidades && s.amenidades.length ? '<div class="field"><label>Características</label><div>' + s.amenidades.map(function (a) { return esc(a); }).join(', ') + '</div></div>' : '') +
+      (s.descripcion ? '<div class="field"><label>Descripción</label><div>' + esc(s.descripcion) + '</div></div>' : '') +
+      (fotosHtml ? '<div class="field"><label>Fotos</label><div style="display:flex;gap:.4rem;flex-wrap:wrap">' + fotosHtml + '</div></div>' : '');
+    $('#solModalBackdrop').classList.add('is-open');
+  }
+
+  function closeSolModal() {
+    $('#solModalBackdrop').classList.remove('is-open');
+  }
+
+  function marcarEstadoSolicitud(id, estado) {
+    return sb.from('solicitudes_alta').update({ estado: estado }).eq('id', id).then(function (res) {
+      if (res.error) { toast('No se pudo actualizar: ' + res.error.message, 'err'); return; }
+      cargarSolicitudes();
+    });
+  }
+
+  function descartarSolicitud() {
+    if (!STATE.solEditando) return;
+    if (!confirm('¿Descartar esta solicitud? No se podrá deshacer.')) return;
+    marcarEstadoSolicitud(STATE.solEditando.id, 'descartada');
+    closeSolModal();
+  }
+
+  function usarSolicitud() {
+    var s = STATE.solEditando;
+    if (!s) return;
+    closeSolModal();
+    openModal(null);
+    $('#f_detalle').value = [s.calle, s.numero, s.colonia].filter(Boolean).join(' ');
+    $('#f_tipo').value = s.tipo || 'departamento';
+    $('#f_precio').value = s.precio || '';
+    $('#f_rec').value = s.rec || '';
+    $('#f_ban').value = s.ban || '';
+    $('#f_est').value = s.est || '';
+    $('#f_m2c').value = s.m2c || '';
+    $('#f_m2t').value = s.m2t || '';
+    $('#f_descripcion').value = s.descripcion || '';
+    setOperacion(s.operacion || 'venta');
+    $$('input[name="amenidad"]').forEach(function (chk) {
+      chk.checked = !!(s.amenidades && s.amenidades.indexOf(chk.value) !== -1);
+    });
+    STATE.fotos = (s.fotos || []).slice();
+    renderPhotoStrip();
+    toast('Revisa la colonia y el título antes de publicar — no se copiaron solos.');
+    marcarEstadoSolicitud(s.id, 'revisada');
   }
 
   // --------------------------------------------------------------- EQUIPO (solo admin)
@@ -962,7 +1092,17 @@
     $('#tabPropiedades').addEventListener('click', function () { setView('propiedades'); });
     $('#tabContactos').addEventListener('click', function () { setView('contactos'); });
     $('#tabTareas').addEventListener('click', function () { setView('tareas'); });
+    $('#tabSolicitudes').addEventListener('click', function () { setView('solicitudes'); });
     $('#tabEquipo').addEventListener('click', function () { setView('equipo'); });
+
+    $('#solicitudesLista').addEventListener('click', function (e) {
+      var row = e.target.closest && e.target.closest('[data-open-sol]');
+      if (row) openSolModal(row.dataset.openSol);
+    });
+    $('#solModalClose').addEventListener('click', closeSolModal);
+    $('#solModalBackdrop').addEventListener('click', function (e) { if (e.target.id === 'solModalBackdrop') closeSolModal(); });
+    $('#solDescartarBtn').addEventListener('click', descartarSolicitud);
+    $('#solUsarBtn').addEventListener('click', usarSolicitud);
 
     $('#addTareaBtn').addEventListener('click', openTareaModal);
     $('#tareasEmptyAddBtn').addEventListener('click', openTareaModal);

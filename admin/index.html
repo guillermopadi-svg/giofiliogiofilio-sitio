@@ -55,6 +55,7 @@
     <button type="button" class="tabbar-btn is-active" id="tabPropiedades" data-view="propiedades">Propiedades</button>
     <button type="button" class="tabbar-btn" id="tabContactos" data-view="contactos">Contactos<span class="tabbar-badge" id="tabContactosBadge" hidden>0</span></button>
     <button type="button" class="tabbar-btn" id="tabTareas" data-view="tareas">Tareas<span class="tabbar-badge" id="tabTareasBadge" hidden>0</span></button>
+    <button type="button" class="tabbar-btn" id="tabSolicitudes" data-view="solicitudes">Solicitudes<span class="tabbar-badge" id="tabSolicitudesBadge" hidden>0</span></button>
     <button type="button" class="tabbar-btn" id="tabEquipo" data-view="equipo" hidden>Equipo</button>
   </nav>
 
@@ -140,6 +141,43 @@
       <button class="btn btn--gold" id="tareasEmptyAddBtn">Agregar la primera</button>
     </div>
   </main>
+
+  <main class="shell" id="viewSolicitudes" hidden>
+    <div class="shell-head">
+      <div>
+        <h1>Solicitudes de alta</h1>
+        <p>Propiedades que registraron los dueños directo desde el link público — revisa y publícalas cuando estén listas.</p>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card"><div class="num" id="statSolicitudesNuevas">0</div><div class="lbl">Nuevas</div></div>
+      <div class="stat-card"><div class="num" id="statSolicitudesRevisadas">0</div><div class="lbl">Revisadas</div></div>
+      <div class="stat-card"><div class="num" id="statSolicitudesTotal">0</div><div class="lbl">Total</div></div>
+    </div>
+
+    <div class="task-list" id="solicitudesLista"></div>
+
+    <div class="empty" id="solicitudesEmptyState" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <p>Todavía no ha llegado ninguna solicitud.</p>
+      <p class="small muted">Comparte este link con quien quiera registrar su propiedad: <code id="altaLinkTexto"></code></p>
+    </div>
+  </main>
+
+  <div class="modal-backdrop" id="solModalBackdrop">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Solicitud de alta</h3>
+        <button class="modal-close" id="solModalClose" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body" id="solModalBody"></div>
+      <div class="modal-foot">
+        <button class="btn btn--ghost" id="solDescartarBtn">Descartar</button>
+        <button class="btn btn--gold" id="solUsarBtn">Usar estos datos →</button>
+      </div>
+    </div>
+  </div>
 
   <main class="shell" id="viewEquipo" hidden>
     <div class="shell-head">

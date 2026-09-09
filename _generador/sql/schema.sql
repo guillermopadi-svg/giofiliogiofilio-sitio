@@ -329,6 +329,95 @@ create trigger on_tarea_updated
   before update on tareas
   for each row execute function set_actualizado_en();
 
+-- ------------------------------------------------------------ solicitudes_alta
+-- Formulario público de alta de propiedad (/alta-propiedad/) -- lo llena
+-- directo el dueño de la propiedad, sin necesidad de cuenta ni login. Vive
+-- separada de `propiedades_manual` a propósito: el INSERT es publico (anon),
+-- pero SELECT/UPDATE/DELETE quedan solo para el equipo autenticado -- un
+-- asesor revisa la solicitud en el panel (pestaña "Solicitudes") y, si
+-- procede, la pasa a mano a `propiedades_manual` para publicarla.
+create table if not exists solicitudes_alta (
+  id uuid primary key default gen_random_uuid(),
+  nombre text not null,
+  apellido text not null default '',
+  telefono text not null default '',
+  email text not null default '',
+  operacion text not null check (operacion in ('venta', 'renta')),
+  tipo text not null,
+  precio numeric not null default 0,
+  calle text not null default '',
+  numero text not null default '',
+  colonia text not null default '',
+  alcaldia text not null default '',
+  cp text not null default '',
+  rec int not null default 0,
+  ban int not null default 0,
+  est int not null default 0,
+  m2c int not null default 0,
+  m2t int not null default 0,
+  antig int not null default 0,
+  amenidades text[] not null default '{}',
+  descripcion text not null default '',
+  fotos text[] not null default '{}',
+  estado text not null default 'nueva' check (estado in ('nueva', 'revisada', 'descartada', 'publicada')),
+  notas_internas text not null default '',
+  creado_en timestamptz not null default now()
+);
+
+alter table solicitudes_alta enable row level security;
+
+grant insert on solicitudes_alta to anon;
+grant select, insert, update, delete on solicitudes_alta to authenticated;
+
+drop policy if exists "cualquiera puede registrar una solicitud" on solicitudes_alta;
+create policy "cualquiera puede registrar una solicitud"
+  on solicitudes_alta for insert
+  to anon
+  with check (true);
+
+drop policy if exists "solo el equipo autenticado ve y da seguimiento" on solicitudes_alta;
+create policy "solo el equipo autenticado ve y da seguimiento"
+  on solicitudes_alta for select
+  to authenticated
+  using (true);
+
+drop policy if exists "solo el equipo autenticado actualiza" on solicitudes_alta;
+create policy "solo el equipo autenticado actualiza"
+  on solicitudes_alta for update
+  to authenticated
+  using (true);
+
+drop policy if exists "solo el equipo autenticado borra" on solicitudes_alta;
+create policy "solo el equipo autenticado borra"
+  on solicitudes_alta for delete
+  to authenticated
+  using (true);
+
+-- Bucket separado del de asesores (`propiedades-manual`): aqui SI puede
+-- subir cualquier visitante anonimo (es el mismo formulario publico), pero
+-- solo puede insertar, nunca leer el listado, sobreescribir ni borrar --
+-- evita que alguien use este bucket como hosting de archivos gratis.
+insert into storage.buckets (id, name, public)
+values ('solicitudes-alta', 'solicitudes-alta', true)
+on conflict (id) do nothing;
+
+drop policy if exists "cualquiera puede ver fotos de solicitudes (bucket publico)" on storage.objects;
+create policy "cualquiera puede ver fotos de solicitudes (bucket publico)"
+  on storage.objects for select
+  using (bucket_id = 'solicitudes-alta');
+
+drop policy if exists "cualquier visitante puede subir foto a su solicitud" on storage.objects;
+create policy "cualquier visitante puede subir foto a su solicitud"
+  on storage.objects for insert
+  to anon
+  with check (bucket_id = 'solicitudes-alta');
+
+drop policy if exists "solo el equipo autenticado borra fotos de solicitudes" on storage.objects;
+create policy "solo el equipo autenticado borra fotos de solicitudes"
+  on storage.objects for delete
+  to authenticated
+  using (bucket_id = 'solicitudes-alta');
+
 -- ------------------------------------------------------------------ NOTAS
 -- 1. Login es SOLO con Google (sin contraseñas). Antes de que nadie pueda
 --    entrar, hay que activar el proveedor de Google en Supabase:
