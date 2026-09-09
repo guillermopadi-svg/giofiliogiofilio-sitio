@@ -231,7 +231,9 @@
       .then(function (data) {
         if (!data || data.ok !== true) {
           btn.disabled = false; btn.textContent = textoOriginal;
-          fotoAviso.textContent = 'No se pudo enviar tu registro, intenta de nuevo en un momento.';
+          fotoAviso.textContent = data && data.error === 'demasiados_intentos'
+            ? 'Se hicieron demasiados intentos seguidos desde esta conexión — espera unos minutos e intenta de nuevo.'
+            : 'No se pudo enviar tu registro, intenta de nuevo en un momento.';
           return;
         }
         form.style.display = 'none';

@@ -18,7 +18,7 @@ function esOrigenValido(origin) {
 
 // Mismo esquema de rate-limiting que api/leads.js -- ver ese archivo para
 // el razonamiento completo (fail-open si Upstash no esta configurado).
-const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_MAX = 20;
 const RATE_LIMIT_WINDOW_SECONDS = 3600;
 
 async function upstash(...command) {
