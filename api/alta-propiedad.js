@@ -63,6 +63,10 @@ function numero(v) {
   return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
+function siNoNoSe(v) {
+  return ['si', 'no', 'no_se'].includes(v) ? v : 'no_se';
+}
+
 module.exports = async (req, res) => {
   const origin = req.headers.origin;
   if (esOrigenValido(origin)) {
@@ -128,6 +132,12 @@ module.exports = async (req, res) => {
     m2c: entero(raw.m2c),
     m2t: entero(raw.m2t),
     antig: entero(raw.antig),
+    hipoteca: siNoNoSe(raw.hipoteca),
+    hipoteca_detalle: texto(raw.hipoteca_detalle, 200),
+    gravamen: siNoNoSe(raw.gravamen),
+    gravamen_detalle: texto(raw.gravamen_detalle, 200),
+    deuda_admin: siNoNoSe(raw.deuda_admin),
+    deuda_admin_detalle: texto(raw.deuda_admin_detalle, 200),
     amenidades,
     descripcion: texto(raw.descripcion, MAX_LARGO_TEXTO),
     fotos,

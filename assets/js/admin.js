@@ -727,6 +727,10 @@
     var fotosHtml = (s.fotos || []).map(function (u) {
       return '<a href="' + esc(u) + '" target="_blank" rel="noopener"><img src="' + esc(u) + '" alt="" style="width:76px;height:76px;object-fit:cover;border-radius:8px"></a>';
     }).join('');
+    var SI_NO_LABEL = { si: 'Sí', no: 'No', no_se: 'No sabe / no dijo' };
+    function legalLinea(label, valor, detalle) {
+      return '<div class="field"><label>' + label + '</label><div>' + (SI_NO_LABEL[valor] || 'No sabe / no dijo') + (detalle ? ' — ' + esc(detalle) : '') + '</div></div>';
+    }
     $('#solModalBody').innerHTML =
       '<div class="field-grid">' +
         '<div class="field"><label>Contacto</label><div>' + esc(s.nombre) + ' ' + esc(s.apellido || '') + '</div></div>' +
@@ -749,6 +753,12 @@
         '<div class="field"><label>Estacionamientos</label><div>' + (s.est || '—') + '</div></div>' +
       '</div>' +
       '<div class="field"><label>Ubicación (como la escribió)</label><div>' + esc([s.calle, s.numero].filter(Boolean).join(' ')) + ', ' + esc(s.colonia) + ', ' + esc(s.alcaldia) + (s.cp ? ' · CP ' + esc(s.cp) : '') + '</div></div>' +
+      '<hr>' +
+      '<div class="field-grid">' +
+        legalLinea('Hipoteca', s.hipoteca, s.hipoteca_detalle) +
+        legalLinea('Gravamen / embargo', s.gravamen, s.gravamen_detalle) +
+      '</div>' +
+      legalLinea('Deudas de administración o servicios', s.deuda_admin, s.deuda_admin_detalle) +
       (s.amenidades && s.amenidades.length ? '<div class="field"><label>Características</label><div>' + s.amenidades.map(function (a) { return esc(a); }).join(', ') + '</div></div>' : '') +
       (s.descripcion ? '<div class="field"><label>Descripción</label><div>' + esc(s.descripcion) + '</div></div>' : '') +
       (fotosHtml ? '<div class="field"><label>Fotos</label><div style="display:flex;gap:.4rem;flex-wrap:wrap">' + fotosHtml + '</div></div>' : '');
