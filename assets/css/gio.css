@@ -816,6 +816,8 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .form-row .err{ font-size:var(--step--2); color:#B4402F; display:none; }
 .form-row.is-error input,.form-row.is-error select,.form-row.is-error textarea{ border-color:#D68579; }
 .form-row.is-error .err{ display:block; }
+.form-row.is-required label::after{ content:" *"; color:#B4402F; }
+.form-row input:disabled,.form-row select:disabled,.form-row textarea:disabled{ opacity:.45; background:var(--navy-050); cursor:not-allowed; }
 .form-consent{ display:flex; gap:.55rem; align-items:flex-start; font-size:var(--step--2); color:var(--ink-50); margin:.5rem 0 .9rem; line-height:1.5; }
 .form-consent input{ margin-top:.15rem; width:15px; height:15px; accent-color:var(--navy); flex:0 0 auto; }
 .form-actions{ display:grid; gap:.5rem; }

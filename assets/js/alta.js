@@ -78,6 +78,22 @@
     alcInput.value = opt ? (opt.dataset.alc || '') : '';
   });
 
+  // ------------------------------------------------------- Legal/financiero
+  function wireDetalle(selId, detId) {
+    var sel = $(selId), det = $(detId);
+    if (!sel || !det) return;
+    function sync() {
+      var off = sel.value === 'no';
+      det.disabled = off;
+      if (off) det.value = '';
+    }
+    sel.addEventListener('change', sync);
+    sync();
+  }
+  wireDetalle('#al-hipoteca', '#al-hipoteca-detalle');
+  wireDetalle('#al-gravamen', '#al-gravamen-detalle');
+  wireDetalle('#al-deuda-admin', '#al-deuda-admin-detalle');
+
   // ------------------------------------------------------- Fotos
   function esHeicPorNombre(file) {
     return /\.(heic|heif)$/i.test(file.name) || /^image\/(heic|heif)/i.test(file.type);

@@ -93,16 +93,16 @@ def main():
         if row.get("tipo") not in TIPO_VALIDOS:
             warnings.append(f"{row['id']}: tipo '{row.get('tipo')}' desconocido — se usó 'departamento'")
 
-        # Formatos que ningún navegador (fuera de Safari) ni WhatsApp/redes
-        # sociales pueden mostrar al compartir el link — el panel ya
-        # convierte HEIC a JPG solo (o avisa) antes de subir, pero esto es
-        # el respaldo del lado del servidor por si algo se cuela de todas
-        # formas (ej. una fila vieja de antes de ese fix).
-        FORMATOS_WEB = (".jpg", ".jpeg", ".png", ".webp", ".gif")
-        fotos_candidatas = [u for u in (row.get("fotos") or []) if u.lower().split("?")[0].endswith(FORMATOS_WEB)]
+        # Se acepta cualquier formato de imagen — el panel/formulario ya
+        # convierten HEIC a JPG antes de subir, así que lo único que de
+        # verdad rompe WhatsApp/redes al compartir el link es un HEIC real
+        # que se haya colado (ej. una fila vieja de antes de ese fix). Eso
+        # se detecta por contenido (es_heic_real), no por extensión — casi
+        # nadie sabe en qué formato quedó guardada su foto.
+        fotos_candidatas = row.get("fotos") or []
         fotos = [u for u in fotos_candidatas if not es_heic_real(u)]
         if len(fotos) < len(fotos_candidatas):
-            warnings.append(f"{row['id']}: {len(fotos_candidatas) - len(fotos)} foto(s) son HEIC real aunque digan .jpg — se omiten")
+            warnings.append(f"{row['id']}: {len(fotos_candidatas) - len(fotos)} foto(s) son HEIC real — se omiten")
         if not fotos:
             # Sin al menos una foto válida, build.py no tiene de dónde sacar
             # la imagen de portada/galería/schema.org de la ficha — se omite
