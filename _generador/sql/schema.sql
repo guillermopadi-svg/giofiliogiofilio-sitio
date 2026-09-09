@@ -413,10 +413,13 @@ create policy "cualquiera puede ver fotos de solicitudes (bucket publico)"
   on storage.objects for select
   using (bucket_id = 'solicitudes-alta');
 
+-- to anon, authenticated: el mismo navegador que tiene sesion iniciada en
+-- /admin/ comparte esa sesion con /alta-propiedad/ (mismo dominio) -- un
+-- asesor probando o usando el formulario publico ya no entra como anon.
 drop policy if exists "cualquier visitante puede subir foto a su solicitud" on storage.objects;
 create policy "cualquier visitante puede subir foto a su solicitud"
   on storage.objects for insert
-  to anon
+  to anon, authenticated
   with check (bucket_id = 'solicitudes-alta');
 
 drop policy if exists "solo el equipo autenticado borra fotos de solicitudes" on storage.objects;
