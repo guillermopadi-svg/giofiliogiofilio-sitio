@@ -814,7 +814,40 @@
   // estudios_precio en schema.sql.
   var TIPO_LABEL_EST = { departamento: 'Departamento', casa: 'Casa', 'casa-en-condominio': 'Casa en condominio', penthouse: 'Penthouse', loft: 'Loft', terreno: 'Terreno', oficina: 'Oficina', 'local-comercial': 'Local comercial' };
   var INVENTARIO_PUBLICO_PROMESA = null;
-  var ULTIMO_PROMEDIO_INVENTARIO = { promedio: 0, n: 0 };
+  var MAX_COMPARABLES_CALCULO = 8;    // "mostrar 8 propiedades" -- si hay mas, se quedan las mas cercanas (radio) dentro de la zona
+  // { promedio, promedioTrim, n, dias } -- promedio = simple (el que de verdad
+  // usa Gio en su Excel para "Valor asignado"); promedioTrim = sin el mas
+  // alto/bajo, solo como dato de referencia adicional.
+  var ULTIMO_PROMEDIO_INVENTARIO = { promedio: 0, promedioTrim: 0, n: 0, dias: [] };
+  var ULTIMO_PROMEDIO_COMPARABLES = { promedio: 0, promedioTrim: 0, n: 0, dias: [] };
+
+  function promedioSimple(valores) {
+    return valores.length ? valores.reduce(function (a, b) { return a + b; }, 0) / valores.length : 0;
+  }
+
+  // Promedio "recortado": quita el más alto y el más bajo antes de promediar
+  // -- solo como referencia adicional (ver nota arriba), con 2 valores o
+  // menos no tiene caso recortar, se promedia tal cual.
+  function promedioTruncado(valores) {
+    var ordenado = valores.slice().sort(function (a, b) { return a - b; });
+    if (ordenado.length > 2) ordenado = ordenado.slice(1, -1);
+    return promedioSimple(ordenado);
+  }
+
+  function diasDesde(fechaIso) {
+    if (!fechaIso) return null;
+    var f = new Date(fechaIso);
+    if (isNaN(f.getTime())) return null;
+    return Math.max(0, Math.round((Date.now() - f.getTime()) / 86400000));
+  }
+
+  function distanciaKm(lat1, lng1, lat2, lng2) {
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLng = (lng2 - lng1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
 
   function cargarInventarioPublico() {
     if (!INVENTARIO_PUBLICO_PROMESA) {
@@ -900,6 +933,8 @@
     var box = $('#estComparablesBox');
     if (!lista.length) {
       box.innerHTML = '<div class="est-empty-hint">Todavía no agregas comparables externos.</div>';
+      ULTIMO_PROMEDIO_COMPARABLES = { promedio: 0, promedioTrim: 0, n: 0, dias: [] };
+      actualizarResumenEstudio();
       return;
     }
     box.innerHTML =
@@ -918,10 +953,16 @@
       var precio = Number(tr.querySelector('.est-in-precio').value) || 0;
       tr.querySelector('.est-in-preciom2').value = (m2 && precio) ? nf.format(Math.round(precio / m2)) : '';
     });
-    var validas = leerComparablesDesdeDOM().filter(function (f) { return f.m2 > 0 && f.precio > 0; });
-    var promedio = validas.length ? validas.reduce(function (s, f) { return s + f.precio / f.m2; }, 0) / validas.length : 0;
+    var validas = leerComparablesDesdeDOM().filter(function (f) { return f.m2 > 0 && f.precio > 0; }).slice(0, MAX_COMPARABLES_CALCULO);
+    var valoresM2 = validas.map(function (f) { return f.precio / f.m2; });
+    var promedio = promedioSimple(valoresM2);
+    var promedioTrim = promedioTruncado(valoresM2);
+    var dias = validas.filter(function (f) { return f.dias > 0; }).map(function (f) { return f.dias; });
+    ULTIMO_PROMEDIO_COMPARABLES = { promedio: promedio, promedioTrim: promedioTrim, n: validas.length, dias: dias };
     var avgEl = $('#estCompAvgM2');
     if (avgEl) avgEl.textContent = promedio ? nf.format(Math.round(promedio)) + '/m²' : '—';
+    var avgRow = $('#estComparablesBody .est-row-avg td:first-child');
+    if (avgRow) avgRow.textContent = 'Promedio (' + validas.length + ')' + (validas.length > 2 ? ' · sin extremos: ' + nf.format(Math.round(promedioTrim)) + '/m²' : '');
     actualizarResumenEstudio();
   }
 
@@ -932,26 +973,48 @@
     var box = $('#estInventarioBox');
     if (!colonia) {
       box.innerHTML = '<div class="est-empty-hint">Escribe una colonia para comparar contra tu inventario.</div>';
-      ULTIMO_PROMEDIO_INVENTARIO = { promedio: 0, n: 0 };
+      ULTIMO_PROMEDIO_INVENTARIO = { promedio: 0, promedioTrim: 0, n: 0, dias: [] };
       actualizarResumenEstudio();
       return;
     }
     cargarInventarioPublico().then(function (props) {
-      var match = props.filter(function (p) {
+      var todoElMatch = props.filter(function (p) {
         return p.operacion === operacion && p.tipo === tipo && normalizaTexto(p.colonia_nombre).indexOf(colonia) !== -1;
       });
+      // Máximo 8 comparables -- si hay más, nos quedamos con los más
+      // cercanos entre sí (centro del propio grupo encontrado), como un
+      // radio dentro de la misma zona/categoría en vez de tomarlos al azar.
+      var match = todoElMatch;
+      if (todoElMatch.length > MAX_COMPARABLES_CALCULO) {
+        var conCoords = todoElMatch.filter(function (p) { return p.lat && p.lng; });
+        if (conCoords.length) {
+          var centroLat = promedioSimple(conCoords.map(function (p) { return p.lat; }));
+          var centroLng = promedioSimple(conCoords.map(function (p) { return p.lng; }));
+          match = todoElMatch.slice().sort(function (a, b) {
+            var da = (a.lat && a.lng) ? distanciaKm(a.lat, a.lng, centroLat, centroLng) : Infinity;
+            var db = (b.lat && b.lng) ? distanciaKm(b.lat, b.lng, centroLat, centroLng) : Infinity;
+            return da - db;
+          }).slice(0, MAX_COMPARABLES_CALCULO);
+        } else {
+          match = todoElMatch.slice(0, MAX_COMPARABLES_CALCULO);
+        }
+      }
       var conPrecioM2 = match.filter(function (p) { return p.precio_m2 > 0; });
-      var promedio = conPrecioM2.length ? conPrecioM2.reduce(function (s, p) { return s + p.precio_m2; }, 0) / conPrecioM2.length : 0;
-      ULTIMO_PROMEDIO_INVENTARIO = { promedio: promedio, n: conPrecioM2.length };
-      if (!match.length) {
+      var valoresM2 = conPrecioM2.map(function (p) { return p.precio_m2; });
+      var promedio = promedioSimple(valoresM2);
+      var promedioTrim = promedioTruncado(valoresM2);
+      var dias = match.map(function (p) { return diasDesde(p.publicado); }).filter(function (d) { return d != null; });
+      ULTIMO_PROMEDIO_INVENTARIO = { promedio: promedio, promedioTrim: promedioTrim, n: conPrecioM2.length, dias: dias };
+      if (!todoElMatch.length) {
         box.innerHTML = '<div class="est-empty-hint">No tienes propiedades publicadas en "' + esc($('#est_colonia').value) + '" con ese tipo y operación.</div>';
       } else {
         box.innerHTML =
-          '<div style="overflow-x:auto"><table class="est-table"><thead><tr><th>Propiedad</th><th>m²</th><th>Precio</th><th>$/m²</th></tr></thead><tbody>' +
+          '<div style="overflow-x:auto"><table class="est-table"><thead><tr><th>Propiedad</th><th>m²</th><th>Precio</th><th>$/m²</th><th>Días</th></tr></thead><tbody>' +
           match.map(function (p) {
-            return '<tr><td><a href="../' + esc(p.url || '') + '" target="_blank" rel="noopener">' + esc(p.titulo) + '</a></td><td>' + (p.m2c || '—') + '</td><td>' + nf.format(p.precio) + '</td><td>' + (p.precio_m2 ? nf.format(Math.round(p.precio_m2)) : '—') + '</td></tr>';
+            var d = diasDesde(p.publicado);
+            return '<tr><td><a href="../' + esc(p.url || '') + '" target="_blank" rel="noopener">' + esc(p.titulo) + '</a></td><td>' + (p.m2c || '—') + '</td><td>' + nf.format(p.precio) + '</td><td>' + (p.precio_m2 ? nf.format(Math.round(p.precio_m2)) : '—') + '</td><td>' + (d == null ? '—' : d) + '</td></tr>';
           }).join('') +
-          '<tr class="est-row-avg"><td colspan="3">Promedio (' + conPrecioM2.length + ')</td><td>' + (promedio ? nf.format(Math.round(promedio)) + '/m²' : '—') + '</td></tr>' +
+          '<tr class="est-row-avg"><td colspan="3">Promedio (' + conPrecioM2.length + (todoElMatch.length > MAX_COMPARABLES_CALCULO ? ' de ' + todoElMatch.length + ' encontrados, los más cercanos' : '') + ')' + (conPrecioM2.length > 2 ? ' · sin extremos: ' + nf.format(Math.round(promedioTrim)) + '/m²' : '') + '</td><td>' + (promedio ? nf.format(Math.round(promedio)) + '/m²' : '—') + '</td><td></td></tr>' +
           '</tbody></table></div>';
       }
       actualizarResumenEstudio();
@@ -962,12 +1025,14 @@
     var m2c = Number($('#est_m2c').value) || 0;
     var box = $('#estResumenBox');
     var promInv = ULTIMO_PROMEDIO_INVENTARIO.promedio;
-    var validasComp = $('#estComparablesBody') ? leerComparablesDesdeDOM().filter(function (f) { return f.m2 > 0 && f.precio > 0; }) : [];
-    var promComp = validasComp.length ? validasComp.reduce(function (s, f) { return s + f.precio / f.m2; }, 0) / validasComp.length : 0;
+    var promComp = ULTIMO_PROMEDIO_COMPARABLES.promedio;
     var fuentes = [];
     if (promInv) fuentes.push(promInv);
     if (promComp) fuentes.push(promComp);
-    var promCombinado = fuentes.length ? fuentes.reduce(function (a, b) { return a + b; }, 0) / fuentes.length : 0;
+    var promCombinado = fuentes.length ? promedioSimple(fuentes) : 0;
+
+    var dias = ULTIMO_PROMEDIO_INVENTARIO.dias.concat(ULTIMO_PROMEDIO_COMPARABLES.dias);
+    var diasProm = dias.length ? Math.round(promedioSimple(dias)) : null;
 
     function card(lbl, valor, destacada) {
       return '<div class="est-resumen-card' + (destacada ? ' est-destacada' : '') + '"><div class="lbl">' + lbl + '</div><div class="num">' + valor + '</div></div>';
@@ -976,10 +1041,23 @@
       box.innerHTML = '<div class="est-empty-hint">Completa los m² y al menos un comparable (propio o externo) para ver el precio estimado.</div>';
       return;
     }
+
+    var valorAsignado = promCombinado * m2c;
+    var factorNegPct = Math.max(0, Number($('#est_propiedades_mercado').value) || 0) / 100;
+    var factorPublicarPct = Math.max(0, Math.min(100, Number($('#est_factor_publicar').value) || 0)) / 100;
+    var factorNegociacion = valorAsignado * factorNegPct;
+    var precioCierre = valorAsignado - factorNegociacion;
+    var precioSugeridoPublicar = valorAsignado - factorPublicarPct * factorNegociacion;
+
     box.innerHTML = '<div class="est-resumen">' +
-      card('Según tu inventario', promInv ? nf.format(Math.round(promInv * m2c)) : '—') +
-      card('Según comparables externos', promComp ? nf.format(Math.round(promComp * m2c)) : '—') +
-      card('Precio sugerido', nf.format(Math.round(promCombinado * m2c)), true) +
+      card('Valor asignado', nf.format(Math.round(valorAsignado)), true) +
+      card('Precio sugerido a publicar', nf.format(Math.round(precioSugeridoPublicar))) +
+      card('Precio estimado de cierre', nf.format(Math.round(precioCierre))) +
+    '</div>' +
+    '<div class="field-hint" style="margin-top:.5rem">' +
+      'Promedio simple $/m²: ' + nf.format(Math.round(promCombinado)) + ' (tu inventario: ' + (promInv ? nf.format(Math.round(promInv)) : '—') + (promComp ? ', externos: ' + nf.format(Math.round(promComp)) : '') + ')' +
+      (factorNegPct ? ' · Factor de negociación: ' + Math.round(factorNegPct * 100) + '% (' + nf.format(Math.round(factorNegociacion)) + ')' : ' · Escribe cuántas propiedades similares hay en el mercado para calcular el factor de negociación') +
+      (diasProm != null ? ' · Promedio de ' + diasProm + ' días publicados' : '') +
     '</div>';
   }
 
@@ -1010,6 +1088,8 @@
     $('#est_tipo').value = e ? e.tipo : 'departamento';
     $('#est_colonia').value = e ? (e.colonia || '') : '';
     $('#est_m2c').value = e && e.m2c ? e.m2c : '';
+    $('#est_propiedades_mercado').value = e && e.propiedades_mercado ? e.propiedades_mercado : '';
+    $('#est_factor_publicar').value = e && e.factor_publicar != null ? e.factor_publicar : 55;
     $('#est_notas').value = e ? (e.notas || '') : '';
     setOperacionEstudio(e ? e.operacion : 'venta');
     renderComparablesTable((e && e.comparables) || []);
@@ -1031,6 +1111,8 @@
       tipo: $('#est_tipo').value,
       colonia: $('#est_colonia').value.trim(),
       m2c: Number($('#est_m2c').value) || 0,
+      propiedades_mercado: Number($('#est_propiedades_mercado').value) || 0,
+      factor_publicar: Number($('#est_factor_publicar').value) || 55,
       comparables: leerComparablesDesdeDOM(),
       notas: $('#est_notas').value.trim(),
     };
@@ -1386,6 +1468,8 @@
     $('#est_tipo').addEventListener('change', recalcularInventarioEstudio);
     $('#est_colonia').addEventListener('input', recalcularInventarioEstudio);
     $('#est_m2c').addEventListener('input', actualizarResumenEstudio);
+    $('#est_propiedades_mercado').addEventListener('input', actualizarResumenEstudio);
+    $('#est_factor_publicar').addEventListener('input', actualizarResumenEstudio);
     $('#estAddComparableBtn').addEventListener('click', function () {
       var lista = leerComparablesDesdeDOM();
       lista.push({});

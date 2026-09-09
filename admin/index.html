@@ -459,6 +459,20 @@
       <div id="estComparablesBox"></div>
       <button type="button" class="btn btn--ghost btn--sm" id="estAddComparableBtn" style="margin-top:.6rem">+ Agregar comparable</button>
 
+      <div class="section-label">Factor de negociación</div>
+      <div class="field-grid">
+        <div class="field">
+          <label for="est_propiedades_mercado">Propiedades similares en el mercado</label>
+          <input type="number" id="est_propiedades_mercado" min="0" placeholder="Ej. 10">
+          <div class="field-hint">Cuenta cuántas ves en Inmuebles24, EasyBroker, etc. (no solo las tuyas) — ese número se usa como % de negociación.</div>
+        </div>
+        <div class="field">
+          <label for="est_factor_publicar">% del factor aplicado al precio de publicación</label>
+          <input type="number" id="est_factor_publicar" min="0" max="100" value="55">
+          <div class="field-hint">55% es lo que Gio usa normalmente — ajústalo si este caso lo requiere.</div>
+        </div>
+      </div>
+
       <div class="section-label">Precio estimado</div>
       <div id="estResumenBox"></div>
 
