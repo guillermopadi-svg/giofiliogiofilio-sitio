@@ -150,7 +150,7 @@
         var ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
         var ruta = sessionId + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
         return sb.storage.from('solicitudes-alta').upload(ruta, f).then(function (res) {
-          if (res.error) { fotoAviso.textContent = 'No se pudo subir ' + f.name + '.'; return null; }
+          if (res.error) { fotoAviso.textContent = 'No se pudo subir ' + f.name + ': ' + (res.error.message || res.error); return null; }
           return sb.storage.from('solicitudes-alta').getPublicUrl(ruta).data.publicUrl;
         });
       });
