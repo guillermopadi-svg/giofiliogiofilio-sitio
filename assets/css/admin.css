@@ -314,6 +314,11 @@ button{ font-family:inherit; cursor:pointer; }
 .est-resumen-card .lbl{ font-size:.68rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-50); }
 .est-resumen-card .num{ font-size:1.15rem; font-weight:700; color:var(--navy); margin-top:.2rem; }
 .est-resumen-card.est-destacada{ background:var(--gold-050); border:1px solid var(--gold-soft); }
+
+.est-instructivo{ background:var(--navy-050); border-radius:var(--r-sm); padding:.7rem .9rem; margin-bottom:1.2rem; }
+.est-instructivo summary{ cursor:pointer; font-weight:600; color:var(--navy); font-size:.88rem; }
+.est-instructivo ol{ margin:.7rem 0 .1rem; padding-left:1.2rem; font-size:.85rem; color:var(--ink-70); line-height:1.6; }
+.est-instructivo li{ margin-bottom:.35rem; }
 .lead-detail dl{ margin:0; }
 .lead-detail dt{ font-size:.72rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-50); margin-top:.9rem; }
 .lead-detail dt:first-child{ margin-top:0; }

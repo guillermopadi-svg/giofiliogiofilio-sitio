@@ -443,6 +443,7 @@ create table if not exists estudios_precio (
   tipo text not null,
   colonia text not null default '',
   m2c numeric not null default 0,
+  m2t numeric not null default 0,                 -- m2 de terreno del sujeto -- junto con m2c arma el "m2 homologado" para comparar casas/terrenos con distinto tamano de terreno
   propiedades_mercado int not null default 0,     -- cuantas propiedades similares hay en el mercado -- el factor de negociacion usa este numero como %
   factor_publicar numeric not null default 55,    -- % del factor de negociacion que se resta al "valor asignado" para armar el precio de publicacion (el resto queda de margen para negociar hasta el precio de cierre)
   solicitud_id uuid references solicitudes_alta(id) on delete set null,
@@ -453,6 +454,7 @@ create table if not exists estudios_precio (
   actualizado_en timestamptz not null default now()
 );
 
+alter table estudios_precio add column if not exists m2t numeric not null default 0;
 alter table estudios_precio add column if not exists propiedades_mercado int not null default 0;
 alter table estudios_precio add column if not exists factor_publicar numeric not null default 55;
 

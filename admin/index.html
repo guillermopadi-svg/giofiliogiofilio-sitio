@@ -416,6 +416,18 @@
 
       <div class="error-msg" id="estudioError"></div>
 
+      <details class="est-instructivo">
+        <summary>¿Cómo llenar este estudio?</summary>
+        <ol>
+          <li>Escribe el tipo, la colonia y los m² (construcción y terreno, si aplica) de la propiedad que quieres estimar.</li>
+          <li>Revisa <strong>"Tu inventario en esta zona"</strong> — se calcula solo contra tus propiedades ya publicadas.</li>
+          <li>Si quieres afinar el número, agrega <strong>comparables externos</strong> (Inmuebles24, EasyBroker, etc.): pega la liga y captura sus datos, igual que en tu Excel.</li>
+          <li>Escribe cuántas <strong>propiedades similares ves en el mercado</strong> (Inmuebles24 y demás, no solo las tuyas) — ese número se usa directo como % del factor de negociación.</li>
+          <li>Abajo se calculan solos el <strong>Valor asignado</strong>, el <strong>Precio sugerido a publicar</strong> y el <strong>Precio estimado de cierre</strong>.</li>
+          <li>Guarda el estudio, o expórtalo a Excel/PDF para mandárselo al cliente.</li>
+        </ol>
+      </details>
+
       <div class="section-label">Propiedad a estimar</div>
       <div class="field">
         <label for="est_nombre">Nombre del estudio</label>
@@ -444,9 +456,16 @@
           <input type="text" id="est_colonia" list="est_colonia_list" placeholder="Ej. Roma Norte">
           <datalist id="est_colonia_list"></datalist>
         </div>
+      </div>
+      <div class="field-grid">
         <div class="field">
           <label for="est_m2c">m² de construcción</label>
           <input type="number" id="est_m2c" min="0" placeholder="65">
+        </div>
+        <div class="field">
+          <label for="est_m2t">m² de terreno</label>
+          <input type="number" id="est_m2t" min="0" placeholder="0">
+          <div class="field-hint">Se usa para homologar el $/m² con casas/terrenos — en departamentos normalmente es 0.</div>
         </div>
       </div>
 

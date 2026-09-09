@@ -899,6 +899,7 @@
         liga: tr.querySelector('.est-in-liga').value.trim(),
         ubicacion: tr.querySelector('.est-in-ubicacion').value.trim(),
         m2: Number(tr.querySelector('.est-in-m2').value) || 0,
+        m2t: Number(tr.querySelector('.est-in-m2t').value) || 0,
         precio: Number(tr.querySelector('.est-in-precio').value) || 0,
         rec: Number(tr.querySelector('.est-in-rec').value) || 0,
         ban: Number(tr.querySelector('.est-in-ban').value) || 0,
@@ -909,16 +910,26 @@
     });
   }
 
+  // "m² homologado" = construcción + terreno -- así una casa con terreno
+  // grande no se compara injustamente contra una con terreno chico usando
+  // solo el $/m² de construcción. En departamentos el terreno normalmente
+  // es 0, así que homologado = construcción y no cambia nada.
+  function m2Homologado(m2c, m2t) {
+    return (Number(m2c) || 0) + (Number(m2t) || 0);
+  }
+
   function estFilaComparableHtml(c, i) {
     c = c || {};
-    var precioM2 = (c.m2 && c.precio) ? Math.round(c.precio / c.m2) : '';
+    var homo = m2Homologado(c.m2, c.m2t);
+    var precioM2 = (homo && c.precio) ? Math.round(c.precio / homo) : '';
     return (
       '<tr class="est-comp-row" data-idx="' + i + '">' +
         '<td class="est-liga"><input type="url" class="est-in-liga" placeholder="https://…" value="' + esc(c.liga || '') + '"></td>' +
         '<td><input type="text" class="est-in-ubicacion" placeholder="Calle, colonia" value="' + esc(c.ubicacion || '') + '"></td>' +
-        '<td><input type="number" min="0" class="est-in-m2" value="' + (c.m2 || '') + '"></td>' +
+        '<td><input type="number" min="0" class="est-in-m2" value="' + (c.m2 || '') + '" title="m² de construcción"></td>' +
+        '<td><input type="number" min="0" class="est-in-m2t" value="' + (c.m2t || '') + '" title="m² de terreno"></td>' +
         '<td><input type="number" min="0" class="est-in-precio" value="' + (c.precio || '') + '"></td>' +
-        '<td><input type="text" class="est-in-preciom2" value="' + (precioM2 ? nf.format(precioM2) : '') + '" readonly></td>' +
+        '<td><input type="text" class="est-in-preciom2" value="' + (precioM2 ? nf.format(precioM2) : '') + '" readonly title="Precio por m² homologado (construcción + terreno)"></td>' +
         '<td><input type="number" min="0" class="est-in-rec" value="' + (c.rec || '') + '"></td>' +
         '<td><input type="number" min="0" class="est-in-ban" value="' + (c.ban || '') + '"></td>' +
         '<td><input type="number" min="0" class="est-in-est" value="' + (c.est || '') + '"></td>' +
@@ -939,22 +950,25 @@
     }
     box.innerHTML =
       '<div style="overflow-x:auto"><table class="est-table"><thead><tr>' +
-        '<th>Liga</th><th>Ubicación</th><th>m²</th><th>Precio</th><th>$/m²</th><th>Rec</th><th>Baños</th><th>Coch</th><th>Antig.</th><th>Días</th><th></th>' +
+        '<th>Liga</th><th>Ubicación</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m²*</th><th>Rec</th><th>Baños</th><th>Coch</th><th>Antig.</th><th>Días</th><th></th>' +
       '</tr></thead><tbody id="estComparablesBody">' +
         lista.map(estFilaComparableHtml).join('') +
-        '<tr class="est-row-avg"><td colspan="4">Promedio (' + lista.length + ')</td><td id="estCompAvgM2">—</td><td colspan="6"></td></tr>' +
-      '</tbody></table></div>';
+        '<tr class="est-row-avg"><td colspan="5">Promedio (' + lista.length + ')</td><td id="estCompAvgM2">—</td><td colspan="6"></td></tr>' +
+      '</tbody></table></div>' +
+      '<div class="field-hint" style="margin-top:.3rem">*$/m² homologado (construcción + terreno) — así se comparan de forma justa aunque el terreno varíe.</div>';
     actualizarPromedioComparablesDOM();
   }
 
   function actualizarPromedioComparablesDOM() {
     $$('#estComparablesBody .est-comp-row').forEach(function (tr) {
       var m2 = Number(tr.querySelector('.est-in-m2').value) || 0;
+      var m2t = Number(tr.querySelector('.est-in-m2t').value) || 0;
       var precio = Number(tr.querySelector('.est-in-precio').value) || 0;
-      tr.querySelector('.est-in-preciom2').value = (m2 && precio) ? nf.format(Math.round(precio / m2)) : '';
+      var homo = m2Homologado(m2, m2t);
+      tr.querySelector('.est-in-preciom2').value = (homo && precio) ? nf.format(Math.round(precio / homo)) : '';
     });
     var validas = leerComparablesDesdeDOM().filter(function (f) { return f.m2 > 0 && f.precio > 0; }).slice(0, MAX_COMPARABLES_CALCULO);
-    var valoresM2 = validas.map(function (f) { return f.precio / f.m2; });
+    var valoresM2 = validas.map(function (f) { return f.precio / m2Homologado(f.m2, f.m2t); });
     var promedio = promedioSimple(valoresM2);
     var promedioTrim = promedioTruncado(valoresM2);
     var dias = validas.filter(function (f) { return f.dias > 0; }).map(function (f) { return f.dias; });
@@ -999,23 +1013,26 @@
           match = todoElMatch.slice(0, MAX_COMPARABLES_CALCULO);
         }
       }
-      var conPrecioM2 = match.filter(function (p) { return p.precio_m2 > 0; });
-      var valoresM2 = conPrecioM2.map(function (p) { return p.precio_m2; });
+      var conHomologado = match.map(function (p) { return { p: p, homo: m2Homologado(p.m2c, p.m2t), precioM2: 0 }; }).map(function (x) { x.precioM2 = x.homo ? x.p.precio / x.homo : 0; return x; }).filter(function (x) { return x.precioM2 > 0; });
+      var valoresM2 = conHomologado.map(function (x) { return x.precioM2; });
       var promedio = promedioSimple(valoresM2);
       var promedioTrim = promedioTruncado(valoresM2);
       var dias = match.map(function (p) { return diasDesde(p.publicado); }).filter(function (d) { return d != null; });
-      ULTIMO_PROMEDIO_INVENTARIO = { promedio: promedio, promedioTrim: promedioTrim, n: conPrecioM2.length, dias: dias };
+      ULTIMO_PROMEDIO_INVENTARIO = { promedio: promedio, promedioTrim: promedioTrim, n: conHomologado.length, dias: dias };
       if (!todoElMatch.length) {
         box.innerHTML = '<div class="est-empty-hint">No tienes propiedades publicadas en "' + esc($('#est_colonia').value) + '" con ese tipo y operación.</div>';
       } else {
         box.innerHTML =
-          '<div style="overflow-x:auto"><table class="est-table"><thead><tr><th>Propiedad</th><th>m²</th><th>Precio</th><th>$/m²</th><th>Días</th></tr></thead><tbody>' +
+          '<div style="overflow-x:auto"><table class="est-table"><thead><tr><th>Propiedad</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m²*</th><th>Días</th></tr></thead><tbody>' +
           match.map(function (p) {
             var d = diasDesde(p.publicado);
-            return '<tr><td><a href="../' + esc(p.url || '') + '" target="_blank" rel="noopener">' + esc(p.titulo) + '</a></td><td>' + (p.m2c || '—') + '</td><td>' + nf.format(p.precio) + '</td><td>' + (p.precio_m2 ? nf.format(Math.round(p.precio_m2)) : '—') + '</td><td>' + (d == null ? '—' : d) + '</td></tr>';
+            var homo = m2Homologado(p.m2c, p.m2t);
+            var precioM2 = homo ? p.precio / homo : 0;
+            return '<tr><td><a href="../' + esc(p.url || '') + '" target="_blank" rel="noopener">' + esc(p.titulo) + '</a></td><td>' + (p.m2c || '—') + '</td><td>' + (p.m2t || '—') + '</td><td>' + nf.format(p.precio) + '</td><td>' + (precioM2 ? nf.format(Math.round(precioM2)) : '—') + '</td><td>' + (d == null ? '—' : d) + '</td></tr>';
           }).join('') +
-          '<tr class="est-row-avg"><td colspan="3">Promedio (' + conPrecioM2.length + (todoElMatch.length > MAX_COMPARABLES_CALCULO ? ' de ' + todoElMatch.length + ' encontrados, los más cercanos' : '') + ')' + (conPrecioM2.length > 2 ? ' · sin extremos: ' + nf.format(Math.round(promedioTrim)) + '/m²' : '') + '</td><td>' + (promedio ? nf.format(Math.round(promedio)) + '/m²' : '—') + '</td><td></td></tr>' +
-          '</tbody></table></div>';
+          '<tr class="est-row-avg"><td colspan="4">Promedio (' + conHomologado.length + (todoElMatch.length > MAX_COMPARABLES_CALCULO ? ' de ' + todoElMatch.length + ' encontrados, los más cercanos' : '') + ')' + (conHomologado.length > 2 ? ' · sin extremos: ' + nf.format(Math.round(promedioTrim)) + '/m²' : '') + '</td><td>' + (promedio ? nf.format(Math.round(promedio)) + '/m²' : '—') + '</td><td></td></tr>' +
+          '</tbody></table></div>' +
+          '<div class="field-hint" style="margin-top:.3rem">*$/m² homologado (construcción + terreno).</div>';
       }
       actualizarResumenEstudio();
     });
@@ -1023,6 +1040,8 @@
 
   function actualizarResumenEstudio() {
     var m2c = Number($('#est_m2c').value) || 0;
+    var m2t = Number($('#est_m2t').value) || 0;
+    var m2Sujeto = m2Homologado(m2c, m2t);
     var box = $('#estResumenBox');
     var promInv = ULTIMO_PROMEDIO_INVENTARIO.promedio;
     var promComp = ULTIMO_PROMEDIO_COMPARABLES.promedio;
@@ -1037,12 +1056,12 @@
     function card(lbl, valor, destacada) {
       return '<div class="est-resumen-card' + (destacada ? ' est-destacada' : '') + '"><div class="lbl">' + lbl + '</div><div class="num">' + valor + '</div></div>';
     }
-    if (!m2c || !fuentes.length) {
+    if (!m2Sujeto || !fuentes.length) {
       box.innerHTML = '<div class="est-empty-hint">Completa los m² y al menos un comparable (propio o externo) para ver el precio estimado.</div>';
       return;
     }
 
-    var valorAsignado = promCombinado * m2c;
+    var valorAsignado = promCombinado * m2Sujeto;
     var factorNegPct = Math.max(0, Number($('#est_propiedades_mercado').value) || 0) / 100;
     var factorPublicarPct = Math.max(0, Math.min(100, Number($('#est_factor_publicar').value) || 0)) / 100;
     var factorNegociacion = valorAsignado * factorNegPct;
@@ -1088,6 +1107,7 @@
     $('#est_tipo').value = e ? e.tipo : 'departamento';
     $('#est_colonia').value = e ? (e.colonia || '') : '';
     $('#est_m2c').value = e && e.m2c ? e.m2c : '';
+    $('#est_m2t').value = e && e.m2t ? e.m2t : '';
     $('#est_propiedades_mercado').value = e && e.propiedades_mercado ? e.propiedades_mercado : '';
     $('#est_factor_publicar').value = e && e.factor_publicar != null ? e.factor_publicar : 55;
     $('#est_notas').value = e ? (e.notas || '') : '';
@@ -1111,6 +1131,7 @@
       tipo: $('#est_tipo').value,
       colonia: $('#est_colonia').value.trim(),
       m2c: Number($('#est_m2c').value) || 0,
+      m2t: Number($('#est_m2t').value) || 0,
       propiedades_mercado: Number($('#est_propiedades_mercado').value) || 0,
       factor_publicar: Number($('#est_factor_publicar').value) || 55,
       comparables: leerComparablesDesdeDOM(),
@@ -1151,13 +1172,15 @@
   // realmente calculó actualizarResumenEstudio().
   function recopilarDatosReporte() {
     var m2c = Number($('#est_m2c').value) || 0;
+    var m2t = Number($('#est_m2t').value) || 0;
+    var m2Sujeto = m2Homologado(m2c, m2t);
     var promInv = ULTIMO_PROMEDIO_INVENTARIO.promedio;
     var promComp = ULTIMO_PROMEDIO_COMPARABLES.promedio;
     var fuentes = [];
     if (promInv) fuentes.push(promInv);
     if (promComp) fuentes.push(promComp);
     var promCombinado = fuentes.length ? promedioSimple(fuentes) : 0;
-    var valorAsignado = promCombinado * m2c;
+    var valorAsignado = promCombinado * m2Sujeto;
     var propiedadesMercado = Math.max(0, Number($('#est_propiedades_mercado').value) || 0);
     var factorNegPct = propiedadesMercado / 100;
     var factorPublicarPct = Math.max(0, Math.min(100, Number($('#est_factor_publicar').value) || 0)) / 100;
@@ -1168,6 +1191,8 @@
       tipo: TIPO_LABEL_EST[$('#est_tipo').value] || $('#est_tipo').value,
       colonia: $('#est_colonia').value.trim(),
       m2c: m2c,
+      m2t: m2t,
+      m2Sujeto: m2Sujeto,
       comparables: leerComparablesDesdeDOM(),
       promInv: promInv,
       promComp: promComp,
@@ -1206,15 +1231,16 @@
     var d = recopilarDatosReporte();
     var opLabel = d.operacion === 'renta' ? 'Renta' : 'Venta';
     var filas = [];
-    filas.push(['Unidades', 'Liga', 'Ubicación', 'Inmueble', 'Operación', 'Metros habitables', 'Precio publicado', 'Precio por metro', 'Habitaciones', 'Baños', 'Cocheras', 'Antigüedad', 'Días publicado']);
+    filas.push(['Unidades', 'Liga', 'Ubicación', 'Inmueble', 'Operación', 'Metros construcción', 'Metros terreno', 'Metros homologados', 'Precio publicado', 'Precio por metro homologado', 'Habitaciones', 'Baños', 'Cocheras', 'Antigüedad', 'Días publicado']);
     d.comparables.forEach(function (c, i) {
-      var pm2 = (c.m2 && c.precio) ? Math.round(c.precio / c.m2) : '';
-      filas.push([i + 1, c.liga, c.ubicacion, d.tipo, opLabel, c.m2 || '', c.precio || '', pm2, c.rec || '', c.ban || '', c.est || '', c.antig || '', c.dias || '']);
+      var homo = m2Homologado(c.m2, c.m2t);
+      var pm2 = (homo && c.precio) ? Math.round(c.precio / homo) : '';
+      filas.push([i + 1, c.liga, c.ubicacion, d.tipo, opLabel, c.m2 || '', c.m2t || '', homo || '', c.precio || '', pm2, c.rec || '', c.ban || '', c.est || '', c.antig || '', c.dias || '']);
     });
     filas.push([]);
-    filas.push(['Promedio simple', '', '', '', '', '', '', Math.round(d.promComp || d.promInv || 0)]);
+    filas.push(['Promedio simple $/m² homologado', '', '', '', '', '', '', Math.round(d.promComp || d.promInv || 0)]);
     filas.push([]);
-    filas.push(['Datos de la propiedad', '', d.colonia, d.tipo, opLabel, d.m2c]);
+    filas.push(['Datos de la propiedad', '', d.colonia, d.tipo, opLabel, d.m2c, d.m2t, d.m2Sujeto]);
     filas.push([]);
     filas.push(['Valor asignado a la propiedad', '', '', '', '', Math.round(d.valorAsignado)]);
     filas.push(['Propiedades similares en el mercado', d.propiedadesMercado]);
@@ -1233,8 +1259,9 @@
     var d = recopilarDatosReporte();
     var opLabel = d.operacion === 'renta' ? 'renta' : 'venta';
     var filasHtml = d.comparables.map(function (c, i) {
-      var pm2 = (c.m2 && c.precio) ? Math.round(c.precio / c.m2) : '';
-      return '<tr><td>' + (i + 1) + '</td><td>' + esc(c.ubicacion) + '</td><td>' + (c.m2 || '') + '</td><td>' + (c.precio ? nf.format(c.precio) : '') + '</td><td>' + (pm2 ? nf.format(pm2) : '') + '</td><td>' + (c.rec || '') + '</td><td>' + (c.ban || '') + '</td><td>' + (c.est || '') + '</td><td>' + (c.antig || '') + '</td><td>' + (c.dias || '') + '</td></tr>';
+      var homo = m2Homologado(c.m2, c.m2t);
+      var pm2 = (homo && c.precio) ? Math.round(c.precio / homo) : '';
+      return '<tr><td>' + (i + 1) + '</td><td>' + esc(c.ubicacion) + '</td><td>' + (c.m2 || '') + '</td><td>' + (c.m2t || '') + '</td><td>' + (c.precio ? nf.format(c.precio) : '') + '</td><td>' + (pm2 ? nf.format(pm2) : '') + '</td><td>' + (c.rec || '') + '</td><td>' + (c.ban || '') + '</td><td>' + (c.est || '') + '</td><td>' + (c.antig || '') + '</td><td>' + (c.dias || '') + '</td></tr>';
     }).join('');
     var html = '<!doctype html><html lang="es-MX"><head><meta charset="utf-8"><title>' + esc(d.nombre) + '</title><style>' +
       'body{font-family:Georgia,serif;color:#0E1626;max-width:900px;margin:2rem auto;padding:0 1rem}' +
@@ -1245,8 +1272,8 @@
       '.footer{margin-top:3rem;font-size:.85rem;color:#4A5468}' +
       '</style></head><body>' +
       '<h1>' + esc(d.nombre) + '</h1>' +
-      '<p>' + esc(d.tipo) + ' en ' + opLabel + (d.colonia ? ' — ' + esc(d.colonia) : '') + (d.m2c ? ' · ' + d.m2c + ' m²' : '') + '</p>' +
-      (filasHtml ? '<h2>Comparables</h2><table><thead><tr><th>#</th><th>Ubicación</th><th>m²</th><th>Precio</th><th>$/m²</th><th>Rec</th><th>Baños</th><th>Coch</th><th>Antig.</th><th>Días</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' : '') +
+      '<p>' + esc(d.tipo) + ' en ' + opLabel + (d.colonia ? ' — ' + esc(d.colonia) : '') + (d.m2Sujeto ? ' · ' + d.m2c + ' m² constr.' + (d.m2t ? ' + ' + d.m2t + ' m² terreno' : '') : '') + '</p>' +
+      (filasHtml ? '<h2>Comparables</h2><table><thead><tr><th>#</th><th>Ubicación</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m² homolog.</th><th>Rec</th><th>Baños</th><th>Coch</th><th>Antig.</th><th>Días</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' : '') +
       '<h2>Resumen</h2><div class="resumen">' +
         '<div class="tarjeta"><div class="lbl">Valor asignado</div><div class="num">' + nf.format(Math.round(d.valorAsignado)) + '</div></div>' +
         '<div class="tarjeta"><div class="lbl">Precio sugerido a publicar</div><div class="num">' + nf.format(Math.round(d.precioSugeridoPublicar)) + '</div></div>' +
@@ -1587,6 +1614,7 @@
     $('#est_tipo').addEventListener('change', recalcularInventarioEstudio);
     $('#est_colonia').addEventListener('input', recalcularInventarioEstudio);
     $('#est_m2c').addEventListener('input', actualizarResumenEstudio);
+    $('#est_m2t').addEventListener('input', actualizarResumenEstudio);
     $('#est_propiedades_mercado').addEventListener('input', actualizarResumenEstudio);
     $('#est_factor_publicar').addEventListener('input', actualizarResumenEstudio);
     $('#estAddComparableBtn').addEventListener('click', function () {
@@ -1603,7 +1631,7 @@
       }
     });
     $('#estComparablesBox').addEventListener('input', function (e) {
-      if (e.target.classList.contains('est-in-m2') || e.target.classList.contains('est-in-precio')) {
+      if (e.target.classList.contains('est-in-m2') || e.target.classList.contains('est-in-m2t') || e.target.classList.contains('est-in-precio')) {
         actualizarPromedioComparablesDOM();
       }
     });
