@@ -374,6 +374,7 @@ alter table solicitudes_alta enable row level security;
 
 grant insert on solicitudes_alta to anon;
 grant select, insert, update, delete on solicitudes_alta to authenticated;
+grant select, insert on solicitudes_alta to service_role;
 
 drop policy if exists "cualquiera puede registrar una solicitud" on solicitudes_alta;
 create policy "cualquiera puede registrar una solicitud"
