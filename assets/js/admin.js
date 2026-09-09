@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, editingId: null, editingLeadId: null, fotos: [], session: null, perfil: null };
+  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, estudios: [], estudioEditando: null, editingId: null, editingLeadId: null, fotos: [], session: null, perfil: null };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -126,6 +126,7 @@
     cargarLeads();
     cargarTareas();
     cargarSolicitudes();
+    cargarEstudios();
     if (esAdmin) cargarEquipo();
   }
 
@@ -537,11 +538,13 @@
     $('#viewContactos').hidden = view !== 'contactos';
     $('#viewTareas').hidden = view !== 'tareas';
     $('#viewSolicitudes').hidden = view !== 'solicitudes';
+    $('#viewEstimador').hidden = view !== 'estimador';
     $('#viewEquipo').hidden = view !== 'equipo';
     $('#tabPropiedades').classList.toggle('is-active', view === 'propiedades');
     $('#tabContactos').classList.toggle('is-active', view === 'contactos');
     $('#tabTareas').classList.toggle('is-active', view === 'tareas');
     $('#tabSolicitudes').classList.toggle('is-active', view === 'solicitudes');
+    $('#tabEstimador').classList.toggle('is-active', view === 'estimador');
     $('#tabEquipo').classList.toggle('is-active', view === 'equipo');
     $('#addPropBtnFab').style.display = view === 'propiedades' && STATE.propiedades.length ? 'inline-flex' : 'none';
   }
@@ -801,6 +804,263 @@
     renderPhotoStrip();
     toast('Revisa la colonia y el título antes de publicar — no se copiaron solos.');
     marcarEstadoSolicitud(s.id, 'revisada');
+  }
+
+  // ----------------------------------------------------- ESTIMADOR DE PRECIO
+  // Digitaliza el estudio comparativo que Gio hacia a mano en Excel: combina
+  // el inventario propio (calculado al vuelo contra assets/data/propiedades.json,
+  // que ya trae precio_m2 de cada ficha publicada) con comparables externos
+  // capturados a mano (liga, m2, precio... igual que el Excel). Ver
+  // estudios_precio en schema.sql.
+  var TIPO_LABEL_EST = { departamento: 'Departamento', casa: 'Casa', 'casa-en-condominio': 'Casa en condominio', penthouse: 'Penthouse', loft: 'Loft', terreno: 'Terreno', oficina: 'Oficina', 'local-comercial': 'Local comercial' };
+  var INVENTARIO_PUBLICO_PROMESA = null;
+  var ULTIMO_PROMEDIO_INVENTARIO = { promedio: 0, n: 0 };
+
+  function cargarInventarioPublico() {
+    if (!INVENTARIO_PUBLICO_PROMESA) {
+      INVENTARIO_PUBLICO_PROMESA = fetch('../assets/data/propiedades.json')
+        .then(function (r) { return r.json(); })
+        .then(function (d) { return (d && d.propiedades) || []; })
+        .catch(function () { return []; });
+    }
+    return INVENTARIO_PUBLICO_PROMESA;
+  }
+
+  function normalizaTexto(s) {
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  }
+
+  function estudioRowHtml(e) {
+    var lugar = [TIPO_LABEL_EST[e.tipo] || e.tipo, e.colonia].filter(Boolean).join(' en ');
+    return (
+      '<div class="task-row" data-open-est="' + e.id + '" style="cursor:pointer">' +
+        '<div class="task-body">' +
+          '<div class="task-titulo">' + esc(e.nombre || lugar) + ' — ' + (e.operacion === 'renta' ? 'Renta' : 'Venta') + '</div>' +
+          '<div class="task-desc">' + esc(lugar || 'Sin colonia') + (e.m2c ? ' · ' + e.m2c + ' m²' : '') + '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderEstudios() {
+    var lista = STATE.estudios;
+    $('#estudiosEmptyState').style.display = lista.length ? 'none' : 'block';
+    $('#estudiosLista').style.display = lista.length ? 'flex' : 'none';
+    $('#estudiosLista').innerHTML = lista.map(estudioRowHtml).join('');
+  }
+
+  function cargarEstudios() {
+    var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
+    var q = sb.from('estudios_precio').select('*').order('creado_en', { ascending: false });
+    if (!esAdmin) q = q.eq('asesor_id', STATE.session.user.id);
+    q.then(function (res) {
+      if (res.error) { console.warn('[Panel] no se pudieron cargar los estudios de precio:', res.error.message); return; }
+      STATE.estudios = res.data || [];
+      renderEstudios();
+    });
+  }
+
+  function leerComparablesDesdeDOM() {
+    return $$('#estComparablesBody .est-comp-row').map(function (tr) {
+      return {
+        liga: tr.querySelector('.est-in-liga').value.trim(),
+        ubicacion: tr.querySelector('.est-in-ubicacion').value.trim(),
+        m2: Number(tr.querySelector('.est-in-m2').value) || 0,
+        precio: Number(tr.querySelector('.est-in-precio').value) || 0,
+        rec: Number(tr.querySelector('.est-in-rec').value) || 0,
+        ban: Number(tr.querySelector('.est-in-ban').value) || 0,
+        est: Number(tr.querySelector('.est-in-est').value) || 0,
+        antig: Number(tr.querySelector('.est-in-antig').value) || 0,
+        dias: Number(tr.querySelector('.est-in-dias').value) || 0,
+      };
+    });
+  }
+
+  function estFilaComparableHtml(c, i) {
+    c = c || {};
+    var precioM2 = (c.m2 && c.precio) ? Math.round(c.precio / c.m2) : '';
+    return (
+      '<tr class="est-comp-row" data-idx="' + i + '">' +
+        '<td class="est-liga"><input type="url" class="est-in-liga" placeholder="https://…" value="' + esc(c.liga || '') + '"></td>' +
+        '<td><input type="text" class="est-in-ubicacion" placeholder="Calle, colonia" value="' + esc(c.ubicacion || '') + '"></td>' +
+        '<td><input type="number" min="0" class="est-in-m2" value="' + (c.m2 || '') + '"></td>' +
+        '<td><input type="number" min="0" class="est-in-precio" value="' + (c.precio || '') + '"></td>' +
+        '<td><input type="text" class="est-in-preciom2" value="' + (precioM2 ? nf.format(precioM2) : '') + '" readonly></td>' +
+        '<td><input type="number" min="0" class="est-in-rec" value="' + (c.rec || '') + '"></td>' +
+        '<td><input type="number" min="0" class="est-in-ban" value="' + (c.ban || '') + '"></td>' +
+        '<td><input type="number" min="0" class="est-in-est" value="' + (c.est || '') + '"></td>' +
+        '<td><input type="number" min="0" class="est-in-antig" value="' + (c.antig || '') + '"></td>' +
+        '<td><input type="number" min="0" class="est-in-dias" value="' + (c.dias || '') + '"></td>' +
+        '<td><button type="button" class="est-remove-btn" data-remove-idx="' + i + '" aria-label="Quitar">&times;</button></td>' +
+      '</tr>'
+    );
+  }
+
+  function renderComparablesTable(lista) {
+    var box = $('#estComparablesBox');
+    if (!lista.length) {
+      box.innerHTML = '<div class="est-empty-hint">Todavía no agregas comparables externos.</div>';
+      return;
+    }
+    box.innerHTML =
+      '<div style="overflow-x:auto"><table class="est-table"><thead><tr>' +
+        '<th>Liga</th><th>Ubicación</th><th>m²</th><th>Precio</th><th>$/m²</th><th>Rec</th><th>Baños</th><th>Coch</th><th>Antig.</th><th>Días</th><th></th>' +
+      '</tr></thead><tbody id="estComparablesBody">' +
+        lista.map(estFilaComparableHtml).join('') +
+        '<tr class="est-row-avg"><td colspan="4">Promedio (' + lista.length + ')</td><td id="estCompAvgM2">—</td><td colspan="6"></td></tr>' +
+      '</tbody></table></div>';
+    actualizarPromedioComparablesDOM();
+  }
+
+  function actualizarPromedioComparablesDOM() {
+    $$('#estComparablesBody .est-comp-row').forEach(function (tr) {
+      var m2 = Number(tr.querySelector('.est-in-m2').value) || 0;
+      var precio = Number(tr.querySelector('.est-in-precio').value) || 0;
+      tr.querySelector('.est-in-preciom2').value = (m2 && precio) ? nf.format(Math.round(precio / m2)) : '';
+    });
+    var validas = leerComparablesDesdeDOM().filter(function (f) { return f.m2 > 0 && f.precio > 0; });
+    var promedio = validas.length ? validas.reduce(function (s, f) { return s + f.precio / f.m2; }, 0) / validas.length : 0;
+    var avgEl = $('#estCompAvgM2');
+    if (avgEl) avgEl.textContent = promedio ? nf.format(Math.round(promedio)) + '/m²' : '—';
+    actualizarResumenEstudio();
+  }
+
+  function recalcularInventarioEstudio() {
+    var tipo = $('#est_tipo').value;
+    var operacion = $('#est_operacion').value;
+    var colonia = normalizaTexto($('#est_colonia').value);
+    var box = $('#estInventarioBox');
+    if (!colonia) {
+      box.innerHTML = '<div class="est-empty-hint">Escribe una colonia para comparar contra tu inventario.</div>';
+      ULTIMO_PROMEDIO_INVENTARIO = { promedio: 0, n: 0 };
+      actualizarResumenEstudio();
+      return;
+    }
+    cargarInventarioPublico().then(function (props) {
+      var match = props.filter(function (p) {
+        return p.operacion === operacion && p.tipo === tipo && normalizaTexto(p.colonia_nombre).indexOf(colonia) !== -1;
+      });
+      var conPrecioM2 = match.filter(function (p) { return p.precio_m2 > 0; });
+      var promedio = conPrecioM2.length ? conPrecioM2.reduce(function (s, p) { return s + p.precio_m2; }, 0) / conPrecioM2.length : 0;
+      ULTIMO_PROMEDIO_INVENTARIO = { promedio: promedio, n: conPrecioM2.length };
+      if (!match.length) {
+        box.innerHTML = '<div class="est-empty-hint">No tienes propiedades publicadas en "' + esc($('#est_colonia').value) + '" con ese tipo y operación.</div>';
+      } else {
+        box.innerHTML =
+          '<div style="overflow-x:auto"><table class="est-table"><thead><tr><th>Propiedad</th><th>m²</th><th>Precio</th><th>$/m²</th></tr></thead><tbody>' +
+          match.map(function (p) {
+            return '<tr><td><a href="../' + esc(p.url || '') + '" target="_blank" rel="noopener">' + esc(p.titulo) + '</a></td><td>' + (p.m2c || '—') + '</td><td>' + nf.format(p.precio) + '</td><td>' + (p.precio_m2 ? nf.format(Math.round(p.precio_m2)) : '—') + '</td></tr>';
+          }).join('') +
+          '<tr class="est-row-avg"><td colspan="3">Promedio (' + conPrecioM2.length + ')</td><td>' + (promedio ? nf.format(Math.round(promedio)) + '/m²' : '—') + '</td></tr>' +
+          '</tbody></table></div>';
+      }
+      actualizarResumenEstudio();
+    });
+  }
+
+  function actualizarResumenEstudio() {
+    var m2c = Number($('#est_m2c').value) || 0;
+    var box = $('#estResumenBox');
+    var promInv = ULTIMO_PROMEDIO_INVENTARIO.promedio;
+    var validasComp = $('#estComparablesBody') ? leerComparablesDesdeDOM().filter(function (f) { return f.m2 > 0 && f.precio > 0; }) : [];
+    var promComp = validasComp.length ? validasComp.reduce(function (s, f) { return s + f.precio / f.m2; }, 0) / validasComp.length : 0;
+    var fuentes = [];
+    if (promInv) fuentes.push(promInv);
+    if (promComp) fuentes.push(promComp);
+    var promCombinado = fuentes.length ? fuentes.reduce(function (a, b) { return a + b; }, 0) / fuentes.length : 0;
+
+    function card(lbl, valor, destacada) {
+      return '<div class="est-resumen-card' + (destacada ? ' est-destacada' : '') + '"><div class="lbl">' + lbl + '</div><div class="num">' + valor + '</div></div>';
+    }
+    if (!m2c || !fuentes.length) {
+      box.innerHTML = '<div class="est-empty-hint">Completa los m² y al menos un comparable (propio o externo) para ver el precio estimado.</div>';
+      return;
+    }
+    box.innerHTML = '<div class="est-resumen">' +
+      card('Según tu inventario', promInv ? nf.format(Math.round(promInv * m2c)) : '—') +
+      card('Según comparables externos', promComp ? nf.format(Math.round(promComp * m2c)) : '—') +
+      card('Precio sugerido', nf.format(Math.round(promCombinado * m2c)), true) +
+    '</div>';
+  }
+
+  function llenarColoniasDatalist() {
+    cargarInventarioPublico().then(function (props) {
+      var vistos = {};
+      var opciones = [];
+      props.forEach(function (p) {
+        if (p.colonia_nombre && !vistos[p.colonia_nombre]) { vistos[p.colonia_nombre] = true; opciones.push(p.colonia_nombre); }
+      });
+      opciones.sort();
+      $('#est_colonia_list').innerHTML = opciones.map(function (c) { return '<option value="' + esc(c) + '">'; }).join('');
+    });
+  }
+
+  function setOperacionEstudio(op) {
+    $$('#estOpToggle button').forEach(function (b) { b.classList.toggle('is-active', b.dataset.op === op); });
+    $('#est_operacion').value = op;
+    recalcularInventarioEstudio();
+  }
+
+  function abrirEstudioModal(id) {
+    var e = id ? STATE.estudios.filter(function (x) { return x.id === id; })[0] : null;
+    STATE.estudioEditando = e || null;
+    $('#estudioModalTitle').textContent = e ? 'Editar estudio' : 'Nuevo estudio de precio';
+    $('#estudioError').classList.remove('show');
+    $('#est_nombre').value = e ? (e.nombre || '') : '';
+    $('#est_tipo').value = e ? e.tipo : 'departamento';
+    $('#est_colonia').value = e ? (e.colonia || '') : '';
+    $('#est_m2c').value = e && e.m2c ? e.m2c : '';
+    $('#est_notas').value = e ? (e.notas || '') : '';
+    setOperacionEstudio(e ? e.operacion : 'venta');
+    renderComparablesTable((e && e.comparables) || []);
+    $('#estDeleteBtn').style.display = e ? 'inline-flex' : 'none';
+    $('#estudioModalBackdrop').classList.add('is-open');
+    llenarColoniasDatalist();
+  }
+
+  function cerrarEstudioModal() {
+    $('#estudioModalBackdrop').classList.remove('is-open');
+  }
+
+  function guardarEstudio() {
+    var errBox = $('#estudioError');
+    errBox.classList.remove('show');
+    var data = {
+      nombre: $('#est_nombre').value.trim(),
+      operacion: $('#est_operacion').value,
+      tipo: $('#est_tipo').value,
+      colonia: $('#est_colonia').value.trim(),
+      m2c: Number($('#est_m2c').value) || 0,
+      comparables: leerComparablesDesdeDOM(),
+      notas: $('#est_notas').value.trim(),
+    };
+    var btn = $('#estSaveBtn');
+    setBusy(btn, true, 'Guardando…');
+    var query = STATE.estudioEditando
+      ? sb.from('estudios_precio').update(data).eq('id', STATE.estudioEditando.id)
+      : sb.from('estudios_precio').insert(Object.assign({ asesor_id: STATE.session.user.id }, data));
+    query.then(function (res) {
+      setBusy(btn, false);
+      if (res.error) {
+        errBox.textContent = 'No se pudo guardar: ' + res.error.message;
+        errBox.classList.add('show');
+        return;
+      }
+      cerrarEstudioModal();
+      toast('Estudio guardado');
+      cargarEstudios();
+    });
+  }
+
+  function eliminarEstudio() {
+    if (!STATE.estudioEditando) return;
+    if (!confirm('¿Eliminar este estudio de precio?')) return;
+    sb.from('estudios_precio').delete().eq('id', STATE.estudioEditando.id).then(function (res) {
+      if (res.error) { toast('No se pudo eliminar: ' + res.error.message, 'err'); return; }
+      cerrarEstudioModal();
+      toast('Estudio eliminado');
+      cargarEstudios();
+    });
   }
 
   // --------------------------------------------------------------- EQUIPO (solo admin)
@@ -1099,6 +1359,7 @@
     $('#tabContactos').addEventListener('click', function () { setView('contactos'); });
     $('#tabTareas').addEventListener('click', function () { setView('tareas'); });
     $('#tabSolicitudes').addEventListener('click', function () { setView('solicitudes'); });
+    $('#tabEstimador').addEventListener('click', function () { setView('estimador'); });
     $('#tabEquipo').addEventListener('click', function () { setView('equipo'); });
 
     $('#solicitudesLista').addEventListener('click', function (e) {
@@ -1109,6 +1370,42 @@
     $('#solModalBackdrop').addEventListener('click', function (e) { if (e.target.id === 'solModalBackdrop') closeSolModal(); });
     $('#solDescartarBtn').addEventListener('click', descartarSolicitud);
     $('#solUsarBtn').addEventListener('click', usarSolicitud);
+
+    $('#addEstudioBtn').addEventListener('click', function () { abrirEstudioModal(null); });
+    $('#estudiosEmptyAddBtn').addEventListener('click', function () { abrirEstudioModal(null); });
+    $('#estudiosLista').addEventListener('click', function (e) {
+      var row = e.target.closest && e.target.closest('[data-open-est]');
+      if (row) abrirEstudioModal(row.dataset.openEst);
+    });
+    $('#estudioModalClose').addEventListener('click', cerrarEstudioModal);
+    $('#estudioModalCancelBtn').addEventListener('click', cerrarEstudioModal);
+    $('#estudioModalBackdrop').addEventListener('click', function (e) { if (e.target.id === 'estudioModalBackdrop') cerrarEstudioModal(); });
+    $$('#estOpToggle button').forEach(function (b) {
+      b.addEventListener('click', function () { setOperacionEstudio(b.dataset.op); });
+    });
+    $('#est_tipo').addEventListener('change', recalcularInventarioEstudio);
+    $('#est_colonia').addEventListener('input', recalcularInventarioEstudio);
+    $('#est_m2c').addEventListener('input', actualizarResumenEstudio);
+    $('#estAddComparableBtn').addEventListener('click', function () {
+      var lista = leerComparablesDesdeDOM();
+      lista.push({});
+      renderComparablesTable(lista);
+    });
+    $('#estComparablesBox').addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('[data-remove-idx]')) {
+        var lista = leerComparablesDesdeDOM();
+        var idx = Number(e.target.closest('[data-remove-idx]').dataset.removeIdx);
+        lista.splice(idx, 1);
+        renderComparablesTable(lista);
+      }
+    });
+    $('#estComparablesBox').addEventListener('input', function (e) {
+      if (e.target.classList.contains('est-in-m2') || e.target.classList.contains('est-in-precio')) {
+        actualizarPromedioComparablesDOM();
+      }
+    });
+    $('#estSaveBtn').addEventListener('click', guardarEstudio);
+    $('#estDeleteBtn').addEventListener('click', eliminarEstudio);
 
     $('#addTareaBtn').addEventListener('click', openTareaModal);
     $('#tareasEmptyAddBtn').addEventListener('click', openTareaModal);

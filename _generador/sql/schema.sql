@@ -428,6 +428,58 @@ create policy "solo el equipo autenticado borra fotos de solicitudes"
   to authenticated
   using (bucket_id = 'solicitudes-alta');
 
+-- ------------------------------------------------------------- estudios_precio
+-- Digitaliza el estudio comparativo que Gio hacia a mano en Excel (liga,
+-- ubicacion, m2, precio... de propiedades similares) para estimar un precio
+-- real de venta o renta. Combina dos fuentes: el inventario propio (se
+-- calcula al vuelo en el panel contra assets/data/propiedades.json, no se
+-- guarda aqui) y comparables externos capturados a mano (si se guardan,
+-- en la columna `comparables`).
+create table if not exists estudios_precio (
+  id uuid primary key default gen_random_uuid(),
+  asesor_id uuid not null references auth.users(id) on delete cascade,
+  nombre text not null default '',
+  operacion text not null check (operacion in ('venta', 'renta')),
+  tipo text not null,
+  colonia text not null default '',
+  m2c numeric not null default 0,
+  solicitud_id uuid references solicitudes_alta(id) on delete set null,
+  propiedad_id uuid references propiedades_manual(id) on delete set null,
+  comparables jsonb not null default '[]'::jsonb,
+  notas text not null default '',
+  creado_en timestamptz not null default now(),
+  actualizado_en timestamptz not null default now()
+);
+
+alter table estudios_precio enable row level security;
+
+grant select, insert, update, delete on estudios_precio to authenticated;
+
+drop policy if exists "cada quien ve y gestiona sus estudios, admin ve todos" on estudios_precio;
+create policy "cada quien ve y gestiona sus estudios, admin ve todos"
+  on estudios_precio for select
+  using (asesor_id = auth.uid() or is_admin());
+
+drop policy if exists "cada quien crea sus propios estudios" on estudios_precio;
+create policy "cada quien crea sus propios estudios"
+  on estudios_precio for insert
+  with check (asesor_id = auth.uid());
+
+drop policy if exists "cada quien edita/borra sus estudios, admin todos (upd)" on estudios_precio;
+create policy "cada quien edita/borra sus estudios, admin todos (upd)"
+  on estudios_precio for update
+  using (asesor_id = auth.uid() or is_admin());
+
+drop policy if exists "cada quien edita/borra sus estudios, admin todos (del)" on estudios_precio;
+create policy "cada quien edita/borra sus estudios, admin todos (del)"
+  on estudios_precio for delete
+  using (asesor_id = auth.uid() or is_admin());
+
+drop trigger if exists on_estudio_updated on estudios_precio;
+create trigger on_estudio_updated
+  before update on estudios_precio
+  for each row execute function set_actualizado_en();
+
 -- ------------------------------------------------------------------ NOTAS
 -- 1. Login es SOLO con Google (sin contraseñas). Antes de que nadie pueda
 --    entrar, hay que activar el proveedor de Google en Supabase:

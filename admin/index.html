@@ -56,6 +56,7 @@
     <button type="button" class="tabbar-btn" id="tabContactos" data-view="contactos">Contactos<span class="tabbar-badge" id="tabContactosBadge" hidden>0</span></button>
     <button type="button" class="tabbar-btn" id="tabTareas" data-view="tareas">Tareas<span class="tabbar-badge" id="tabTareasBadge" hidden>0</span></button>
     <button type="button" class="tabbar-btn" id="tabSolicitudes" data-view="solicitudes">Solicitudes<span class="tabbar-badge" id="tabSolicitudesBadge" hidden>0</span></button>
+    <button type="button" class="tabbar-btn" id="tabEstimador" data-view="estimador">Estimador</button>
     <button type="button" class="tabbar-btn" id="tabEquipo" data-view="equipo" hidden>Equipo</button>
   </nav>
 
@@ -162,6 +163,24 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       <p>Todavía no ha llegado ninguna solicitud.</p>
       <p class="small muted">Comparte este link con quien quiera registrar su propiedad: <code id="altaLinkTexto"></code></p>
+    </div>
+  </main>
+
+  <main class="shell" id="viewEstimador" hidden>
+    <div class="shell-head">
+      <div>
+        <h1>Estimador de precio</h1>
+        <p>Calcula un precio real de venta o renta comparando tu inventario en la zona con comparables externos.</p>
+      </div>
+      <button class="btn btn--gold" id="addEstudioBtn">+ Nuevo estudio</button>
+    </div>
+
+    <div class="task-list" id="estudiosLista"></div>
+
+    <div class="empty" id="estudiosEmptyState" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-8"/></svg>
+      <p>Todavía no has hecho ningún estudio de precio.</p>
+      <button class="btn btn--gold" id="estudiosEmptyAddBtn">Hacer el primero</button>
     </div>
   </main>
 
@@ -381,6 +400,79 @@
       <div class="modal-foot-right">
         <button class="btn btn--ghost btn--sm" id="modalCancelBtn" onclick="document.getElementById('modalBackdrop').classList.remove('is-open')">Cancelar</button>
         <button class="btn btn--gold" id="publishBtn">Publicar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------------------------------------------------------- MODAL: ESTUDIO DE PRECIO ---------------------------------------------------------- -->
+<div class="modal-backdrop" id="estudioModalBackdrop">
+  <div class="modal modal--lg">
+    <div class="modal-head">
+      <h2 id="estudioModalTitle">Nuevo estudio de precio</h2>
+      <button class="modal-close" id="estudioModalClose" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="error-msg" id="estudioError"></div>
+
+      <div class="section-label">Propiedad a estimar</div>
+      <div class="field">
+        <label for="est_nombre">Nombre del estudio</label>
+        <input type="text" id="est_nombre" placeholder="Ej. Depto en Lago Meru 50">
+      </div>
+      <div class="est-op-toggle" id="estOpToggle">
+        <button type="button" data-op="venta" class="is-active">Venta</button>
+        <button type="button" data-op="renta">Renta</button>
+      </div>
+      <input type="hidden" id="est_operacion" value="venta">
+      <div class="field-grid-3">
+        <div class="field">
+          <label for="est_tipo">Tipo</label>
+          <select id="est_tipo">
+            <option value="departamento">Departamento</option>
+            <option value="casa">Casa</option>
+            <option value="penthouse">Penthouse</option>
+            <option value="loft">Loft</option>
+            <option value="terreno">Terreno</option>
+            <option value="oficina">Oficina</option>
+            <option value="local-comercial">Local comercial</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="est_colonia">Colonia</label>
+          <input type="text" id="est_colonia" list="est_colonia_list" placeholder="Ej. Roma Norte">
+          <datalist id="est_colonia_list"></datalist>
+        </div>
+        <div class="field">
+          <label for="est_m2c">m² de construcción</label>
+          <input type="number" id="est_m2c" min="0" placeholder="65">
+        </div>
+      </div>
+
+      <div class="section-label">Tu inventario en esta zona</div>
+      <div class="field-hint">Se calcula solo, contra las propiedades que ya tienes publicadas en giofilio.com.</div>
+      <div id="estInventarioBox"></div>
+
+      <div class="section-label">Comparables externos (opcional)</div>
+      <div class="field-hint">Pega ligas de Inmuebles24, EasyBroker, etc. — como el Excel, pero el promedio se calcula solo.</div>
+      <div id="estComparablesBox"></div>
+      <button type="button" class="btn btn--ghost btn--sm" id="estAddComparableBtn" style="margin-top:.6rem">+ Agregar comparable</button>
+
+      <div class="section-label">Precio estimado</div>
+      <div id="estResumenBox"></div>
+
+      <div class="field">
+        <label for="est_notas">Notas (opcional)</label>
+        <textarea id="est_notas" rows="2" placeholder="Contexto adicional del estudio…"></textarea>
+      </div>
+
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn--ghost" id="estDeleteBtn" style="display:none">Eliminar</button>
+      <div class="modal-foot-right">
+        <button class="btn btn--ghost btn--sm" id="estudioModalCancelBtn">Cancelar</button>
+        <button class="btn btn--gold" id="estSaveBtn">Guardar estudio</button>
       </div>
     </div>
   </div>
