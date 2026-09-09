@@ -153,11 +153,16 @@
           if (res.error) { fotoAviso.textContent = 'No se pudo subir ' + f.name + ': ' + (res.error.message || res.error); return null; }
           return sb.storage.from('solicitudes-alta').getPublicUrl(ruta).data.publicUrl;
         });
+      }).catch(function (err) {
+        fotoAviso.textContent = 'No se pudo procesar "' + file.name + '": ' + (err && err.message ? err.message : err);
+        return null;
       });
     })).then(function (urls) {
       urls.filter(Boolean).forEach(function (u) { fotos.push(u); });
       subiendo -= lista.length;
       renderFotos();
+    }).catch(function () {
+      subiendo -= lista.length;
     });
   }
 
