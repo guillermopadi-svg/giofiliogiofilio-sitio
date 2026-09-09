@@ -1145,6 +1145,125 @@
     });
   }
 
+  // Junta todo lo que se ve en pantalla (formulario + promedios ya
+  // calculados) en un solo objeto -- lo usan tanto la exportación a Excel
+  // como la de PDF, así ninguna de las dos se desincroniza de lo que
+  // realmente calculó actualizarResumenEstudio().
+  function recopilarDatosReporte() {
+    var m2c = Number($('#est_m2c').value) || 0;
+    var promInv = ULTIMO_PROMEDIO_INVENTARIO.promedio;
+    var promComp = ULTIMO_PROMEDIO_COMPARABLES.promedio;
+    var fuentes = [];
+    if (promInv) fuentes.push(promInv);
+    if (promComp) fuentes.push(promComp);
+    var promCombinado = fuentes.length ? promedioSimple(fuentes) : 0;
+    var valorAsignado = promCombinado * m2c;
+    var propiedadesMercado = Math.max(0, Number($('#est_propiedades_mercado').value) || 0);
+    var factorNegPct = propiedadesMercado / 100;
+    var factorPublicarPct = Math.max(0, Math.min(100, Number($('#est_factor_publicar').value) || 0)) / 100;
+    var factorNegociacion = valorAsignado * factorNegPct;
+    return {
+      nombre: $('#est_nombre').value.trim() || 'Estudio de precio',
+      operacion: $('#est_operacion').value,
+      tipo: TIPO_LABEL_EST[$('#est_tipo').value] || $('#est_tipo').value,
+      colonia: $('#est_colonia').value.trim(),
+      m2c: m2c,
+      comparables: leerComparablesDesdeDOM(),
+      promInv: promInv,
+      promComp: promComp,
+      promCombinado: promCombinado,
+      valorAsignado: valorAsignado,
+      propiedadesMercado: propiedadesMercado,
+      factorNegPct: factorNegPct,
+      factorNegociacion: factorNegociacion,
+      factorPublicarPct: factorPublicarPct,
+      precioCierre: valorAsignado - factorNegociacion,
+      precioSugeridoPublicar: valorAsignado - factorPublicarPct * factorNegociacion,
+      asesor: (STATE.perfil && STATE.perfil.nombre) || (STATE.session && STATE.session.user.email) || '',
+      fecha: new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }),
+    };
+  }
+
+  function csvEsc(v) {
+    var s = String(v == null ? '' : v);
+    if (/[",\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function descargarArchivo(nombre, contenido, tipo) {
+    var blob = new Blob([contenido], { type: tipo });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportarEstudioExcel() {
+    var d = recopilarDatosReporte();
+    var opLabel = d.operacion === 'renta' ? 'Renta' : 'Venta';
+    var filas = [];
+    filas.push(['Unidades', 'Liga', 'Ubicación', 'Inmueble', 'Operación', 'Metros habitables', 'Precio publicado', 'Precio por metro', 'Habitaciones', 'Baños', 'Cocheras', 'Antigüedad', 'Días publicado']);
+    d.comparables.forEach(function (c, i) {
+      var pm2 = (c.m2 && c.precio) ? Math.round(c.precio / c.m2) : '';
+      filas.push([i + 1, c.liga, c.ubicacion, d.tipo, opLabel, c.m2 || '', c.precio || '', pm2, c.rec || '', c.ban || '', c.est || '', c.antig || '', c.dias || '']);
+    });
+    filas.push([]);
+    filas.push(['Promedio simple', '', '', '', '', '', '', Math.round(d.promComp || d.promInv || 0)]);
+    filas.push([]);
+    filas.push(['Datos de la propiedad', '', d.colonia, d.tipo, opLabel, d.m2c]);
+    filas.push([]);
+    filas.push(['Valor asignado a la propiedad', '', '', '', '', Math.round(d.valorAsignado)]);
+    filas.push(['Propiedades similares en el mercado', d.propiedadesMercado]);
+    filas.push(['Factor de negociación', '', '', '', '', Math.round(d.factorNegociacion), '', d.factorNegPct]);
+    filas.push(['Precio sugerido a publicar', '', '', '', '', Math.round(d.precioSugeridoPublicar)]);
+    filas.push(['Precio estimado de cierre', '', '', '', '', Math.round(d.precioCierre)]);
+    filas.push([]);
+    filas.push(['Estudio realizado por', d.asesor]);
+    filas.push(['Fecha', d.fecha]);
+    var csv = filas.map(function (fila) { return fila.map(csvEsc).join(','); }).join('\r\n');
+    var nombreArchivo = (d.nombre || 'estudio-precio').replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '.csv';
+    descargarArchivo(nombreArchivo, '﻿' + csv, 'text/csv;charset=utf-8;');
+  }
+
+  function exportarEstudioPDF() {
+    var d = recopilarDatosReporte();
+    var opLabel = d.operacion === 'renta' ? 'renta' : 'venta';
+    var filasHtml = d.comparables.map(function (c, i) {
+      var pm2 = (c.m2 && c.precio) ? Math.round(c.precio / c.m2) : '';
+      return '<tr><td>' + (i + 1) + '</td><td>' + esc(c.ubicacion) + '</td><td>' + (c.m2 || '') + '</td><td>' + (c.precio ? nf.format(c.precio) : '') + '</td><td>' + (pm2 ? nf.format(pm2) : '') + '</td><td>' + (c.rec || '') + '</td><td>' + (c.ban || '') + '</td><td>' + (c.est || '') + '</td><td>' + (c.antig || '') + '</td><td>' + (c.dias || '') + '</td></tr>';
+    }).join('');
+    var html = '<!doctype html><html lang="es-MX"><head><meta charset="utf-8"><title>' + esc(d.nombre) + '</title><style>' +
+      'body{font-family:Georgia,serif;color:#0E1626;max-width:900px;margin:2rem auto;padding:0 1rem}' +
+      'h1{font-size:1.4rem;color:#071F4A;margin-bottom:.2rem} h2{font-size:1rem;color:#071F4A;margin-top:2rem;border-bottom:1px solid #ccc;padding-bottom:.3rem}' +
+      'table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:.5rem} th,td{border:1px solid #ddd;padding:.4rem .5rem;text-align:left}' +
+      'th{background:#f2f4f9} .resumen{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:1rem}' +
+      '.tarjeta{background:#f2f4f9;padding:.8rem;border-radius:8px} .tarjeta .lbl{font-size:.7rem;text-transform:uppercase;color:#737E92} .tarjeta .num{font-size:1.1rem;font-weight:bold;color:#071F4A}' +
+      '.footer{margin-top:3rem;font-size:.85rem;color:#4A5468}' +
+      '</style></head><body>' +
+      '<h1>' + esc(d.nombre) + '</h1>' +
+      '<p>' + esc(d.tipo) + ' en ' + opLabel + (d.colonia ? ' — ' + esc(d.colonia) : '') + (d.m2c ? ' · ' + d.m2c + ' m²' : '') + '</p>' +
+      (filasHtml ? '<h2>Comparables</h2><table><thead><tr><th>#</th><th>Ubicación</th><th>m²</th><th>Precio</th><th>$/m²</th><th>Rec</th><th>Baños</th><th>Coch</th><th>Antig.</th><th>Días</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' : '') +
+      '<h2>Resumen</h2><div class="resumen">' +
+        '<div class="tarjeta"><div class="lbl">Valor asignado</div><div class="num">' + nf.format(Math.round(d.valorAsignado)) + '</div></div>' +
+        '<div class="tarjeta"><div class="lbl">Precio sugerido a publicar</div><div class="num">' + nf.format(Math.round(d.precioSugeridoPublicar)) + '</div></div>' +
+        '<div class="tarjeta"><div class="lbl">Precio estimado de cierre</div><div class="num">' + nf.format(Math.round(d.precioCierre)) + '</div></div>' +
+      '</div>' +
+      '<p style="margin-top:1rem;font-size:.85rem;color:#4A5468">Factor de negociación: ' + Math.round(d.factorNegPct * 100) + '% (' + nf.format(Math.round(d.factorNegociacion)) + '), basado en ' + d.propiedadesMercado + ' propiedades similares en el mercado.</p>' +
+      '<div class="footer">Estudio realizado por ' + esc(d.asesor) + '<br>' + esc(d.fecha) + '</div>' +
+      '</body></html>';
+    var w = window.open('', '_blank');
+    if (!w) { toast('Habilita las ventanas emergentes para exportar a PDF', 'err'); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(function () { w.print(); }, 300);
+  }
+
   // --------------------------------------------------------------- EQUIPO (solo admin)
   function contarPropiedadesActivas(asesorId) {
     return STATE.propiedades.filter(function (p) { return p.asesor_id === asesorId && p.estado === 'disponible'; }).length;
@@ -1490,6 +1609,8 @@
     });
     $('#estSaveBtn').addEventListener('click', guardarEstudio);
     $('#estDeleteBtn').addEventListener('click', eliminarEstudio);
+    $('#estExportExcelBtn').addEventListener('click', exportarEstudioExcel);
+    $('#estExportPdfBtn').addEventListener('click', exportarEstudioPDF);
 
     $('#addTareaBtn').addEventListener('click', openTareaModal);
     $('#tareasEmptyAddBtn').addEventListener('click', openTareaModal);
