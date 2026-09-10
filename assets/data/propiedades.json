@@ -972,56 +972,6 @@
       "estado": "disponible"
     },
     {
-      "id": "EB-WE9913",
-      "titulo": "Departamento Interior en Renta en Palacio de Versalles en Col. Lomas de Reforma",
-      "titulo_wa": "la propiedad en Lomas de Reforma",
-      "url": "propiedad/departamento-lomas-de-reforma-ebwe9913/",
-      "operacion": "renta",
-      "tipo": "departamento",
-      "tipo_label": "Departamento",
-      "precio": 46000.0,
-      "moneda": "MXN",
-      "mantenimiento": 0,
-      "colonia": "lomas-de-reforma-eb-we9913",
-      "colonia_nombre": "Lomas de Reforma",
-      "alcaldia": "miguel-hidalgo",
-      "alcaldia_nombre": "Miguel Hidalgo",
-      "alcaldia_tiene_pagina": true,
-      "estado_nombre": "Ciudad de México",
-      "sin_pagina": true,
-      "calle": "Palacio de Versalles",
-      "cp": "11930",
-      "lat": 19.4032991,
-      "lng": -99.2360268,
-      "rec": 3,
-      "ban": 2,
-      "medios": 1,
-      "est": 2,
-      "m2c": 186.0,
-      "m2t": 0,
-      "antig": 1986,
-      "piso": "1",
-      "estado_inm": "excelente",
-      "amenidades": [
-        "cisterna",
-        "jardin",
-        "roof-garden",
-        "terraza",
-        "bodega",
-        "cuarto-servicio",
-        "elevador",
-        "alberca"
-      ],
-      "badges": [],
-      "destacada": false,
-      "exclusiva": false,
-      "publicado": "2026-07-06",
-      "actualizado": "2026-07-16",
-      "foto_card": "assets/img/properties/eb-eb-we9913-00-card.jpg",
-      "precio_m2": 247,
-      "estado": "disponible"
-    },
-    {
       "id": "EB-VU9329",
       "titulo": "Departamento amueblado en Renta, Choapan 44, Hipódromo",
       "titulo_wa": "la propiedad en Hipódromo Condesa",
@@ -1398,6 +1348,55 @@
       "actualizado": "2026-07-22",
       "foto_card": "assets/img/properties/eb-eb-vy7191-00-card.jpg",
       "precio_m2": 1740,
+      "estado": "disponible"
+    },
+    {
+      "id": "EB-WH0952",
+      "titulo": "Departamento en Renta en Palmerales",
+      "titulo_wa": "la propiedad en Cuajimalpa",
+      "url": "propiedad/departamento-cuajimalpa-ebwh0952/",
+      "operacion": "renta",
+      "tipo": "departamento",
+      "tipo_label": "Departamento",
+      "precio": 24500.0,
+      "moneda": "MXN",
+      "mantenimiento": 0,
+      "colonia": "cuajimalpa-eb-wh0952",
+      "colonia_nombre": "Cuajimalpa",
+      "alcaldia": "cuajimalpa-de-morelos",
+      "alcaldia_nombre": "Cuajimalpa de Morelos",
+      "alcaldia_tiene_pagina": true,
+      "estado_nombre": "Ciudad de México",
+      "sin_pagina": true,
+      "calle": "Carretera México -  Toluca",
+      "cp": "05000",
+      "lat": 19.3505187,
+      "lng": -99.3013495,
+      "rec": 2,
+      "ban": 2,
+      "medios": 0,
+      "est": 2,
+      "m2c": 90.0,
+      "m2t": 0,
+      "antig": 2015,
+      "piso": "5",
+      "estado_inm": "excelente",
+      "amenidades": [
+        "cisterna",
+        "terraza",
+        "elevador",
+        "roof-garden",
+        "bodega"
+      ],
+      "badges": [
+        "exclusiva"
+      ],
+      "destacada": true,
+      "exclusiva": true,
+      "publicado": "2026-07-17",
+      "actualizado": "2026-07-29",
+      "foto_card": "assets/img/properties/eb-eb-wh0952-00-card.jpg",
+      "precio_m2": 272,
       "estado": "disponible"
     }
   ],
@@ -1784,6 +1783,10 @@
       "colonia": "Polanco"
     },
     {
+      "calle": "Carretera México -  Toluca",
+      "colonia": "Cuajimalpa"
+    },
+    {
       "calle": "Choapan",
       "colonia": "Hipódromo Condesa"
     },
@@ -1830,10 +1833,6 @@
     {
       "calle": "Ocotlán",
       "colonia": "Roma Norte"
-    },
-    {
-      "calle": "Palacio de Versalles",
-      "colonia": "Lomas de Reforma"
     },
     {
       "calle": "Prolongación Hidalgo",
