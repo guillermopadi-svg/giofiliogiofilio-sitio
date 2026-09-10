@@ -1264,23 +1264,40 @@
       return '<tr><td>' + (i + 1) + '</td><td>' + esc(c.ubicacion) + '</td><td>' + (c.m2 || '') + '</td><td>' + (c.m2t || '') + '</td><td>' + (c.precio ? nf.format(c.precio) : '') + '</td><td>' + (pm2 ? nf.format(pm2) : '') + '</td><td>' + (c.rec || '') + '</td><td>' + (c.ban || '') + '</td><td>' + (c.est || '') + '</td><td>' + (c.antig || '') + '</td><td>' + (c.dias || '') + '</td></tr>';
     }).join('');
     var html = '<!doctype html><html lang="es-MX"><head><meta charset="utf-8"><title>' + esc(d.nombre) + '</title><style>' +
-      'body{font-family:Georgia,serif;color:#0E1626;max-width:900px;margin:2rem auto;padding:0 1rem}' +
-      'h1{font-size:1.4rem;color:#071F4A;margin-bottom:.2rem} h2{font-size:1rem;color:#071F4A;margin-top:2rem;border-bottom:1px solid #ccc;padding-bottom:.3rem}' +
-      'table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:.5rem} th,td{border:1px solid #ddd;padding:.4rem .5rem;text-align:left}' +
-      'th{background:#f2f4f9} .resumen{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:1rem}' +
-      '.tarjeta{background:#f2f4f9;padding:.8rem;border-radius:8px} .tarjeta .lbl{font-size:.7rem;text-transform:uppercase;color:#737E92} .tarjeta .num{font-size:1.1rem;font-weight:bold;color:#071F4A}' +
-      '.footer{margin-top:3rem;font-size:.85rem;color:#4A5468}' +
+      '@page{ size:letter; margin:1.9cm 1.8cm 2.2cm; }' +
+      '*{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }' +
+      'html{ background:#fff; }' +
+      'body{ font-family:Georgia,"Times New Roman",serif; color:#0E1626; background:#fff; width:100%; margin:0 auto; padding:1.4rem .2rem 2rem; }' +
+      '.gf-header{ display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #B88E3E; padding-bottom:.7rem; margin-bottom:1.4rem; }' +
+      '.gf-header img{ height:30px; width:auto; display:block; }' +
+      '.gf-header .tag{ font-family:Helvetica,Arial,sans-serif; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#737E92; }' +
+      'h1{ font-size:1.5rem; color:#071F4A; margin:0 0 .2rem; font-weight:700; }' +
+      '.sub{ font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:#4A5468; margin-bottom:0; }' +
+      'h2{ font-family:Helvetica,Arial,sans-serif; font-size:.78rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#B88E3E; margin:1.8rem 0 .6rem; padding-bottom:.3rem; border-bottom:1px solid #E4E7EE; }' +
+      'table{ width:100%; border-collapse:collapse; font-family:Helvetica,Arial,sans-serif; font-size:.66rem; table-layout:fixed; }' +
+      'th,td{ border:1px solid #E4E7EE; padding:.3rem .4rem; text-align:left; overflow-wrap:break-word; }' +
+      'th{ background:#071F4A; color:#fff; font-weight:600; }' +
+      'tbody tr:nth-child(even){ background:#F7F5F0; }' +
+      '.resumen{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:.7rem; margin-top:.6rem; }' +
+      '.tarjeta{ background:#F2F4F9; border:1px solid #E4E7EE; border-radius:8px; padding:.75rem .85rem; font-family:Helvetica,Arial,sans-serif; }' +
+      '.tarjeta.destacada{ background:#FAF5EA; border-color:#D9BE86; }' +
+      '.tarjeta .lbl{ font-size:.62rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#737E92; }' +
+      '.tarjeta.destacada .lbl{ color:#8C6A2F; }' +
+      '.tarjeta .num{ font-size:1.05rem; font-weight:700; color:#071F4A; margin-top:.15rem; }' +
+      '.nota{ font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:#4A5468; margin-top:.7rem; line-height:1.5; }' +
+      '.gf-footer{ margin-top:2.6rem; padding-top:.7rem; border-top:1px solid #E8DDCF; font-family:Helvetica,Arial,sans-serif; font-size:.75rem; color:#737E92; display:flex; justify-content:space-between; }' +
       '</style></head><body>' +
+      '<div class="gf-header"><img src="https://www.giofilio.com/assets/img/brand/wordmark.png" alt="Gio Filio" id="gfLogoImg"><span class="tag">Estudio de precio</span></div>' +
       '<h1>' + esc(d.nombre) + '</h1>' +
-      '<p>' + esc(d.tipo) + ' en ' + opLabel + (d.colonia ? ' — ' + esc(d.colonia) : '') + (d.m2Sujeto ? ' · ' + d.m2c + ' m² constr.' + (d.m2t ? ' + ' + d.m2t + ' m² terreno' : '') : '') + '</p>' +
+      '<p class="sub">' + esc(d.tipo) + ' en ' + opLabel + (d.colonia ? ' — ' + esc(d.colonia) : '') + (d.m2Sujeto ? ' · ' + d.m2c + ' m² constr.' + (d.m2t ? ' + ' + d.m2t + ' m² terreno' : '') : '') + '</p>' +
       (filasHtml ? '<h2>Comparables</h2><table><thead><tr><th>#</th><th>Ubicación</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m² homolog.</th><th>Rec</th><th>Baños</th><th>Coch</th><th>Antig.</th><th>Días</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' : '') +
       '<h2>Resumen</h2><div class="resumen">' +
         '<div class="tarjeta"><div class="lbl">Valor asignado</div><div class="num">' + nf.format(Math.round(d.valorAsignado)) + '</div></div>' +
-        '<div class="tarjeta"><div class="lbl">Precio sugerido a publicar</div><div class="num">' + nf.format(Math.round(d.precioSugeridoPublicar)) + '</div></div>' +
+        '<div class="tarjeta destacada"><div class="lbl">Precio sugerido a publicar</div><div class="num">' + nf.format(Math.round(d.precioSugeridoPublicar)) + '</div></div>' +
         '<div class="tarjeta"><div class="lbl">Precio estimado de cierre</div><div class="num">' + nf.format(Math.round(d.precioCierre)) + '</div></div>' +
       '</div>' +
-      '<p style="margin-top:1rem;font-size:.85rem;color:#4A5468">Factor de negociación: ' + Math.round(d.factorNegPct * 100) + '% (' + nf.format(Math.round(d.factorNegociacion)) + '), basado en ' + d.propiedadesMercado + ' propiedades similares en el mercado.</p>' +
-      '<div class="footer">Estudio realizado por ' + esc(d.asesor) + '<br>' + esc(d.fecha) + '</div>' +
+      '<p class="nota">Factor de negociación: ' + Math.round(d.factorNegPct * 100) + '% (' + nf.format(Math.round(d.factorNegociacion)) + '), basado en ' + d.propiedadesMercado + ' propiedades similares en el mercado.</p>' +
+      '<div class="gf-footer"><span>Estudio realizado por ' + esc(d.asesor) + '</span><span>' + esc(d.fecha) + '</span></div>' +
       '</body></html>';
     var w = window.open('', '_blank');
     if (!w) { toast('Habilita las ventanas emergentes para exportar a PDF', 'err'); return; }
@@ -1288,7 +1305,15 @@
     w.document.write(html);
     w.document.close();
     w.focus();
-    setTimeout(function () { w.print(); }, 300);
+    var imprimir = function () { w.print(); };
+    var img = w.document.getElementById('gfLogoImg');
+    if (img && !img.complete) {
+      img.addEventListener('load', imprimir, { once: true });
+      img.addEventListener('error', imprimir, { once: true });
+      setTimeout(imprimir, 1500); // respaldo por si la imagen nunca dispara load/error
+    } else {
+      setTimeout(imprimir, 150);
+    }
   }
 
   // --------------------------------------------------------------- EQUIPO (solo admin)
