@@ -539,12 +539,14 @@
     $('#viewTareas').hidden = view !== 'tareas';
     $('#viewSolicitudes').hidden = view !== 'solicitudes';
     $('#viewEstimador').hidden = view !== 'estimador';
+    $('#viewDocumentos').hidden = view !== 'documentos';
     $('#viewEquipo').hidden = view !== 'equipo';
     $('#tabPropiedades').classList.toggle('is-active', view === 'propiedades');
     $('#tabContactos').classList.toggle('is-active', view === 'contactos');
     $('#tabTareas').classList.toggle('is-active', view === 'tareas');
     $('#tabSolicitudes').classList.toggle('is-active', view === 'solicitudes');
     $('#tabEstimador').classList.toggle('is-active', view === 'estimador');
+    $('#tabDocumentos').classList.toggle('is-active', view === 'documentos');
     $('#tabEquipo').classList.toggle('is-active', view === 'equipo');
     $('#addPropBtnFab').style.display = view === 'propiedades' && STATE.propiedades.length ? 'inline-flex' : 'none';
   }
@@ -1613,6 +1615,7 @@
     $('#tabTareas').addEventListener('click', function () { setView('tareas'); });
     $('#tabSolicitudes').addEventListener('click', function () { setView('solicitudes'); });
     $('#tabEstimador').addEventListener('click', function () { setView('estimador'); });
+    $('#tabDocumentos').addEventListener('click', function () { setView('documentos'); });
     $('#tabEquipo').addEventListener('click', function () { setView('equipo'); });
 
     $('#solicitudesLista').addEventListener('click', function (e) {

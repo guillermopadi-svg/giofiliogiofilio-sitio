@@ -331,6 +331,17 @@ button{ font-family:inherit; cursor:pointer; }
 .empty{ text-align:center; padding:4rem 1rem; color:var(--ink-50); }
 .empty svg{ width:48px; height:48px; margin:0 auto 1rem; opacity:.4; }
 
+.doc-section{ margin-bottom:2.2rem; }
+.doc-section h3{ font-size:1rem; color:var(--navy); margin-bottom:.9rem; padding-bottom:.5rem; border-bottom:1px solid var(--line); }
+.doc-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:.7rem; }
+.doc-card{
+  display:flex; align-items:center; gap:.6rem; padding:.8rem .9rem; background:var(--white);
+  border:1px solid var(--line); border-radius:var(--r-sm); text-decoration:none; color:var(--ink);
+  font-size:.88rem; font-weight:500; transition:border-color .16s ease, box-shadow .16s ease;
+}
+.doc-card:hover{ border-color:var(--gold-soft); box-shadow:var(--sh-2); }
+.doc-card-icon{ font-size:1.1rem; flex:0 0 auto; }
+
 .fab{
   position:fixed; right:2rem; bottom:2rem; z-index:30;
   box-shadow:var(--sh-4);
