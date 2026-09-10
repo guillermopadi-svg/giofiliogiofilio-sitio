@@ -11,7 +11,7 @@ from parts import (results_block, contact_form, gio_card, testimonial_block,
 from data_zonas import ALCALDIAS, COLONIAS, COLONIA_BY_SLUG, ALCALDIA_BY_SLUG, ALCALDIA_SLUG_BY_NOMBRE, MARCA
 from data_colonias_todas import COLONIAS_TODAS
 from data_props import TIPOS, TIPO_LABEL, TIPO_PLURAL, AMENIDAD_LABEL, ESTADOS_INMUEBLE, AMENIDADES
-from data_content import TESTIMONIOS, PROCESO, FAQS_GENERALES, BLOG, BLOG_CATEGORIAS
+from data_content import TESTIMONIOS, PROCESO, FAQS_GENERALES, BLOG, BLOG_CATEGORIAS, BLOG_EXTRA
 import prep
 
 OUT = ".."  # el sitio real es el directorio padre de _generador
@@ -52,6 +52,20 @@ ZONE_IMG_MAP = {
 ZONE_IMG = prep.build_zone_images(ZONE_IMG_MAP, pool_ids=POOL)
 BLOG_IMG_MAP = {b["slug"]: idx for b, idx in zip(BLOG, [24, 19, 0, 32, 38, 50, 33, 45, 48, 4])}
 BLOG_IMG = prep.build_blog_images(BLOG_IMG_MAP, pool_ids=POOL)
+
+# BLOG_ALL: para listados (home, indice del blog, sitemap, schema) -- incluye
+# los posts publicados por n8n (BLOG_EXTRA), ordenados por fecha. build_post()
+# sigue iterando solo sobre BLOG: las paginas de BLOG_EXTRA ya existen en
+# disco y no se regeneran aqui.
+BLOG_ALL = sorted(BLOG + BLOG_EXTRA, key=lambda b: b["fecha"], reverse=True)
+for _b in BLOG_EXTRA:
+    PAGES.append(f'blog/{_b["slug"]}/index.html')
+
+
+def blog_card_img(b, R):
+    if b.get("card_img"):
+        return b["card_img"]
+    return R(BLOG_IMG[b["slug"]] + "-card.jpg")
 
 print("→ Normalizando dataset…")
 PROPS_ALL = prep.normalize(IMAGES)
@@ -170,11 +184,11 @@ def build_home():
     </a>''' for s in zonas_home)
 
     posts_html = "".join(f'''<a class="post-card" href="{R("blog/" + b["slug"] + "/")}">
-      <div class="pc-media"><img src="{R(BLOG_IMG[b["slug"]] + "-card.jpg")}" alt="{e(b["titulo"])}" loading="lazy" width="640" height="400"></div>
+      <div class="pc-media"><img src="{blog_card_img(b, R)}" alt="{e(b["titulo"])}" loading="lazy" width="640" height="400"></div>
       <div class="pc-body">
         <div class="post-meta"><span class="cat">{e(b["categoria"])}</span><span>{b["lectura"]} min</span></div>
         <h3>{e(b["titulo"])}</h3><p>{e(b["resumen"])}</p>
-      </div></a>''' for b in BLOG[:3])
+      </div></a>''' for b in BLOG_ALL[:3])
 
     # Slides del hero: la primera es la imagen generica de siempre (sin
     # highlight, es el estado por defecto); las siguientes son fotos reales
@@ -1498,15 +1512,15 @@ def build_blog():
     crumbs = [("Inicio", "index.html"), ("Blog y guías", None)]
     cats = "".join(f'<a class="chip" href="#cat-{slugify(c)}">{e(c)}</a>' for c in BLOG_CATEGORIAS)
     cards = "".join(f'''<a class="post-card" href="{R("blog/" + b["slug"] + "/")}">
-      <div class="pc-media"><img src="{R(BLOG_IMG[b["slug"]] + "-card.jpg")}" alt="{e(b["titulo"])}" loading="lazy" width="640" height="400"></div>
+      <div class="pc-media"><img src="{blog_card_img(b, R)}" alt="{e(b["titulo"])}" loading="lazy" width="640" height="400"></div>
       <div class="pc-body">
         <div class="post-meta"><span class="cat">{e(b["categoria"])}</span><span>{b["lectura"]} min de lectura</span></div>
         <h3>{e(b["titulo"])}</h3><p>{e(b["resumen"])}</p>
         <span class="link-arrow">Leer guía{icon("arrow")}</span>
-      </div></a>''' for b in BLOG)
+      </div></a>''' for b in BLOG_ALL)
     by_cat = ""
     for c in BLOG_CATEGORIAS:
-        posts = [b for b in BLOG if b["categoria"] == c]
+        posts = [b for b in BLOG_ALL if b["categoria"] == c]
         if not posts:
             continue
         lis = "".join(f'<li><a href="{R("blog/" + b["slug"] + "/")}">{e(b["titulo"])}</a> <span class="small muted">· {b["lectura"]} min</span></li>' for b in posts)
@@ -1547,7 +1561,7 @@ def build_blog():
                        "publisher": {"@id": SITE + "/#gio-filio"},
                        "blogPost": [{"@type": "BlogPosting", "headline": b["titulo"],
                                      "url": canonical(f'blog/{b["slug"]}/'), "datePublished": b["fecha"]}
-                                    for b in BLOG]}],
+                                    for b in BLOG_ALL]}],
         page_type="blog_index", **K()))
 
     for b in BLOG:

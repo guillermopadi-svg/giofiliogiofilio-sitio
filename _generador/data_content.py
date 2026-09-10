@@ -187,3 +187,51 @@ BLOG = [
 ]
 
 BLOG_CATEGORIAS = ["Comprar", "Rentar", "Invertir", "Vender", "Créditos hipotecarios", "Zonas de CDMX", "Lifestyle", "Tendencias"]
+
+# Posts publicados directamente por el workflow de n8n (imagen propia generada
+# por IA, ya construidos en blog/<slug>/index.html). Se listan aqui solo para
+# que aparezcan en el indice del blog, la home y el sitemap -- build.py NO
+# regenera su pagina (a diferencia de BLOG), para no perder el formato propio
+# de cada uno (por ejemplo tablas dentro del cuerpo).
+BLOG_EXTRA = [
+    dict(slug="the-real-estate-show-2026-inversion-cdmx", categoria="Tendencias",
+         titulo="The Real Estate Show 2026: qué significan los $18,400 mdd de inversión de la ADI para quien compra o renta en CDMX",
+         resumen="La ADI anunció una inversión de sus socios superior a los 18,400 millones de dólares, con más de 4,200 millones para la capital. Traduzco el titular a lo que realmente cambia para quien busca comprar, rentar o invertir en la Ciudad de México.",
+         lectura=7, fecha="2026-08-23",
+         card_img="https://giofilio.com/assets/img/blog/the-real-estate-show-2026-inversion-cdmx-card.png"),
+    dict(slug="la-jornada-notarial-un-impulso-para-la-seguridad-juridica-en-cdmx", categoria="Tendencias",
+         titulo="La Jornada Notarial: Un impulso para la seguridad jurídica en CDMX",
+         resumen="Descubre cómo la Jornada Notarial ofrece descuentos y asesoría gratuita para escrituración y sucesiones en la Ciudad de México.",
+         lectura=3, fecha="2026-08-25",
+         card_img="https://giofilio.com/assets/img/blog/la-jornada-notarial-un-impulso-para-la-seguridad-juridica-en-cdmx-card.png"),
+    dict(slug="herencias-y-donaciones-en-mexico-lo-que-necesitas-saber", categoria="Tendencias",
+         titulo="Herencias y Donaciones en México: Lo que Necesitas Saber",
+         resumen="Explora cómo las herencias y donaciones se manejan fiscalmente en México y qué debes considerar al recibir bienes familiares.",
+         lectura=3, fecha="2026-08-25",
+         card_img="https://giofilio.com/assets/img/blog/herencias-y-donaciones-en-mexico-lo-que-necesitas-saber-card.png"),
+    dict(slug="la-reconfiguracion-del-mercado-inmobiliario-en-cdmx-oportunidades-y-de", categoria="Tendencias",
+         titulo="La Reconfiguración del Mercado Inmobiliario en CDMX: Oportunidades y Desafíos",
+         resumen="El mercado inmobiliario en CDMX enfrenta contrastes: oportunidades en zonas emergentes y retos en inventario y plusvalía.",
+         lectura=3, fecha="2026-08-25",
+         card_img="https://giofilio.com/assets/img/blog/la-reconfiguracion-del-mercado-inmobiliario-en-cdmx-oportunidades-y-de-card.png"),
+    dict(slug="cambios-en-la-ley-antilavado-2026-impacto-en-el-mercado-inmobiliario", categoria="Tendencias",
+         titulo="Cambios en la Ley Antilavado 2026: Impacto en el Mercado Inmobiliario",
+         resumen="La nueva Ley Antilavado en México trae cambios que afectarán al sector inmobiliario; descubre cómo prepararte.",
+         lectura=3, fecha="2026-08-30",
+         card_img="https://giofilio.com/assets/img/blog/cambios-en-la-ley-antilavado-2026-impacto-en-el-mercado-inmobiliario-card.png"),
+    dict(slug="la-nueva-era-del-mercado-inmobiliario-industrial-en-mexico", categoria="Tendencias",
+         titulo="La Nueva Era del Mercado Inmobiliario Industrial en México",
+         resumen="La creciente exportación de electrónicos impulsa la demanda de espacios industriales en México, redefiniendo el panorama inmobiliario.",
+         lectura=3, fecha="2026-08-30",
+         card_img="https://giofilio.com/assets/img/blog/la-nueva-era-del-mercado-inmobiliario-industrial-en-mexico-card.png"),
+    dict(slug="open-house-cdmx-2026-un-vistazo-a-la-arquitectura-del-futuro", categoria="Tendencias",
+         titulo="Open House CDMX 2026: Un Vistazo a la Arquitectura del Futuro",
+         resumen="Explora la arquitectura de CDMX en Open House 2026, un festival que redefine el diseño urbano para enfrentar desafíos contemporáneos.",
+         lectura=3, fecha="2026-08-30",
+         card_img="https://giofilio.com/assets/img/blog/open-house-cdmx-2026-un-vistazo-a-la-arquitectura-del-futuro-card.png"),
+    dict(slug="el-mercado-inmobiliario-en-cdmx-entre-la-inversion-y-la-exclusion", categoria="Tendencias",
+         titulo="El mercado inmobiliario en CDMX: entre la inversión y la exclusión",
+         resumen="El mercado inmobiliario en CDMX se mantiene activo, pero inaccesible para la mayoría. ¿Qué impulsa esta paradoja?",
+         lectura=3, fecha="2026-08-25",
+         card_img="https://giofilio.com/assets/img/blog/el-mercado-inmobiliario-en-cdmx-entre-la-inversion-y-la-exclusion-card.png"),
+]
