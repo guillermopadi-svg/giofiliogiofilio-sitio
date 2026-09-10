@@ -549,6 +549,26 @@
     $('#tabDocumentos').classList.toggle('is-active', view === 'documentos');
     $('#tabEquipo').classList.toggle('is-active', view === 'equipo');
     $('#addPropBtnFab').style.display = view === 'propiedades' && STATE.propiedades.length ? 'inline-flex' : 'none';
+    if (view === 'documentos') mostrarDocLanding();
+  }
+
+  // --------------------------------------------------------------- DOCUMENTOS
+  function mostrarDocLanding() {
+    $('#docLanding').hidden = false;
+    $('#docDetail').hidden = true;
+  }
+  function abrirDocCategoria(targetId) {
+    $$('.doc-section', $('#docDetail')).forEach(function (sec) { sec.hidden = sec.id !== targetId; });
+    $('#docLanding').hidden = true;
+    $('#docDetail').hidden = false;
+    $('#docDetail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function wireDocumentos() {
+    $$('.doc-cat-card').forEach(function (card) {
+      card.addEventListener('click', function () { abrirDocCategoria(card.dataset.docTarget); });
+    });
+    var back = $('#docBack');
+    if (back) back.addEventListener('click', mostrarDocLanding);
   }
 
   // --------------------------------------------------------------- TAREAS
@@ -1616,6 +1636,7 @@
     $('#tabSolicitudes').addEventListener('click', function () { setView('solicitudes'); });
     $('#tabEstimador').addEventListener('click', function () { setView('estimador'); });
     $('#tabDocumentos').addEventListener('click', function () { setView('documentos'); });
+    wireDocumentos();
     $('#tabEquipo').addEventListener('click', function () { setView('equipo'); });
 
     $('#solicitudesLista').addEventListener('click', function (e) {
