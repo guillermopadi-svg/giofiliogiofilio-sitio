@@ -400,6 +400,33 @@
     });
   }
 
+  // Auditoria de seguridad 2026-09-11 (GIO-005): las fotos que NO son HEIC
+  // se subian tal cual, con su EXIF original -- si trae GPS, cualquiera que
+  // descargue la foto publicada puede sacar la ubicacion exacta de la
+  // propiedad. Re-dibujar en un <canvas> y volver a exportar como JPEG
+  // descarta el EXIF por completo (mismo efecto colateral que ya beneficia
+  // a la conversion HEIC de arriba). De paso, forzar siempre ".jpg" evita
+  // depender del nombre original del archivo para la extension (GIO-002).
+  function limpiarExifJpeg(file) {
+    return new Promise(function (resolve) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(function (blob) {
+          if (!blob) { resolve(file); return; }
+          resolve(new File([blob], 'foto.jpg', { type: 'image/jpeg' }));
+        }, 'image/jpeg', 0.9);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+
   function avisoFoto(msg) {
     var el = $('#fotoAviso');
     if (!msg) { el.hidden = true; el.textContent = ''; return; }
@@ -427,12 +454,11 @@
               );
               return null;
             })
-          : Promise.resolve(file);
+          : limpiarExifJpeg(file);
         return prep;
       }).then(function (f) {
         if (!f) return null;
-        var ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
-        var ruta = carpeta + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+        var ruta = carpeta + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
         return sb.storage.from('propiedades-manual').upload(ruta, f).then(function (res) {
           if (res.error) { toast('No se pudo subir ' + f.name + ': ' + res.error.message, 'err'); return null; }
           return sb.storage.from('propiedades-manual').getPublicUrl(ruta).data.publicUrl;

@@ -1186,8 +1186,17 @@
       fecha: new Date().toISOString()
     });
 
+    // Auditoria de seguridad 2026-09-11 (GIO-007): esto guardaba TODOS los
+    // leads enviados desde este navegador, para siempre, con nombre/correo/
+    // teléfono/mensaje incluidos -- un XSS futuro, una extensión maliciosa o
+    // alguien más usando el mismo equipo podía leer el historial completo.
+    // Solo se necesita como respaldo por si falla el envío al CRM, así que
+    // basta con guardar los últimos 3, no un arreglo que crece sin límite.
+    var MAX_LEADS_RESPALDO = 3;
     var all = store(LS.leads, []);
-    all.push(lead); save(LS.leads, all);
+    all.push(lead);
+    if (all.length > MAX_LEADS_RESPALDO) all = all.slice(-MAX_LEADS_RESPALDO);
+    save(LS.leads, all);
 
     // Punto de integración con CRM (HubSpot u otro). Ver README.
     if (typeof window.gfSendToCRM === 'function') {
@@ -1195,7 +1204,9 @@
     }
     return lead;
   }
-  window.gfLeads = function () { return store(LS.leads, []); };
+  // Expuesto solo en modo debug (CFG.debug) -- en producción, window.gfLeads()
+  // dejaba leer desde la consola el historial de leads de este navegador.
+  if (CFG.debug) window.gfLeads = function () { return store(LS.leads, []); };
 
   // Redirige a la página de gracias tras un envío exitoso. Se pasan los
   // datos por query string (no por localStorage) para que la página de

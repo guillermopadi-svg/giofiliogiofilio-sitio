@@ -47,15 +47,35 @@ async function excedeLimite(key) {
   return count > RATE_LIMIT_MAX;
 }
 
+// Auditoria de seguridad 2026-09-11 (GIO-004): el token de un asesor sigue
+// siendo valido ante Supabase aunque Gio lo haya desactivado desde el panel
+// (perfiles.activo = false) -- antes bastaba con estar autenticado, sin
+// importar si seguia activo. Se agrega una segunda verificacion contra
+// `perfiles` con la service_role key (que ignora RLS) para confirmar que
+// sigue activo antes de disparar el rebuild.
 async function usuarioValido(accessToken) {
   const supabaseUrl = process.env.SUPABASE_URL;
   const anonKey = process.env.SUPABASE_ANON_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !anonKey || !accessToken) return false;
   try {
     const res = await fetch(`${supabaseUrl}/auth/v1/user`, {
       headers: { apikey: anonKey, Authorization: `Bearer ${accessToken}` },
     });
-    return res.ok;
+    if (!res.ok) return false;
+    const user = await res.json();
+    if (!user || !user.id) return false;
+
+    if (!serviceKey) {
+      console.warn('[api/rebuild] SUPABASE_SERVICE_ROLE_KEY no configurada — no se pudo verificar si el asesor sigue activo.');
+      return true;
+    }
+    const perfilRes = await fetch(`${supabaseUrl}/rest/v1/perfiles?id=eq.${user.id}&select=activo`, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+    });
+    if (!perfilRes.ok) return false;
+    const perfiles = await perfilRes.json();
+    return Array.isArray(perfiles) && perfiles.length > 0 && perfiles[0].activo === true;
   } catch {
     return false;
   }

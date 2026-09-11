@@ -24,7 +24,7 @@ jobs:
           python-version: '3.12'
 
       - name: Instalar dependencias
-        run: pip install Pillow
+        run: pip install -r _generador/requirements.txt
 
       - name: Traer propiedades del panel de asesores (Supabase)
         working-directory: _generador

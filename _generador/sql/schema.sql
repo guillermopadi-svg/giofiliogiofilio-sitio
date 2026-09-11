@@ -68,10 +68,26 @@ create or replace function is_admin()
 returns boolean
 language sql security definer stable set search_path = public
 as $$
-  select exists (select 1 from perfiles where id = auth.uid() and rol = 'admin');
+  select exists (select 1 from perfiles where id = auth.uid() and rol = 'admin' and activo);
 $$;
 
 grant execute on function is_admin() to authenticated;
+
+-- Auditoria de seguridad 2026-09-11 (GIO-004): desactivar a un asesor
+-- (perfiles.activo = false) antes solo lo sacaba del panel la PROXIMA vez
+-- que cargaba /admin/ -- su token de Supabase seguia siendo valido y ninguna
+-- policy de leads/propiedades_manual/tareas/estudios_precio revisaba
+-- `activo`, asi que seguia pudiendo leer/escribir todo eso llamando la REST
+-- API directo. is_activo() cierra eso a nivel de base de datos: se usa en
+-- todas las policies de "dueno del renglon" de aqui en adelante.
+create or replace function is_activo()
+returns boolean
+language sql security definer stable set search_path = public
+as $$
+  select coalesce((select activo from perfiles where id = auth.uid()), false);
+$$;
+
+grant execute on function is_activo() to authenticated;
 
 drop policy if exists "cada quien lee su propio perfil, admin lee todos" on perfiles;
 create policy "cada quien lee su propio perfil, admin lee todos"
@@ -175,22 +191,22 @@ grant select on propiedades_manual to service_role;
 drop policy if exists "todos ven las publicadas, cada quien ve tambien las suyas" on propiedades_manual;
 create policy "todos ven las publicadas, cada quien ve tambien las suyas"
   on propiedades_manual for select
-  using (estado = 'disponible' or asesor_id = auth.uid() or is_admin());
+  using (estado = 'disponible' or (is_activo() and (asesor_id = auth.uid() or is_admin())));
 
 drop policy if exists "cada asesor crea sus propias fichas" on propiedades_manual;
 create policy "cada asesor crea sus propias fichas"
   on propiedades_manual for insert
-  with check (asesor_id = auth.uid());
+  with check (is_activo() and asesor_id = auth.uid());
 
 drop policy if exists "cada asesor edita las suyas, admin edita todas" on propiedades_manual;
 create policy "cada asesor edita las suyas, admin edita todas"
   on propiedades_manual for update
-  using (asesor_id = auth.uid() or is_admin());
+  using (is_activo() and (asesor_id = auth.uid() or is_admin()));
 
 drop policy if exists "cada asesor borra las suyas, admin borra todas" on propiedades_manual;
 create policy "cada asesor borra las suyas, admin borra todas"
   on propiedades_manual for delete
-  using (asesor_id = auth.uid() or is_admin());
+  using (is_activo() and (asesor_id = auth.uid() or is_admin()));
 
 create or replace function set_actualizado_en()
 returns trigger as $$
@@ -219,12 +235,20 @@ create policy "cualquiera puede ver las fotos (bucket publico)"
 drop policy if exists "un asesor autenticado puede subir sus fotos" on storage.objects;
 create policy "un asesor autenticado puede subir sus fotos"
   on storage.objects for insert
-  with check (bucket_id = 'propiedades-manual' and auth.role() = 'authenticated');
+  with check (bucket_id = 'propiedades-manual' and auth.role() = 'authenticated' and is_activo());
 
 drop policy if exists "un asesor autenticado puede borrar fotos que subio" on storage.objects;
 create policy "un asesor autenticado puede borrar fotos que subio"
   on storage.objects for delete
-  using (bucket_id = 'propiedades-manual' and auth.uid() = owner);
+  using (bucket_id = 'propiedades-manual' and auth.uid() = owner and is_activo());
+
+-- Auditoria de seguridad 2026-09-11 (GIO-001): antes cualquiera podia subir
+-- cualquier tipo/tamano de archivo a este bucket publico. Se restringe a
+-- imagenes y 8 MB por archivo -- suficiente para fotos de propiedades.
+update storage.buckets
+set allowed_mime_types = array['image/jpeg','image/png','image/webp','image/heic','image/heif'],
+    file_size_limit = 8388608
+where id = 'propiedades-manual';
 
 -- ------------------------------------------------------------------- leads
 -- Cada envío de un formulario del sitio (api/leads.js) se guarda aquí ADEMÁS
@@ -265,14 +289,14 @@ drop policy if exists "todo asesor autenticado ve todos los leads" on leads;
 create policy "todo asesor autenticado ve todos los leads"
   on leads for select
   to authenticated
-  using (true);
+  using (is_activo());
 
 drop policy if exists "todo asesor autenticado puede tomar/mover cualquier lead" on leads;
 create policy "todo asesor autenticado puede tomar/mover cualquier lead"
   on leads for update
   to authenticated
-  using (true)
-  with check (true);
+  using (is_activo())
+  with check (is_activo());
 
 -- El insert es exclusivo de api/leads.js (service_role, que ademas ignora
 -- RLS) -- no se da policy de insert a "authenticated" a proposito.
@@ -307,22 +331,22 @@ grant select, insert, update, delete on tareas to authenticated;
 drop policy if exists "cada quien ve y gestiona sus propias tareas, admin ve todas" on tareas;
 create policy "cada quien ve y gestiona sus propias tareas, admin ve todas"
   on tareas for select
-  using (asesor_id = auth.uid() or is_admin());
+  using (is_activo() and (asesor_id = auth.uid() or is_admin()));
 
 drop policy if exists "cada quien crea sus propias tareas" on tareas;
 create policy "cada quien crea sus propias tareas"
   on tareas for insert
-  with check (asesor_id = auth.uid());
+  with check (is_activo() and asesor_id = auth.uid());
 
 drop policy if exists "cada quien edita/borra sus propias tareas, admin todas (upd)" on tareas;
 create policy "cada quien edita/borra sus propias tareas, admin todas (upd)"
   on tareas for update
-  using (asesor_id = auth.uid() or is_admin());
+  using (is_activo() and (asesor_id = auth.uid() or is_admin()));
 
 drop policy if exists "cada quien edita/borra sus propias tareas, admin todas (del)" on tareas;
 create policy "cada quien edita/borra sus propias tareas, admin todas (del)"
   on tareas for delete
-  using (asesor_id = auth.uid() or is_admin());
+  using (is_activo() and (asesor_id = auth.uid() or is_admin()));
 
 drop trigger if exists on_tarea_updated on tareas;
 create trigger on_tarea_updated
@@ -386,19 +410,19 @@ drop policy if exists "solo el equipo autenticado ve y da seguimiento" on solici
 create policy "solo el equipo autenticado ve y da seguimiento"
   on solicitudes_alta for select
   to authenticated
-  using (true);
+  using (is_activo());
 
 drop policy if exists "solo el equipo autenticado actualiza" on solicitudes_alta;
 create policy "solo el equipo autenticado actualiza"
   on solicitudes_alta for update
   to authenticated
-  using (true);
+  using (is_activo());
 
 drop policy if exists "solo el equipo autenticado borra" on solicitudes_alta;
 create policy "solo el equipo autenticado borra"
   on solicitudes_alta for delete
   to authenticated
-  using (true);
+  using (is_activo());
 
 -- Bucket separado del de asesores (`propiedades-manual`): aqui SI puede
 -- subir cualquier visitante anonimo (es el mismo formulario publico), pero
@@ -426,7 +450,18 @@ drop policy if exists "solo el equipo autenticado borra fotos de solicitudes" on
 create policy "solo el equipo autenticado borra fotos de solicitudes"
   on storage.objects for delete
   to authenticated
-  using (bucket_id = 'solicitudes-alta');
+  using (bucket_id = 'solicitudes-alta' and is_activo());
+
+-- Auditoria de seguridad 2026-09-11 (GIO-001, hallazgo principal): este
+-- bucket es publico y el INSERT esta abierto a "anon" a proposito (es el
+-- formulario publico, sin login) -- pero no tenia NINGUNA restriccion de
+-- tipo o tamano de archivo, asi que cualquiera en internet podia usarlo
+-- como hosting de archivos gratis llamando la Storage REST API directo,
+-- sin pasar por el formulario. Se restringe a imagenes y 8 MB por archivo.
+update storage.buckets
+set allowed_mime_types = array['image/jpeg','image/png','image/webp','image/heic','image/heif'],
+    file_size_limit = 8388608
+where id = 'solicitudes-alta';
 
 -- ------------------------------------------------------------- estudios_precio
 -- Digitaliza el estudio comparativo que Gio hacia a mano en Excel (liga,
@@ -465,22 +500,22 @@ grant select, insert, update, delete on estudios_precio to authenticated;
 drop policy if exists "cada quien ve y gestiona sus estudios, admin ve todos" on estudios_precio;
 create policy "cada quien ve y gestiona sus estudios, admin ve todos"
   on estudios_precio for select
-  using (asesor_id = auth.uid() or is_admin());
+  using (is_activo() and (asesor_id = auth.uid() or is_admin()));
 
 drop policy if exists "cada quien crea sus propios estudios" on estudios_precio;
 create policy "cada quien crea sus propios estudios"
   on estudios_precio for insert
-  with check (asesor_id = auth.uid());
+  with check (is_activo() and asesor_id = auth.uid());
 
 drop policy if exists "cada quien edita/borra sus estudios, admin todos (upd)" on estudios_precio;
 create policy "cada quien edita/borra sus estudios, admin todos (upd)"
   on estudios_precio for update
-  using (asesor_id = auth.uid() or is_admin());
+  using (is_activo() and (asesor_id = auth.uid() or is_admin()));
 
 drop policy if exists "cada quien edita/borra sus estudios, admin todos (del)" on estudios_precio;
 create policy "cada quien edita/borra sus estudios, admin todos (del)"
   on estudios_precio for delete
-  using (asesor_id = auth.uid() or is_admin());
+  using (is_activo() and (asesor_id = auth.uid() or is_admin()));
 
 drop trigger if exists on_estudio_updated on estudios_precio;
 create trigger on_estudio_updated
