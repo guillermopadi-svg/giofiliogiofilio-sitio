@@ -1518,17 +1518,16 @@ def build_blog():
         <h3>{e(b["titulo"])}</h3><p>{e(b["resumen"])}</p>
         <span class="link-arrow">Leer guía{icon("arrow")}</span>
       </div></a>''' for b in BLOG_ALL)
-    MAX_POR_CATEGORIA = 5
     by_cat = ""
     for c in BLOG_CATEGORIAS:
         posts = [b for b in BLOG_ALL if b["categoria"] == c]
         if not posts:
             continue
-        restantes = len(posts) - MAX_POR_CATEGORIA
-        posts = posts[:MAX_POR_CATEGORIA]
-        lis = "".join(f'<li><a href="{R("blog/" + b["slug"] + "/")}">{e(b["titulo"])}</a> <span class="small muted">· {b["lectura"]} min</span></li>' for b in posts)
-        mas = f'<li class="small muted">+{restantes} más en esta categoría</li>' if restantes > 0 else ""
-        by_cat += f'<div id="cat-{slugify(c)}"><h3 style="font-size:var(--step-1)">{e(c)}</h3><ul class="prose">{lis}{mas}</ul></div>'
+        destacado = posts[0]
+        lis = f'<li><a href="{R("blog/" + destacado["slug"] + "/")}">{e(destacado["titulo"])}</a> <span class="small muted">· {destacado["lectura"]} min</span></li>'
+        if len(posts) > 1:
+            lis += f'<li><a href="{R("blog/categoria/" + slugify(c) + "/")}" class="link-arrow">Ver las {len(posts)} guías de {e(c)}{icon("arrow")}</a></li>'
+        by_cat += f'<div id="cat-{slugify(c)}"><h3 style="font-size:var(--step-1)">{e(c)}</h3><ul class="prose">{lis}</ul></div>'
 
     body = f'''
 {breadcrumb(path, crumbs)}
@@ -1568,8 +1567,53 @@ def build_blog():
                                     for b in BLOG_ALL]}],
         page_type="blog_index", **K()))
 
+    for c in BLOG_CATEGORIAS:
+        posts = [b for b in BLOG_ALL if b["categoria"] == c]
+        if len(posts) > 1:
+            build_blog_categoria(c, posts)
+
     for b in BLOG:
         build_post(b)
+
+
+def build_blog_categoria(c, posts):
+    path = f'blog/categoria/{slugify(c)}/index.html'
+    R = lambda t: rel(path, t)
+    crumbs = [("Inicio", "index.html"), ("Blog y guías", "blog/"), (c, None)]
+    cards = "".join(f'''<a class="post-card" href="{R("blog/" + b["slug"] + "/")}">
+      <div class="pc-media"><img src="{blog_card_img(b, R)}" alt="{e(b["titulo"])}" loading="lazy" width="640" height="400"></div>
+      <div class="pc-body">
+        <div class="post-meta"><span class="cat">{e(b["categoria"])}</span><span>{b["lectura"]} min de lectura</span></div>
+        <h3>{e(b["titulo"])}</h3><p>{e(b["resumen"])}</p>
+        <span class="link-arrow">Leer guía{icon("arrow")}</span>
+      </div></a>''' for b in posts)
+
+    body = f'''
+{breadcrumb(path, crumbs)}
+<section class="hero hero--page hero--light hero--compact">
+  <div class="hero-inner wrap">
+    <p class="eyebrow">Blog y guías</p>
+    <h1>{e(c)}</h1>
+    <p class="lead" style="max-width:64ch">{len(posts)} guías sobre {e(c.lower())} para comprar, rentar, vender e invertir en la Ciudad de México.</p>
+    <div class="flex flex-wrap" style="margin-top:1.5rem"><a class="chip" href="{R("blog/")}">Ver todas las categorías</a></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap"><div class="grid grid-3">{cards}</div></div>
+</section>
+
+{cta_band(path, "¿Tu caso no está en ninguna guía?",
+          "Escríbeme y lo resolvemos en una conversación. Suele ser más rápido que leer diez artículos.",
+          ("Hablar con Gio", "contacto/"))}
+'''
+    write(path, page(path, f'{c}: guías inmobiliarias de CDMX | Gio Filio',
+        f'Todas las guías de {c.lower()} sobre comprar, rentar, vender e invertir en Ciudad de México.',
+        body, schema=[breadcrumb_schema(crumbs),
+                      {"@context": "https://schema.org", "@type": "CollectionPage",
+                       "name": f'{c} — Blog de Gio Filio', "url": canonical(path),
+                       "isPartOf": {"@id": canonical("blog/")}}],
+        page_type="blog_index", **K()))
 
 
 def build_post(b):
