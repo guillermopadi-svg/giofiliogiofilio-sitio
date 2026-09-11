@@ -741,6 +741,111 @@
     });
   }
 
+  var SOL_COLUMNAS = [
+    { header: 'Fecha', width: 12 }, { header: 'Estado', width: 12 }, { header: 'Nombre', width: 22 },
+    { header: 'Teléfono', width: 14 }, { header: 'Correo', width: 24 }, { header: 'Operación', width: 11 },
+    { header: 'Tipo', width: 16 }, { header: 'Precio', width: 13 }, { header: 'Colonia', width: 18 },
+    { header: 'Alcaldía', width: 16 }, { header: 'Dirección', width: 24 }, { header: 'CP', width: 8 },
+    { header: 'm² constr.', width: 10 }, { header: 'm² terreno', width: 10 }, { header: 'Recámaras', width: 10 },
+    { header: 'Baños', width: 8 }, { header: 'Estac.', width: 8 }, { header: 'Antigüedad', width: 12 },
+    { header: 'Hipoteca', width: 16 }, { header: 'Gravamen', width: 16 }, { header: 'Deudas admin./servicios', width: 22 },
+    { header: 'Características', width: 28 }, { header: 'Descripción', width: 32 }, { header: 'Fotos', width: 8 },
+  ];
+  var SOL_ESTADO_LABEL = { nueva: 'Nueva', revisada: 'Revisada', publicada: 'Publicada', descartada: 'Descartada' };
+  var SOL_SI_NO_LABEL = { si: 'Sí', no: 'No', no_se: 'No sabe / no dijo' };
+
+  function exportarSolicitudesExcel() {
+    var lista = STATE.solicitudes || [];
+    if (!lista.length) { toast('No hay solicitudes para exportar', 'err'); return; }
+    if (typeof ExcelJS === 'undefined') { toast('No se pudo cargar el generador de Excel', 'err'); return; }
+
+    var NAVY = 'FF071F4A', GOLD = 'FFB88E3E', IVORY = 'FFF7F5F0', WHITE = 'FFFFFFFF', INK = 'FF0E1626', INK70 = 'FF4A5468';
+    var wb = new ExcelJS.Workbook();
+    wb.creator = 'Gio Filio';
+    wb.created = new Date();
+    var ws = wb.addWorksheet('Solicitudes', { views: [{ state: 'frozen', ySplit: 4 }] });
+    ws.columns = SOL_COLUMNAS.map(function (c) { return { width: c.width }; });
+    var nCols = SOL_COLUMNAS.length;
+    var lastCol = ws.getColumn(nCols).letter;
+
+    ws.mergeCells('C1:' + lastCol + '1');
+    var titleCell = ws.getCell('C1');
+    titleCell.value = 'Solicitudes de alta';
+    titleCell.font = { name: 'Georgia', size: 17, bold: true, color: { argb: NAVY } };
+    titleCell.alignment = { vertical: 'middle' };
+
+    ws.mergeCells('C2:' + lastCol + '2');
+    var subCell = ws.getCell('C2');
+    var fechaGen = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+    subCell.value = 'Generado el ' + fechaGen + ' · ' + lista.length + ' solicitud' + (lista.length === 1 ? '' : 'es');
+    subCell.font = { name: 'Arial', size: 10, italic: true, color: { argb: INK70 } };
+    subCell.alignment = { vertical: 'middle' };
+
+    ws.getRow(1).height = 30;
+    ws.getRow(2).height = 18;
+    ws.getRow(3).height = 6;
+
+    var headerRow = ws.getRow(4);
+    SOL_COLUMNAS.forEach(function (c, i) { headerRow.getCell(i + 1).value = c.header; });
+    headerRow.eachCell(function (cell) {
+      cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: WHITE } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+      cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+      cell.border = { bottom: { style: 'medium', color: { argb: GOLD } } };
+    });
+    headerRow.height = 30;
+    ws.autoFilter = { from: { row: 4, column: 1 }, to: { row: 4, column: nCols } };
+
+    lista.forEach(function (s, i) {
+      var row = ws.getRow(5 + i);
+      var valores = [
+        s.creado_en ? formatFechaCorta(s.creado_en.slice(0, 10)) : '',
+        SOL_ESTADO_LABEL[s.estado] || s.estado || '',
+        [s.nombre, s.apellido].filter(Boolean).join(' '),
+        s.telefono || '', s.email || '',
+        s.operacion === 'renta' ? 'Renta' : 'Venta',
+        TIPO_LABEL_SOL[s.tipo] || s.tipo || '',
+        s.precio || null,
+        s.colonia || '', s.alcaldia || '',
+        [s.calle, s.numero].filter(Boolean).join(' '), s.cp || '',
+        s.m2c || null, s.m2t || null, s.rec || null, s.ban || null, s.est || null,
+        s.antig || 'Nueva',
+        SOL_SI_NO_LABEL[s.hipoteca] || 'No sabe / no dijo',
+        SOL_SI_NO_LABEL[s.gravamen] || 'No sabe / no dijo',
+        SOL_SI_NO_LABEL[s.deuda_admin] || 'No sabe / no dijo',
+        (s.amenidades || []).join(', '),
+        s.descripcion || '',
+        (s.fotos || []).length,
+      ];
+      valores.forEach(function (v, ci) { row.getCell(ci + 1).value = v; });
+      row.getCell(8).numFmt = '$#,##0';
+      row.eachCell({ includeEmpty: true }, function (cell) {
+        cell.font = { name: 'Arial', size: 9.5, color: { argb: INK } };
+        cell.alignment = { vertical: 'middle', wrapText: false };
+        if (i % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: IVORY } };
+      });
+      var estadoFill = s.estado === 'nueva' ? 'FFFAF5EA' : s.estado === 'publicada' ? 'FFE3F3EA' : 'FFEFF2F7';
+      var estadoFont = s.estado === 'nueva' ? 'FF8C6A2F' : s.estado === 'publicada' ? 'FF1F7A4D' : 'FF4A5468';
+      var estadoCell = row.getCell(2);
+      estadoCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: estadoFill } };
+      estadoCell.font = { name: 'Arial', size: 9.5, bold: true, color: { argb: estadoFont } };
+    });
+
+    fetch('../assets/img/brand/wordmark.png').then(function (r) { return r.arrayBuffer(); }).catch(function () { return null; }).then(function (buf) {
+      if (buf) {
+        var imgId = wb.addImage({ buffer: buf, extension: 'png' });
+        ws.addImage(imgId, { tl: { col: 0.15, row: 0.15 }, ext: { width: 118, height: 31 } });
+      }
+      return wb.xlsx.writeBuffer();
+    }).then(function (buffer) {
+      var nombreArchivo = 'solicitudes-alta-' + new Date().toISOString().slice(0, 10) + '.xlsx';
+      descargarArchivo(nombreArchivo, buffer, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }).catch(function (err) {
+      console.error('[Panel] no se pudo exportar el Excel de solicitudes:', err);
+      toast('No se pudo generar el Excel', 'err');
+    });
+  }
+
   function openSolModal(id) {
     var s = STATE.solicitudes.find(function (x) { return x.id === id; });
     if (!s) return;
@@ -1647,6 +1752,7 @@
     $('#solModalBackdrop').addEventListener('click', function (e) { if (e.target.id === 'solModalBackdrop') closeSolModal(); });
     $('#solDescartarBtn').addEventListener('click', descartarSolicitud);
     $('#solUsarBtn').addEventListener('click', usarSolicitud);
+    $('#solExportExcelBtn').addEventListener('click', exportarSolicitudesExcel);
 
     $('#addEstudioBtn').addEventListener('click', function () { abrirEstudioModal(null); });
     $('#estudiosEmptyAddBtn').addEventListener('click', function () { abrirEstudioModal(null); });
