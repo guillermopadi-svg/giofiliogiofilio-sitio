@@ -1518,13 +1518,17 @@ def build_blog():
         <h3>{e(b["titulo"])}</h3><p>{e(b["resumen"])}</p>
         <span class="link-arrow">Leer guía{icon("arrow")}</span>
       </div></a>''' for b in BLOG_ALL)
+    MAX_POR_CATEGORIA = 5
     by_cat = ""
     for c in BLOG_CATEGORIAS:
         posts = [b for b in BLOG_ALL if b["categoria"] == c]
         if not posts:
             continue
+        restantes = len(posts) - MAX_POR_CATEGORIA
+        posts = posts[:MAX_POR_CATEGORIA]
         lis = "".join(f'<li><a href="{R("blog/" + b["slug"] + "/")}">{e(b["titulo"])}</a> <span class="small muted">· {b["lectura"]} min</span></li>' for b in posts)
-        by_cat += f'<div id="cat-{slugify(c)}"><h3 style="font-size:var(--step-1)">{e(c)}</h3><ul class="prose">{lis}</ul></div>'
+        mas = f'<li class="small muted">+{restantes} más en esta categoría</li>' if restantes > 0 else ""
+        by_cat += f'<div id="cat-{slugify(c)}"><h3 style="font-size:var(--step-1)">{e(c)}</h3><ul class="prose">{lis}{mas}</ul></div>'
 
     body = f'''
 {breadcrumb(path, crumbs)}
