@@ -67,6 +67,52 @@ function siNoNoSe(v) {
   return ['si', 'no', 'no_se'].includes(v) ? v : 'no_se';
 }
 
+const TIPO_LABEL = {
+  departamento: 'Departamento', casa: 'Casa', 'casa-en-condominio': 'Casa en condominio',
+  penthouse: 'Penthouse', loft: 'Loft', terreno: 'Terreno', oficina: 'Oficina',
+  'local-comercial': 'Local comercial', desarrollo: 'Desarrollo',
+};
+
+// Cada solicitud del formulario publico ahora tambien nutre "Contactos" (tabla
+// `leads`), igual que el resto de los formularios del sitio -- antes se
+// quedaba solo en la pestaña Solicitudes y el asesor tenia que copiar el
+// contacto a mano si queria darle seguimiento como lead. No bloquea la
+// respuesta al visitante si esto falla: la solicitud ya quedo guardada, que
+// es lo que de verdad importa.
+async function espejarComoLead(url, key, fila) {
+  const opLabel = fila.operacion === 'renta' ? 'renta' : 'venta';
+  const tipoLabel = TIPO_LABEL[fila.tipo] || fila.tipo;
+  const lugar = [fila.colonia, fila.alcaldia].filter(Boolean).join(', ');
+  const lead = {
+    nombre: [fila.nombre, fila.apellido].filter(Boolean).join(' '),
+    email: fila.email || null,
+    telefono: fila.telefono || null,
+    mensaje: fila.descripcion || null,
+    fuente: 'alta_propiedad',
+    formulario: 'alta-propiedad',
+    propiedad_titulo: `Quiere publicar: ${tipoLabel} en ${opLabel}` + (lugar ? ` — ${lugar}` : ''),
+    propiedad_precio: fila.precio ? String(fila.precio) : null,
+    operacion: fila.operacion,
+    colonia: fila.colonia || null,
+    contexto: { rec: fila.rec, ban: fila.ban, est: fila.est, m2c: fila.m2c, m2t: fila.m2t, antig: fila.antig },
+  };
+  try {
+    const res = await fetch(`${url}/rest/v1/leads`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(lead),
+    });
+    if (!res.ok) console.error('[api/alta-propiedad] no se pudo espejar como lead:', res.status, await res.text());
+  } catch (err) {
+    console.error('[api/alta-propiedad] fallo espejando como lead:', err.message);
+  }
+}
+
 module.exports = async (req, res) => {
   const origin = req.headers.origin;
   if (esOrigenValido(origin)) {
@@ -172,6 +218,8 @@ module.exports = async (req, res) => {
     res.status(502).json({ ok: false, error: 'no_se_pudo_guardar' });
     return;
   }
+
+  await espejarComoLead(url, key, fila);
 
   res.status(200).json({ ok: true });
 };

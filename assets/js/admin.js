@@ -98,12 +98,38 @@
     return 'Buenas noches';
   }
   var MENSAJES_BIENVENIDA = [
+    // Ánimo / motivación
     'Sigamos haciendo que este sea tu mejor mes.',
     'Cada propiedad que subes es un paso más cerca de tu próxima venta.',
     'Un contacto bien atendido hoy es una firma mañana.',
     'Gracias por ser una pieza clave de este equipo.',
     'Vamos por más — tú puedes con esto.',
     'Hoy es un buen día para cerrar algo grande.',
+    // Tips de plusvalía y zona
+    'La plusvalía sube más rápido cerca de estaciones de metro, parques y nueva infraestructura — vale la pena mencionarlo en tus fichas.',
+    'Una colonia con poco inventario disponible casi siempre negocia mejor precio para el vendedor.',
+    'Antes de fijar precio, revisa qué se vendió de verdad en la zona, no solo qué está publicado.',
+    // Tips de precio por m²
+    'Compara siempre el precio por m² homologado (construcción + terreno), no solo el precio total — así comparas manzanas con manzanas.',
+    'Dos propiedades "del mismo precio" pueden valer muy distinto por m² — el Estimador te lo resuelve en segundos.',
+    // Tips de oficio
+    'Un inmueble bien fotografiado se renta o vende más rápido — la primera imagen es la que decide el clic.',
+    'Contestar en los primeros minutos triplica tus probabilidades de agendar una cita.',
+    'Una descripción honesta (con lo bueno y lo que hay que saber) genera más confianza que una perfecta.',
+    // Recordatorios
+    'Recuerda dar seguimiento a tus leads en las primeras 24 horas — es cuando más responden.',
+    'Si una propiedad lleva semanas sin movimiento, puede ser momento de revisar precio o fotos, no de esperar más.',
+    'Actualiza el estado de tus solicitudes — así el equipo sabe qué ya revisaste y qué no.',
+    // Algo ligero
+    '"Inmueble" viene del latín immobilis: literal, "que no se mueve". A diferencia de tus ventas este mes.',
+    'Dato curioso: en CDMX hay colonias con el mismo nombre en alcaldías distintas — siempre confirma cuál es cuál.',
+    'Café en mano, panel abierto — así se ven los buenos días productivos.',
+    // Directo al grano
+    'Tienes correos sin leer.',
+    'Nadie lo va a hacer por ti.',
+    'Las casas no se venden solas.',
+    'Ese lead no se va a contactar solo.',
+    'Hoy es tan buen día como cualquiera para cerrar algo.',
   ];
   function actualizarSaludo() {
     var nombre = (STATE.perfil && STATE.perfil.nombre) || (STATE.session && STATE.session.user.email) || 'Asesor';
@@ -872,16 +898,14 @@
     });
   }
 
-  function openSolModal(id) {
-    var s = STATE.solicitudes.find(function (x) { return x.id === id; });
-    if (!s) return;
-    STATE.solEditando = s;
+  var SI_NO_LABEL_SOL = { si: 'Sí', no: 'No', no_se: 'No sabe / no dijo' };
+
+  function renderSolModalVer(s) {
     var fotosHtml = (s.fotos || []).map(function (u) {
       return '<a href="' + esc(u) + '" target="_blank" rel="noopener"><img src="' + esc(u) + '" alt="" style="width:76px;height:76px;object-fit:cover;border-radius:8px"></a>';
     }).join('');
-    var SI_NO_LABEL = { si: 'Sí', no: 'No', no_se: 'No sabe / no dijo' };
     function legalLinea(label, valor, detalle) {
-      return '<div class="field"><label>' + label + '</label><div>' + (SI_NO_LABEL[valor] || 'No sabe / no dijo') + (detalle ? ' — ' + esc(detalle) : '') + '</div></div>';
+      return '<div class="field"><label>' + label + '</label><div>' + (SI_NO_LABEL_SOL[valor] || 'No sabe / no dijo') + (detalle ? ' — ' + esc(detalle) : '') + '</div></div>';
     }
     $('#solModalBody').innerHTML =
       '<div class="field-grid">' +
@@ -913,12 +937,152 @@
       legalLinea('Deudas de administración o servicios', s.deuda_admin, s.deuda_admin_detalle) +
       (s.amenidades && s.amenidades.length ? '<div class="field"><label>Características</label><div>' + s.amenidades.map(function (a) { return esc(a); }).join(', ') + '</div></div>' : '') +
       (s.descripcion ? '<div class="field"><label>Descripción</label><div>' + esc(s.descripcion) + '</div></div>' : '') +
-      (fotosHtml ? '<div class="field"><label>Fotos</label><div style="display:flex;gap:.4rem;flex-wrap:wrap">' + fotosHtml + '</div></div>' : '');
+      (fotosHtml ? '<div class="field"><label>Fotos</label><div style="display:flex;gap:.4rem;flex-wrap:wrap">' + fotosHtml + '</div></div>' : '') +
+      '<hr>' +
+      '<div class="field">' +
+        '<label for="solNotasInternas">Notas internas</label>' +
+        '<textarea id="solNotasInternas" rows="3" placeholder="Notas para el equipo — no las ve el solicitante…">' + esc(s.notas_internas || '') + '</textarea>' +
+      '</div>';
+  }
+
+  function renderSolModalEditar(s) {
+    function siNoSelect(id, valor) {
+      return '<select id="' + id + '">' + ['si', 'no', 'no_se'].map(function (v) {
+        return '<option value="' + v + '"' + (v === valor ? ' selected' : '') + '>' + SI_NO_LABEL_SOL[v] + '</option>';
+      }).join('') + '</select>';
+    }
+    $('#solModalBody').innerHTML =
+      '<div class="field-grid">' +
+        '<div class="field"><label>Nombre</label><input id="solE_nombre" value="' + esc(s.nombre) + '"></div>' +
+        '<div class="field"><label>Apellido</label><input id="solE_apellido" value="' + esc(s.apellido || '') + '"></div>' +
+      '</div>' +
+      '<div class="field-grid">' +
+        '<div class="field"><label>Teléfono</label><input id="solE_telefono" value="' + esc(s.telefono || '') + '"></div>' +
+        '<div class="field"><label>Correo</label><input id="solE_email" value="' + esc(s.email || '') + '"></div>' +
+      '</div>' +
+      '<hr>' +
+      '<div class="field-grid">' +
+        '<div class="field"><label>Operación</label><select id="solE_operacion">' +
+          '<option value="venta"' + (s.operacion === 'venta' ? ' selected' : '') + '>Venta</option>' +
+          '<option value="renta"' + (s.operacion === 'renta' ? ' selected' : '') + '>Renta</option>' +
+        '</select></div>' +
+        '<div class="field"><label>Precio</label><input id="solE_precio" type="number" value="' + (s.precio || 0) + '"></div>' +
+      '</div>' +
+      '<div class="field-grid-3">' +
+        '<div class="field"><label>m² construcción</label><input id="solE_m2c" type="number" value="' + (s.m2c || 0) + '"></div>' +
+        '<div class="field"><label>m² terreno</label><input id="solE_m2t" type="number" value="' + (s.m2t || 0) + '"></div>' +
+        '<div class="field"><label>Antigüedad</label><input id="solE_antig" type="number" value="' + (s.antig || 0) + '"></div>' +
+      '</div>' +
+      '<div class="field-grid-3">' +
+        '<div class="field"><label>Recámaras</label><input id="solE_rec" type="number" value="' + (s.rec || 0) + '"></div>' +
+        '<div class="field"><label>Baños</label><input id="solE_ban" type="number" value="' + (s.ban || 0) + '"></div>' +
+        '<div class="field"><label>Estacionamientos</label><input id="solE_est" type="number" value="' + (s.est || 0) + '"></div>' +
+      '</div>' +
+      '<div class="field-grid">' +
+        '<div class="field"><label>Calle</label><input id="solE_calle" value="' + esc(s.calle || '') + '"></div>' +
+        '<div class="field"><label>Número</label><input id="solE_numero" value="' + esc(s.numero || '') + '"></div>' +
+      '</div>' +
+      '<div class="field-grid">' +
+        '<div class="field"><label>Colonia</label><input id="solE_colonia" value="' + esc(s.colonia || '') + '"></div>' +
+        '<div class="field"><label>Alcaldía</label><input id="solE_alcaldia" value="' + esc(s.alcaldia || '') + '"></div>' +
+      '</div>' +
+      '<div class="field"><label>CP</label><input id="solE_cp" value="' + esc(s.cp || '') + '" style="max-width:140px"></div>' +
+      '<hr>' +
+      '<div class="field-grid">' +
+        '<div class="field"><label>Hipoteca</label>' + siNoSelect('solE_hipoteca', s.hipoteca) + '</div>' +
+        '<div class="field"><label>Gravamen / embargo</label>' + siNoSelect('solE_gravamen', s.gravamen) + '</div>' +
+      '</div>' +
+      '<div class="field"><label>Deudas de administración o servicios</label>' + siNoSelect('solE_deuda_admin', s.deuda_admin) + '</div>' +
+      '<div class="field"><label>Descripción</label><textarea id="solE_descripcion" rows="3">' + esc(s.descripcion || '') + '</textarea></div>';
+  }
+
+  function ponerModoSolModal(modo) {
+    $('#solEditarBtn').hidden = modo === 'editar';
+    $('#solCancelarEdicionBtn').hidden = modo !== 'editar';
+    $('#solGuardarCambiosBtn').hidden = modo !== 'editar';
+    $('#solGuardarNotasBtn').hidden = modo === 'editar';
+    $('#solUsarBtn').hidden = modo === 'editar';
+    $('#solDescartarBtn').hidden = modo === 'editar';
+  }
+
+  function openSolModal(id) {
+    var s = STATE.solicitudes.find(function (x) { return x.id === id; });
+    if (!s) return;
+    STATE.solEditando = s;
+    renderSolModalVer(s);
+    ponerModoSolModal('ver');
     $('#solModalBackdrop').classList.add('is-open');
   }
 
   function closeSolModal() {
     $('#solModalBackdrop').classList.remove('is-open');
+  }
+
+  function abrirEdicionSolicitud() {
+    var s = STATE.solEditando;
+    if (!s) return;
+    renderSolModalEditar(s);
+    ponerModoSolModal('editar');
+  }
+
+  function cancelarEdicionSolicitud() {
+    var s = STATE.solEditando;
+    if (!s) return;
+    renderSolModalVer(s);
+    ponerModoSolModal('ver');
+  }
+
+  function guardarCambiosSolicitud() {
+    var s = STATE.solEditando;
+    if (!s) return;
+    var cambios = {
+      nombre: $('#solE_nombre').value.trim(),
+      apellido: $('#solE_apellido').value.trim(),
+      telefono: $('#solE_telefono').value.trim(),
+      email: $('#solE_email').value.trim(),
+      operacion: $('#solE_operacion').value,
+      precio: Number($('#solE_precio').value) || 0,
+      m2c: Number($('#solE_m2c').value) || 0,
+      m2t: Number($('#solE_m2t').value) || 0,
+      antig: Number($('#solE_antig').value) || 0,
+      rec: Number($('#solE_rec').value) || 0,
+      ban: Number($('#solE_ban').value) || 0,
+      est: Number($('#solE_est').value) || 0,
+      calle: $('#solE_calle').value.trim(),
+      numero: $('#solE_numero').value.trim(),
+      colonia: $('#solE_colonia').value.trim(),
+      alcaldia: $('#solE_alcaldia').value.trim(),
+      cp: $('#solE_cp').value.trim(),
+      hipoteca: $('#solE_hipoteca').value,
+      gravamen: $('#solE_gravamen').value,
+      deuda_admin: $('#solE_deuda_admin').value,
+      descripcion: $('#solE_descripcion').value.trim(),
+    };
+    var btn = $('#solGuardarCambiosBtn');
+    setBusy(btn, true, 'Guardando…');
+    sb.from('solicitudes_alta').update(cambios).eq('id', s.id).then(function (res) {
+      setBusy(btn, false);
+      if (res.error) { toast('No se pudo guardar: ' + res.error.message, 'err'); return; }
+      Object.assign(s, cambios);
+      renderSolModalVer(s);
+      ponerModoSolModal('ver');
+      renderSolicitudes();
+      toast('Cambios guardados');
+    });
+  }
+
+  function guardarNotasSolicitud() {
+    var s = STATE.solEditando;
+    if (!s) return;
+    var notas = $('#solNotasInternas').value;
+    var btn = $('#solGuardarNotasBtn');
+    setBusy(btn, true, 'Guardando…');
+    sb.from('solicitudes_alta').update({ notas_internas: notas }).eq('id', s.id).then(function (res) {
+      setBusy(btn, false);
+      if (res.error) { toast('No se pudo guardar la nota: ' + res.error.message, 'err'); return; }
+      s.notas_internas = notas;
+      toast('Nota guardada');
+    });
   }
 
   function marcarEstadoSolicitud(id, estado) {
@@ -1778,6 +1942,10 @@
     $('#solModalBackdrop').addEventListener('click', function (e) { if (e.target.id === 'solModalBackdrop') closeSolModal(); });
     $('#solDescartarBtn').addEventListener('click', descartarSolicitud);
     $('#solUsarBtn').addEventListener('click', usarSolicitud);
+    $('#solEditarBtn').addEventListener('click', abrirEdicionSolicitud);
+    $('#solCancelarEdicionBtn').addEventListener('click', cancelarEdicionSolicitud);
+    $('#solGuardarCambiosBtn').addEventListener('click', guardarCambiosSolicitud);
+    $('#solGuardarNotasBtn').addEventListener('click', guardarNotasSolicitud);
     $('#solExportExcelBtn').addEventListener('click', exportarSolicitudesExcel);
 
     $('#addEstudioBtn').addEventListener('click', function () { abrirEstudioModal(null); });
