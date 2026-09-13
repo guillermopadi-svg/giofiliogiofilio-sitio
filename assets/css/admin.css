@@ -81,6 +81,12 @@ button{ font-family:inherit; cursor:pointer; }
   background:var(--btn-bg); color:var(--btn-fg); font-weight:600; font-size:.92rem;
   text-decoration:none; transition:transform .18s var(--ease), box-shadow .18s var(--ease), background .18s, border-color .18s;
 }
+/* Mismo caso que .tabbar-btn[hidden] mas abajo: display:inline-flex de
+   arriba le gana al display:none de [hidden] (origen "autor" contra "user
+   agent") -- sin esto, un boton con hidden (ej. "Cancelar"/"Guardar cambios"
+   del modal de Solicitudes en modo "ver") se ve igual de visible que uno
+   sin ese atributo. */
+.btn[hidden]{ display:none; }
 .btn:hover{ background:var(--navy-deep); border-color:var(--navy-deep); transform:translateY(-1px); box-shadow:var(--sh-2); }
 .btn:active{ transform:translateY(0); }
 .btn[disabled]{ opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
