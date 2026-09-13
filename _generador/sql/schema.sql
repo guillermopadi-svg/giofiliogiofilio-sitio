@@ -183,10 +183,29 @@ create table if not exists propiedades_manual (
   actualizado_en timestamptz not null default now()
 );
 
+-- ------------------------------------------------ inventario de EasyBroker
+-- Antes de esto, las propiedades de EasyBroker (RE/MAX Blue) vivian SOLO
+-- como codigo Python (_generador/data_props_live.py) -- nunca tocaban
+-- Supabase, asi que el panel no las veia. importar_easybroker_a_panel.py
+-- (corre a diario junto con sync_easybroker.py) las trae aqui para que
+-- cualquier asesor las pueda editar desde /admin/, sin perder el
+-- refresco automatico diario de EasyBroker para las que nadie ha tocado.
+alter table propiedades_manual add column if not exists easybroker_id text unique;
+alter table propiedades_manual add column if not exists bloqueado_por_panel boolean not null default false;
+alter table propiedades_manual add column if not exists moneda text not null default 'MXN';
+alter table propiedades_manual add column if not exists calle text not null default '';
+alter table propiedades_manual add column if not exists cp text not null default '';
+alter table propiedades_manual add column if not exists lat numeric;
+alter table propiedades_manual add column if not exists lng numeric;
+alter table propiedades_manual add column if not exists antig int not null default 0;
+alter table propiedades_manual add column if not exists piso text not null default '';
+alter table propiedades_manual add column if not exists niveles int not null default 0;
+alter table propiedades_manual add column if not exists badges text[] not null default '{}';
+
 alter table propiedades_manual enable row level security;
 
 grant select, insert, update, delete on propiedades_manual to authenticated;
-grant select on propiedades_manual to service_role;
+grant select, insert, update on propiedades_manual to service_role;
 
 drop policy if exists "todos ven las publicadas, cada quien ve tambien las suyas" on propiedades_manual;
 create policy "todos ven las publicadas, cada quien ve tambien las suyas"
@@ -198,10 +217,13 @@ create policy "cada asesor crea sus propias fichas"
   on propiedades_manual for insert
   with check (is_activo() and asesor_id = auth.uid());
 
+-- "or easybroker_id is not null": una ficha importada de EasyBroker no
+-- pertenece a ningun asesor en particular -- cualquiera activo la puede
+-- editar, sin importar quien haya quedado como asesor_id nominal.
 drop policy if exists "cada asesor edita las suyas, admin edita todas" on propiedades_manual;
 create policy "cada asesor edita las suyas, admin edita todas"
   on propiedades_manual for update
-  using (is_activo() and (asesor_id = auth.uid() or is_admin()));
+  using (is_activo() and (asesor_id = auth.uid() or is_admin() or easybroker_id is not null));
 
 drop policy if exists "cada asesor borra las suyas, admin borra todas" on propiedades_manual;
 create policy "cada asesor borra las suyas, admin borra todas"

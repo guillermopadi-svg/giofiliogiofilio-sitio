@@ -30,6 +30,20 @@ jobs:
           EASYBROKER_API_KEY: ${{ secrets.EASYBROKER_API_KEY }}
         run: python3 sync_easybroker.py
 
+      - name: Importar/actualizar ese inventario en el panel (Supabase)
+        working-directory: _generador
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python3 importar_easybroker_a_panel.py
+
+      - name: Traer de vuelta ese inventario (con ediciones del panel si las hay)
+        working-directory: _generador
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python3 fetch_manual_props.py
+
       - name: Reconstruir el sitio
         working-directory: _generador
         run: python3 build.py

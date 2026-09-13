@@ -8,7 +8,14 @@ from data_props import (TIPOS, TIPO_LABEL, TIPO_PLURAL, AMENIDADES,
 from data_props_live import PROPIEDADES as PROPIEDADES_EB, DATASET_ES_DEMO
 from data_props_manual import PROPIEDADES as PROPIEDADES_MANUAL
 
-PROPIEDADES = PROPIEDADES_EB + PROPIEDADES_MANUAL
+# Una vez que importar_easybroker_a_panel.py trae una propiedad de EasyBroker
+# a la tabla propiedades_manual (para que se pueda editar desde el panel),
+# esa propiedad existe en AMBAS listas con el mismo id -- se excluye de la
+# lista de EasyBroker para no publicarla duplicada; la version de
+# propiedades_manual gana siempre (sea la que llego intacta de la
+# sincronizacion, o una ya editada a mano).
+_IDS_MANUAL = {p["id"] for p in PROPIEDADES_MANUAL}
+PROPIEDADES = [p for p in PROPIEDADES_EB if p["id"] not in _IDS_MANUAL] + PROPIEDADES_MANUAL
 from render import slugify
 
 OUT = ".."  # el sitio real es el directorio padre de _generador

@@ -115,8 +115,15 @@ def main():
 
         fecha = (row.get("actualizado_en") or row.get("creado_en") or "")[:10] or date.today().isoformat()
 
+        # Una ficha importada de EasyBroker (ver importar_easybroker_a_panel.py)
+        # conserva su id original (ej. "EB-VS5968") en vez del "GF-xxxxxxxx"
+        # que se genera para las que sí nacieron en el panel -- como el slug
+        # final se arma con título+id, esto mantiene la misma URL pública de
+        # siempre aunque la ficha ya se pueda editar desde aquí.
+        eb_id = row.get("easybroker_id")
+
         props.append(dict(
-            id=f"GF-{row['id'][:8]}",
+            id=eb_id or f"GF-{row['id'][:8]}",
             titulo=row.get("titulo") or f"Propiedad en {colonia['nombre']}",
             titulo_wa=f"la propiedad en {colonia['nombre']}",
             operacion=row.get("operacion") or "venta",
@@ -128,24 +135,24 @@ def main():
             sin_pagina=not colonia["tiene_pagina"],
             fuera_cdmx=False,
             precio=row.get("precio") or 0,
-            moneda="MXN",
+            moneda=row.get("moneda") or "MXN",
             mantenimiento=0,
-            calle="",
-            cp="",
-            lat=colonia.get("lat"),
-            lng=colonia.get("lng"),
+            calle=row.get("calle") or "",
+            cp=row.get("cp") or "",
+            lat=row.get("lat") or colonia.get("lat"),
+            lng=row.get("lng") or colonia.get("lng"),
             rec=row.get("rec") or 0,
             ban=row.get("ban") or 0,
             medios=row.get("medios") or 0,
             est=row.get("est") or 0,
             m2c=row.get("m2c") or 0,
             m2t=row.get("m2t") or 0,
-            antig=0,
-            piso="",
-            niveles=0,
+            antig=row.get("antig") or 0,
+            piso=row.get("piso") or "",
+            niveles=row.get("niveles") or 0,
             estado_inm="excelente",
             amenidades=[a for a in (row.get("amenidades") or [])],
-            badges=[],
+            badges=row.get("badges") or [],
             destacada=bool(row.get("destacada")),
             exclusiva=True,
             publicado=fecha,

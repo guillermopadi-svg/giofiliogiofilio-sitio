@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, estudios: [], estudioEditando: null, editingId: null, editingLeadId: null, fotos: [], session: null, perfil: null };
+  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -255,7 +255,11 @@
     var base = slugifyPy((TIPO_LABEL_ADMIN[p.tipo] || p.tipo) + ' ' + coloniaLabel(p.colonia_slug) + ' ' + detalleParte);
     var visto = {}, dedup = [];
     base.split('-').forEach(function (w) { if (!visto[w]) { visto[w] = true; dedup.push(w); } });
-    return 'https://www.giofilio.com/propiedad/' + dedup.join('-') + '-gf' + p.id.slice(0, 8).toLowerCase() + '/';
+    // Una ficha importada de EasyBroker conserva su easybroker_id (ej.
+    // "EB-VT0576") como id publico en el sitio -- no el "gf" + primeros 8
+    // caracteres del uuid que se usa para las que nacieron en el panel.
+    var idParte = p.easybroker_id ? p.easybroker_id.toLowerCase().replace(/-/g, '') : 'gf' + p.id.slice(0, 8).toLowerCase();
+    return 'https://www.giofilio.com/propiedad/' + dedup.join('-') + '-' + idParte + '/';
   }
 
   function pcardHtml(p) {
@@ -274,6 +278,23 @@
     var verLink = p.estado === 'disponible'
       ? '<a class="btn btn--ghost" href="' + esc(urlPublicacion(p)) + '" target="_blank" rel="noopener">Ver</a>'
       : '';
+    // Etiqueta de origen: una ficha con easybroker_id viene de la
+    // sincronizacion diaria con EasyBroker (RE/MAX Blue) -- se avisa si
+    // sigue recibiendo esos cambios automaticos o si ya se edito a mano
+    // (y por lo tanto dejo de recibirlos, ver saveProperty()).
+    var origenBadge = '';
+    var reactivarBtn = '';
+    if (p.easybroker_id) {
+      if (p.bloqueado_por_panel) {
+        origenBadge = '<span class="pcard-tag pcard-tag--bloqueada" title="Ya no recibe cambios automaticos de EasyBroker">Editado a mano</span>';
+        var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
+        if (esAdmin) {
+          reactivarBtn = '<button class="btn btn--ghost" data-reactivar-sync="' + p.id + '" title="La siguiente sincronizacion diaria volvera a traer los datos de EasyBroker">Reactivar sincronización</button>';
+        }
+      } else {
+        origenBadge = '<span class="pcard-tag" title="Se actualiza solo todos los dias desde EasyBroker">Sincronizado con EasyBroker</span>';
+      }
+    }
     return (
       '<div class="pcard" data-id="' + p.id + '">' +
         '<div class="pcard-media">' + badge +
@@ -283,15 +304,25 @@
           '<div class="pcard-price">' + nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') + '</div>' +
           '<div class="pcard-title">' + esc(p.titulo || 'Sin título') + '</div>' +
           '<div class="pcard-meta"><span>' + esc(coloniaLabel(p.colonia_slug)) + '</span><span>' + meta.join(' · ') + '</span></div>' +
+          (origenBadge ? '<div class="pcard-origen">' + origenBadge + '</div>' : '') +
           '<div class="pcard-actions">' +
             verLink +
             togglePausa +
             '<button class="btn btn--ghost" data-edit="' + p.id + '">Editar</button>' +
+            reactivarBtn +
             '<button class="btn btn--danger" data-del="' + p.id + '">Eliminar</button>' +
           '</div>' +
         '</div>' +
       '</div>'
     );
+  }
+
+  function reactivarSyncPropiedad(id) {
+    sb.from('propiedades_manual').update({ bloqueado_por_panel: false }).eq('id', id).then(function (res) {
+      if (res.error) { toast('No se pudo reactivar: ' + res.error.message, 'err'); return; }
+      toast('Listo — la próxima sincronización diaria vuelve a traer los datos de EasyBroker.');
+      cargarPropiedades();
+    });
   }
 
   function renderGrid() {
@@ -309,7 +340,12 @@
   function cargarPropiedades() {
     var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
     var q = sb.from('propiedades_manual').select('*').order('creado_en', { ascending: false });
-    if (!esAdmin) q = q.eq('asesor_id', STATE.session.user.id);
+    // Un asesor no-admin solo ve sus propias fichas EN EL PANEL (aunque las
+    // publicadas de cualquiera ya sean visibles en el sitio) -- excepto las
+    // que vienen de EasyBroker (RE/MAX Blue): esas son inventario
+    // compartido, no de un asesor en particular, y cualquiera activo las
+    // puede ver/editar aqui (ver policy de update en schema.sql).
+    if (!esAdmin) q = q.or('asesor_id.eq.' + STATE.session.user.id + ',easybroker_id.not.is.null');
     q.then(function (res) {
       if (res.error) {
         toast('No se pudieron cargar tus propiedades: ' + res.error.message, 'err');
@@ -326,6 +362,13 @@
   // forma distinta ("depa", "departamentito", "bello departamento"...).
   // "Detalle" es el único texto libre, y se pega al final.
   function tituloAuto() {
+    // Una ficha importada de EasyBroker ya trae su propio titulo natural
+    // (no armado de tipo+operacion+colonia+detalle) -- si se le aplicara el
+    // armado automatico de aqui abajo, se perderia ese titulo real la
+    // primera vez que alguien la editara y guardara, cambiando ademas su
+    // URL publica (el slug se arma con titulo+id). Mientras STATE.editandoEB
+    // este activo, el campo "detalle" se trata como el titulo completo.
+    if (STATE.editandoEB) return $('#f_detalle').value.trim();
     var tipoSel = $('#f_tipo');
     var tipoLabel = tipoSel.options[tipoSel.selectedIndex] ? tipoSel.options[tipoSel.selectedIndex].text : '';
     var operacionTexto = $('#f_operacion').value === 'renta' ? 'renta' : 'venta';
@@ -354,7 +397,15 @@
     STATE.editingId = prop ? prop.id : null;
     STATE.fotos = prop && prop.fotos ? prop.fotos.slice() : [];
     $('#modalTitle').textContent = prop ? 'Editar propiedad' : 'Nueva propiedad';
-    $('#f_detalle').value = prop ? prop.detalle || '' : '';
+    // Una ficha con easybroker_id trae su propio titulo natural, no armado
+    // de tipo+operacion+colonia+detalle -- se edita como titulo completo
+    // (ver tituloAuto()) para no perderlo ni cambiar la URL publica al guardar.
+    STATE.editandoEB = !!(prop && prop.easybroker_id);
+    $('#f_detalle_label').textContent = STATE.editandoEB ? 'Título' : 'Nombre del edificio o desarrollo (opcional)';
+    $('#f_detalle_hint').textContent = STATE.editandoEB
+      ? 'Esta ficha viene de EasyBroker — aquí se edita su título completo tal cual se publica.'
+      : 'El título se arma solo con tipo, operación y colonia — esto solo agrega el nombre del edificio al final.';
+    $('#f_detalle').value = prop ? (STATE.editandoEB ? (prop.titulo || '') : (prop.detalle || '')) : '';
     $('#f_tipo').value = prop ? prop.tipo : 'departamento';
     $('#f_precio').value = prop ? prop.precio : '';
     $('#f_cp').value = '';
@@ -536,6 +587,10 @@
       return;
     }
     data.estado = publicar ? 'disponible' : 'borrador';
+    // En cuanto alguien edita a mano una ficha que venia de EasyBroker, se
+    // marca bloqueado_por_panel para que la sincronizacion diaria deje de
+    // pisarla -- ver importar_easybroker_a_panel.py.
+    if (STATE.editandoEB) data.bloqueado_por_panel = true;
     var btn = publicar ? $('#publishBtn') : $('#saveDraftBtn');
     setBusy(btn, true, publicar ? 'Publicando…' : 'Guardando…');
 
@@ -2084,6 +2139,7 @@
       var editId = e.target.dataset.edit;
       var delId = e.target.dataset.del;
       var pausaId = e.target.dataset.togglePausa;
+      var reactivarId = e.target.dataset.reactivarSync;
       if (editId) {
         var p = STATE.propiedades.filter(function (x) { return x.id === editId; })[0];
         openModal(p);
@@ -2091,6 +2147,8 @@
         deleteProperty(delId);
       } else if (pausaId) {
         togglePausa(pausaId);
+      } else if (reactivarId) {
+        reactivarSyncPropiedad(reactivarId);
       }
     });
 
