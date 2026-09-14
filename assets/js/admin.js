@@ -1059,6 +1059,7 @@
     $('#solUsarBtn').hidden = modo === 'editar';
     $('#solDescartarBtn').hidden = modo === 'editar';
     $('#solVerEstudioBtn').hidden = modo === 'editar' || !STATE.solEstudioId;
+    $('#solCrearEstudioBtn').hidden = modo === 'editar' || !!STATE.solEstudioId;
   }
 
   function openSolModal(id) {
@@ -1081,6 +1082,44 @@
     closeSolModal();
     setView('estimador');
     abrirEstudioModal(estudioId);
+  }
+
+  // Las solicitudes de antes de que existiera espejarComoEstudio (ver
+  // api/alta-propiedad.js) no tienen estudio enlazado -- este boton hace lo
+  // mismo a mano, para cualquier solicitud vieja o nueva que todavia no
+  // tenga uno.
+  function crearEstudioDeSolicitud() {
+    var s = STATE.solEditando;
+    if (!s) return;
+    var opLabel = s.operacion === 'renta' ? 'renta' : 'venta';
+    var tipoLabel = TIPO_LABEL_SOL[s.tipo] || s.tipo;
+    var nombreContacto = [s.nombre, s.apellido].filter(Boolean).join(' ');
+    var btn = $('#solCrearEstudioBtn');
+    setBusy(btn, true, 'Creando…');
+    sb.from('estudios_precio').insert({
+      asesor_id: STATE.session.user.id,
+      nombre: nombreContacto || (tipoLabel + ' en ' + opLabel),
+      operacion: s.operacion,
+      tipo: s.tipo,
+      colonia: s.colonia || '',
+      m2c: s.m2c || 0,
+      m2t: s.m2t || 0,
+      solicitud_id: s.id,
+      notas: 'Generado desde la solicitud de alta de ' + (nombreContacto || 'un propietario') + ' (' + tipoLabel + ' en ' + opLabel + (s.colonia ? ', ' + s.colonia : '') + ').',
+    }).then(function (res) {
+      setBusy(btn, false);
+      if (res.error) { toast('No se pudo crear el estudio: ' + res.error.message, 'err'); return; }
+      cargarEstudios().then(function () {
+        var estudio = STATE.estudios.filter(function (e) { return e.solicitud_id === s.id; })[0];
+        STATE.solEstudioId = estudio ? estudio.id : null;
+        if (STATE.solEstudioId) {
+          verEstudioDeSolicitud();
+        } else {
+          toast('Estudio de precio creado');
+          ponerModoSolModal('ver');
+        }
+      });
+    });
   }
 
   function closeSolModal() {
@@ -1276,7 +1315,7 @@
     var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
     var q = sb.from('estudios_precio').select('*').order('creado_en', { ascending: false });
     if (!esAdmin) q = q.eq('asesor_id', STATE.session.user.id);
-    q.then(function (res) {
+    return q.then(function (res) {
       if (res.error) { console.warn('[Panel] no se pudieron cargar los estudios de precio:', res.error.message); return; }
       STATE.estudios = res.data || [];
       renderEstudios();
@@ -2083,6 +2122,7 @@
     $('#solGuardarCambiosBtn').addEventListener('click', guardarCambiosSolicitud);
     $('#solGuardarNotasBtn').addEventListener('click', guardarNotasSolicitud);
     $('#solVerEstudioBtn').addEventListener('click', verEstudioDeSolicitud);
+    $('#solCrearEstudioBtn').addEventListener('click', crearEstudioDeSolicitud);
     $('#solExportExcelBtn').addEventListener('click', exportarSolicitudesExcel);
 
     $('#addEstudioBtn').addEventListener('click', function () { abrirEstudioModal(null); });
