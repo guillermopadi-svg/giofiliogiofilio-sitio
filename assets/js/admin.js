@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null };
+  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -1058,15 +1058,29 @@
     $('#solGuardarNotasBtn').hidden = modo === 'editar';
     $('#solUsarBtn').hidden = modo === 'editar';
     $('#solDescartarBtn').hidden = modo === 'editar';
+    $('#solVerEstudioBtn').hidden = modo === 'editar' || !STATE.solEstudioId;
   }
 
   function openSolModal(id) {
     var s = STATE.solicitudes.find(function (x) { return x.id === id; });
     if (!s) return;
     STATE.solEditando = s;
+    // Cada solicitud genera su propio estudio de precio en automático (ver
+    // espejarComoEstudio en api/alta-propiedad.js) -- aqui solo se busca el
+    // que ya se cargo en STATE.estudios para poder saltar directo a el.
+    var estudio = STATE.estudios.filter(function (e) { return e.solicitud_id === s.id; })[0];
+    STATE.solEstudioId = estudio ? estudio.id : null;
     renderSolModalVer(s);
     ponerModoSolModal('ver');
     $('#solModalBackdrop').classList.add('is-open');
+  }
+
+  function verEstudioDeSolicitud() {
+    if (!STATE.solEstudioId) return;
+    var estudioId = STATE.solEstudioId;
+    closeSolModal();
+    setView('estimador');
+    abrirEstudioModal(estudioId);
   }
 
   function closeSolModal() {
@@ -2001,6 +2015,7 @@
     $('#solCancelarEdicionBtn').addEventListener('click', cancelarEdicionSolicitud);
     $('#solGuardarCambiosBtn').addEventListener('click', guardarCambiosSolicitud);
     $('#solGuardarNotasBtn').addEventListener('click', guardarNotasSolicitud);
+    $('#solVerEstudioBtn').addEventListener('click', verEstudioDeSolicitud);
     $('#solExportExcelBtn').addEventListener('click', exportarSolicitudesExcel);
 
     $('#addEstudioBtn').addEventListener('click', function () { abrirEstudioModal(null); });

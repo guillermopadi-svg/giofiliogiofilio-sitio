@@ -113,6 +113,68 @@ async function espejarComoLead(url, key, fila) {
   }
 }
 
+// estudios_precio exige un asesor_id (dueño del renglon) -- como esta
+// solicitud todavia no tiene ningun asesor asignado, se le asigna al primer
+// perfil admin (igual que hace importar_easybroker_a_panel.py para el
+// inventario de EasyBroker). Si todavia no hay ningun admin dado de alta,
+// se omite el estudio automatico -- la solicitud ya quedo guardada de
+// cualquier forma, que es lo que de verdad importa.
+async function primerAdminId(url, key) {
+  try {
+    const res = await fetch(`${url}/rest/v1/perfiles?rol=eq.admin&select=id&limit=1`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return (rows && rows[0] && rows[0].id) || null;
+  } catch (err) {
+    console.error('[api/alta-propiedad] fallo buscando un perfil admin:', err.message);
+    return null;
+  }
+}
+
+// Cada solicitud tambien genera de una vez su estudio de precio (tabla
+// `estudios_precio`, la misma que usa la pestaña Estimador) pre-llenado con
+// los datos que ya dio el propietario -- para que el asesor solo tenga que
+// abrirlo y comparar contra el mercado, en vez de capturar todo desde cero.
+// Se enlaza con `solicitud_id` para que el panel pueda mostrar el link entre
+// ambos.
+async function espejarComoEstudio(url, key, fila, solicitudId, adminId) {
+  if (!adminId) {
+    console.error('[api/alta-propiedad] no hay ningun perfil admin todavia -- se omite el estudio automatico');
+    return;
+  }
+  const opLabel = fila.operacion === 'renta' ? 'renta' : 'venta';
+  const tipoLabel = TIPO_LABEL[fila.tipo] || fila.tipo;
+  const nombreContacto = [fila.nombre, fila.apellido].filter(Boolean).join(' ');
+  const estudio = {
+    asesor_id: adminId,
+    nombre: nombreContacto || `${tipoLabel} en ${opLabel}`,
+    operacion: fila.operacion,
+    tipo: fila.tipo,
+    colonia: fila.colonia || '',
+    m2c: fila.m2c,
+    m2t: fila.m2t,
+    solicitud_id: solicitudId || null,
+    notas: `Generado automáticamente al recibir la solicitud de alta de ${nombreContacto || 'un propietario'} (${tipoLabel} en ${opLabel}${fila.colonia ? `, ${fila.colonia}` : ''}).`,
+  };
+  try {
+    const res = await fetch(`${url}/rest/v1/estudios_precio`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(estudio),
+    });
+    if (!res.ok) console.error('[api/alta-propiedad] no se pudo espejar como estudio:', res.status, await res.text());
+  } catch (err) {
+    console.error('[api/alta-propiedad] fallo espejando como estudio:', err.message);
+  }
+}
+
 module.exports = async (req, res) => {
   const origin = req.headers.origin;
   if (esOrigenValido(origin)) {
@@ -197,6 +259,7 @@ module.exports = async (req, res) => {
     return;
   }
 
+  let solicitudId = null;
   try {
     const supaRes = await fetch(`${url}/rest/v1/solicitudes_alta`, {
       method: 'POST',
@@ -204,7 +267,7 @@ module.exports = async (req, res) => {
         'Content-Type': 'application/json',
         apikey: key,
         Authorization: `Bearer ${key}`,
-        Prefer: 'return=minimal',
+        Prefer: 'return=representation',
       },
       body: JSON.stringify(fila),
     });
@@ -213,6 +276,8 @@ module.exports = async (req, res) => {
       res.status(502).json({ ok: false, error: 'no_se_pudo_guardar' });
       return;
     }
+    const creado = await supaRes.json();
+    solicitudId = (creado && creado[0] && creado[0].id) || null;
   } catch (err) {
     console.error('[api/alta-propiedad] fallo guardando en Supabase:', err.message);
     res.status(502).json({ ok: false, error: 'no_se_pudo_guardar' });
@@ -220,6 +285,8 @@ module.exports = async (req, res) => {
   }
 
   await espejarComoLead(url, key, fila);
+  const adminId = await primerAdminId(url, key);
+  await espejarComoEstudio(url, key, fila, solicitudId, adminId);
 
   res.status(200).json({ ok: true });
 };
