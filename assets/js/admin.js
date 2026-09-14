@@ -1206,6 +1206,10 @@
   // alto/bajo, solo como dato de referencia adicional.
   var ULTIMO_PROMEDIO_INVENTARIO = { promedio: 0, promedioTrim: 0, n: 0, dias: [] };
   var ULTIMO_PROMEDIO_COMPARABLES = { promedio: 0, promedioTrim: 0, n: 0, dias: [] };
+  // Guarda las fichas de tu propio inventario que hicieron match (no solo el
+  // promedio) para poder mostrarlas -- tabla y grafico -- en el informe que
+  // se le manda al cliente, igual que los comparables externos.
+  var ULTIMO_MATCH_INVENTARIO = [];
 
   function promedioSimple(valores) {
     return valores.length ? valores.reduce(function (a, b) { return a + b; }, 0) / valores.length : 0;
@@ -1374,6 +1378,7 @@
     if (!colonia) {
       box.innerHTML = '<div class="est-empty-hint">Escribe una colonia para comparar contra tu inventario.</div>';
       ULTIMO_PROMEDIO_INVENTARIO = { promedio: 0, promedioTrim: 0, n: 0, dias: [] };
+      ULTIMO_MATCH_INVENTARIO = [];
       actualizarResumenEstudio();
       return;
     }
@@ -1405,6 +1410,7 @@
       var promedioTrim = promedioTruncado(valoresM2);
       var dias = match.map(function (p) { return diasDesde(p.publicado); }).filter(function (d) { return d != null; });
       ULTIMO_PROMEDIO_INVENTARIO = { promedio: promedio, promedioTrim: promedioTrim, n: conHomologado.length, dias: dias };
+      ULTIMO_MATCH_INVENTARIO = conHomologado;
       if (!todoElMatch.length) {
         box.innerHTML = '<div class="est-empty-hint">No tienes propiedades publicadas en "' + esc($('#est_colonia').value) + '" con ese tipo y operación.</div>';
       } else {
@@ -1580,6 +1586,16 @@
       m2t: m2t,
       m2Sujeto: m2Sujeto,
       comparables: leerComparablesDesdeDOM(),
+      // Fichas de tu propio inventario que hicieron match con esta colonia/
+      // tipo/operación (ver recalcularInventarioEstudio) -- se muestran en
+      // el informe igual que los comparables externos, con su propio $/m².
+      inventario: ULTIMO_MATCH_INVENTARIO.map(function (x) {
+        return {
+          titulo: x.p.titulo, url: x.p.url, m2: x.p.m2c, m2t: x.p.m2t, precio: x.p.precio,
+          precioM2: x.precioM2, rec: x.p.rec, ban: x.p.ban, est: x.p.est, antig: x.p.antig,
+          dias: diasDesde(x.p.publicado),
+        };
+      }),
       promInv: promInv,
       promComp: promComp,
       promCombinado: promCombinado,
@@ -1641,6 +1657,46 @@
     descargarArchivo(nombreArchivo, '﻿' + csv, 'text/csv;charset=utf-8;');
   }
 
+  // Grafico de barras (SVG inline -- se imprime igual que cualquier otro
+  // elemento de la pagina, sin depender de ninguna libreria externa) que
+  // compara el $/m² homologado de cada comparable contra el precio sugerido
+  // de la propia propiedad, para que el cliente vea de un vistazo donde
+  // queda parado su inmueble frente al mercado.
+  function graficoPreciosM2Html(items, sujeto) {
+    var datos = items.filter(function (x) { return x.precioM2 > 0; })
+      .sort(function (a, b) { return b.precioM2 - a.precioM2; });
+    if (sujeto && sujeto.precioM2 > 0) datos.push(sujeto);
+    if (datos.length < 2) return '';
+    var max = Math.max.apply(null, datos.map(function (x) { return x.precioM2; })) || 1;
+    var W = 680, barH = 20, gap = 9, padL = 210, padR = 74, padTop = 6;
+    var H = padTop * 2 + datos.length * (barH + gap) - gap;
+    var filas = datos.map(function (x, i) {
+      var y = padTop + i * (barH + gap);
+      var w = Math.max(3, (x.precioM2 / max) * (W - padL - padR));
+      var esSujeto = x === sujeto;
+      var color = esSujeto ? '#B88E3E' : '#8493B0';
+      return (
+        '<text x="' + (padL - 10) + '" y="' + (y + barH / 2 + 4) + '" text-anchor="end" font-size="10.5" font-family="Helvetica,Arial,sans-serif" font-weight="' + (esSujeto ? '700' : '400') + '" fill="' + (esSujeto ? '#8C6A2F' : '#4A5468') + '">' + esc(x.label) + '</text>' +
+        '<rect x="' + padL + '" y="' + y + '" width="' + w + '" height="' + barH + '" rx="3" fill="' + color + '"></rect>' +
+        '<text x="' + (padL + w + 8) + '" y="' + (y + barH / 2 + 4) + '" font-size="10.5" font-family="Helvetica,Arial,sans-serif" font-weight="700" fill="#071F4A">' + nf.format(Math.round(x.precioM2)) + '</text>'
+      );
+    }).join('');
+    return (
+      '<h2>Precio por m² homologado — comparativo</h2>' +
+      '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H + '" xmlns="http://www.w3.org/2000/svg">' + filas + '</svg>' +
+      '<p class="nota" style="margin-top:.3rem">En dorado, el precio sugerido para tu propiedad frente a las demás.</p>'
+    );
+  }
+
+  function tablaInventarioHtml(inventario) {
+    if (!inventario.length) return '';
+    var filas = inventario.map(function (p, i) {
+      var pm2 = p.precioM2 ? Math.round(p.precioM2) : '';
+      return '<tr><td>' + (i + 1) + '</td><td>' + (p.url ? '<a href="../' + esc(p.url) + '">' + esc(p.titulo) + '</a>' : esc(p.titulo)) + '</td><td>' + (p.m2 || '') + '</td><td>' + (p.m2t || '') + '</td><td>' + (p.precio ? nf.format(p.precio) : '') + '</td><td>' + (pm2 ? nf.format(pm2) : '') + '</td><td>' + (p.dias == null ? '' : p.dias) + '</td></tr>';
+    }).join('');
+    return '<h2>Tu inventario (propiedades publicadas comparables)</h2><table><thead><tr><th>#</th><th>Propiedad</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m² homolog.</th><th>Días</th></tr></thead><tbody>' + filas + '</tbody></table>';
+  }
+
   function exportarEstudioPDF() {
     var d = recopilarDatosReporte();
     var opLabel = d.operacion === 'renta' ? 'renta' : 'venta';
@@ -1649,6 +1705,14 @@
       var pm2 = (homo && c.precio) ? Math.round(c.precio / homo) : '';
       return '<tr><td>' + (i + 1) + '</td><td>' + esc(c.ubicacion) + '</td><td>' + (c.m2 || '') + '</td><td>' + (c.m2t || '') + '</td><td>' + (c.precio ? nf.format(c.precio) : '') + '</td><td>' + (pm2 ? nf.format(pm2) : '') + '</td><td>' + (c.rec || '') + '</td><td>' + (c.ban || '') + '</td><td>' + (c.est || '') + '</td><td>' + (c.antig || '') + '</td><td>' + (c.dias || '') + '</td></tr>';
     }).join('');
+    var inventarioHtml = tablaInventarioHtml(d.inventario);
+    var itemsGrafico = d.inventario.map(function (p) { return { label: p.titulo, precioM2: p.precioM2 }; })
+      .concat(d.comparables.map(function (c) {
+        var homo = m2Homologado(c.m2, c.m2t);
+        return { label: c.ubicacion || 'Comparable', precioM2: homo && c.precio ? c.precio / homo : 0 };
+      }));
+    var sujetoGrafico = { label: 'Tu propiedad (sugerido)', precioM2: d.m2Sujeto ? d.precioSugeridoPublicar / d.m2Sujeto : 0 };
+    var graficoHtml = graficoPreciosM2Html(itemsGrafico, sujetoGrafico);
     var html = '<!doctype html><html lang="es-MX"><head><meta charset="utf-8"><title>' + esc(d.nombre) + '</title><style>' +
       '@page{ size:letter; margin:1.9cm 1.8cm 2.2cm; }' +
       '*{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }' +
@@ -1661,6 +1725,7 @@
       '.sub{ font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:#4A5468; margin-bottom:0; }' +
       'h2{ font-family:Helvetica,Arial,sans-serif; font-size:.78rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#B88E3E; margin:1.8rem 0 .6rem; padding-bottom:.3rem; border-bottom:1px solid #E4E7EE; }' +
       'table{ width:100%; border-collapse:collapse; font-family:Helvetica,Arial,sans-serif; font-size:.66rem; table-layout:fixed; }' +
+      'svg{ display:block; margin:.3rem auto 0; max-width:100%; }' +
       'th,td{ border:1px solid #E4E7EE; padding:.3rem .4rem; text-align:left; overflow-wrap:break-word; }' +
       'th{ background:#071F4A; color:#fff; font-weight:600; }' +
       'tbody tr:nth-child(even){ background:#F7F5F0; }' +
@@ -1676,7 +1741,9 @@
       '<div class="gf-header"><img src="https://www.giofilio.com/assets/img/brand/wordmark.png" alt="Gio Filio" id="gfLogoImg"><span class="tag">Estudio de precio</span></div>' +
       '<h1>' + esc(d.nombre) + '</h1>' +
       '<p class="sub">' + esc(d.tipo) + ' en ' + opLabel + (d.colonia ? ' — ' + esc(d.colonia) : '') + (d.m2Sujeto ? ' · ' + d.m2c + ' m² constr.' + (d.m2t ? ' + ' + d.m2t + ' m² terreno' : '') : '') + '</p>' +
-      (filasHtml ? '<h2>Comparables</h2><table><thead><tr><th>#</th><th>Ubicación</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m² homolog.</th><th>Rec</th><th>Baños</th><th>Coch</th><th>Antig.</th><th>Días</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' : '') +
+      inventarioHtml +
+      (filasHtml ? '<h2>Comparables externos</h2><table><thead><tr><th>#</th><th>Ubicación</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m² homolog.</th><th>Rec</th><th>Baños</th><th>Coch</th><th>Antig.</th><th>Días</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' : '') +
+      graficoHtml +
       '<h2>Resumen</h2><div class="resumen">' +
         '<div class="tarjeta"><div class="lbl">Valor asignado</div><div class="num">' + nf.format(Math.round(d.valorAsignado)) + '</div></div>' +
         '<div class="tarjeta destacada"><div class="lbl">Precio sugerido a publicar</div><div class="num">' + nf.format(Math.round(d.precioSugeridoPublicar)) + '</div></div>' +
