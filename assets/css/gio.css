@@ -234,6 +234,22 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 @media (max-width:720px){ .demo-long{ display:none; } .demo-short{ display:inline; } .demo-bar{ font-size:var(--step--2); padding:.45rem .75rem; } }
 .demo-bar strong{ font-family:var(--font-display); letter-spacing:.1em; text-transform:uppercase; font-size:var(--step--2); }
 
+/* --------------------------------------------- 7b. FRANJA DE TEMPORADA */
+/* Detalle temporal por mes patrio -- quitar este bloque y el markup en
+   render.py despues de septiembre 2026. */
+.fiestas-bar{
+  background:var(--beige); color:var(--navy); text-align:center;
+  font-size:var(--step--1); padding:.5rem 2.2rem .5rem 1rem; letter-spacing:.01em;
+  position:relative; z-index:61; border-top:3px solid #006341;
+}
+.fiestas-bar-close{
+  position:absolute; right:.5rem; top:50%; transform:translateY(-50%);
+  background:none; border:none; color:var(--ink-70); font-size:1.3rem; line-height:1;
+  cursor:pointer; padding:.3rem .5rem;
+}
+.fiestas-bar-close:hover{ color:var(--navy); }
+@media (max-width:720px){ .fiestas-bar{ font-size:var(--step--2); padding:.45rem 2rem .45rem .75rem; } }
+
 /* ------------------------------------------------------------- 8. HEADER */
 .site-header{
   position:sticky; top:0; z-index:200; background:#fff;
@@ -1064,5 +1080,5 @@ body.no-scroll{ overflow:hidden; }
 .prose ul{ padding-left:1.2em; }
 .prose li{ margin-bottom:.4em; color:var(--ink-70); }
 @media print{
-  .site-header,.wa-fab,.mobile-actions,.cmp-bar,.demo-bar,.site-footer{ display:none !important; }
+  .site-header,.wa-fab,.mobile-actions,.cmp-bar,.demo-bar,.fiestas-bar,.site-footer{ display:none !important; }
 }

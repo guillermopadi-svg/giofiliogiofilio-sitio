@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"></noscript>
-<link rel="stylesheet" href="../../../assets/css/gio.css?v=2">
+<link rel="stylesheet" href="../../../assets/css/gio.css?v=3">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://giofilio.com/"},{"@type":"ListItem","position":2,"name":"Renta","item":"https://giofilio.com/renta/"},{"@type":"ListItem","position":3,"name":"Departamentos","item":"https://giofilio.com/departamentos/"},{"@type":"ListItem","position":4,"name":"San Ángel"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"¿Cuánto cuesta un departamento en renta en San Ángel?","acceptedAnswer":{"@type":"Answer","text":"Ahora mismo no publico departamentos en renta en San Ángel, pero el precio de referencia de la zona ronda $300 MXN por metro cuadrado al mes. El valor real depende del edificio, el nivel y el estado del inmueble."}},{"@type":"Question","name":"¿Qué incluye vivir en San Ángel?","acceptedAnswer":{"@type":"Answer","text":"San Ángel se vive despacio. Calles empedradas, bugambilias, muros de piedra y una escala de pueblo que sobrevivió al crecimiento de la ciudad. Las propiedades son en su mayoría casas, muchas catalogadas por el INAH, lo que implica reglas específicas para cualquier intervención. Es una compra emocional que además ha demostrado una plusvalía muy sólida."}},{"@type":"Question","name":"¿Cómo llego a San Ángel?","acceptedAnswer":{"@type":"Answer","text":"Metrobús sobre Insurgentes Sur, acceso por Revolución y Periférico. Interior de la zona muy caminable."}}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"RealEstateAgent","@id":"https://giofilio.com/#gio-filio","name":"Gio Filio","alternateName":"Gio Filio — Tu espacio ideal","slogan":"Tu espacio ideal","description":"Asesoría inmobiliaria personal en Ciudad de México para comprar, rentar, vender e invertir.","url":"https://giofilio.com/","logo":"https://giofilio.com/assets/img/brand/logo-principal.png","image":"https://giofilio.com/assets/img/gio/retrato-1200.jpg","email":"gio@giofilio.com","telephone":"+5215544876074","priceRange":"$$$","areaServed":{"@type":"City","name":"Ciudad de México","address":{"@type":"PostalAddress","addressLocality":"Ciudad de México","addressRegion":"CDMX","addressCountry":"MX"}},"address":{"@type":"PostalAddress","addressLocality":"Ciudad de México","addressRegion":"CDMX","addressCountry":"MX"},"sameAs":["https://www.instagram.com/gio.filio/","https://www.facebook.com/Giofiliorealestate"],"employee":{"@type":"Person","name":"Gio Filio","jobTitle":"Asesora Inmobiliaria","image":"https://giofilio.com/assets/img/gio/perfil-1200.jpg","worksFor":{"@id":"https://giofilio.com/#gio-filio"}}}</script>
@@ -54,6 +54,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <noscript><div class="demo-bar">Este sitio usa JavaScript para los filtros, el mapa y los favoritos. Puedes navegar el catálogo y las páginas de zona sin JavaScript.</div></noscript>
+<!-- Franja de temporada -- quitar despues de septiembre 2026. -->
+<div class="fiestas-bar" id="fiestasBar">
+<span>🇲🇽 <strong>¡Feliz mes patrio!</strong> Todo el equipo de Gio Filio les desea una linda Independencia.</span>
+<button type="button" class="fiestas-bar-close" id="fiestasBarClose" aria-label="Cerrar aviso">&times;</button>
+</div>
+<script>(function(){try{if(localStorage.getItem('gf_fiestas_2026')){document.getElementById('fiestasBar').remove();}}catch(e){}
+var b=document.getElementById('fiestasBarClose');
+if(b)b.addEventListener('click',function(){document.getElementById('fiestasBar').remove();try{localStorage.setItem('gf_fiestas_2026','1');}catch(e){}});
+})();</script>
 
 <a class="skip-link" href="#main">Saltar al contenido principal</a>
 <header class="site-header">

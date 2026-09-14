@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"></noscript>
-<link rel="stylesheet" href="../../assets/css/gio.css?v=2">
+<link rel="stylesheet" href="../../assets/css/gio.css?v=3">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://giofilio.com/"},{"@type":"ListItem","position":2,"name":"Zonas de CDMX","item":"https://giofilio.com/zonas/"},{"@type":"ListItem","position":3,"name":"Cuauhtémoc"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"¿Cuántas propiedades hay disponibles en Cuauhtémoc?","acceptedAnswer":{"@type":"Answer","text":"En este momento hay 6 propiedades publicadas en Cuauhtémoc. El inventario se actualiza conforme se integran nuevas propiedades a la plataforma."}},{"@type":"Question","name":"¿Cómo es vivir en Cuauhtémoc?","acceptedAnswer":{"@type":"Answer","text":"Es la alcaldía más caminable de la ciudad. Metro, Metrobús, Ecobici y calles arboladas hacen que muchos residentes no usen auto entre semana. Parque México, Parque España y la Alameda ordenan la vida al aire libre."}},{"@type":"Question","name":"¿Gio Filio trabaja fuera de la Ciudad de México?","acceptedAnswer":{"@type":"Answer","text":"No. Toda la asesoría se concentra exclusivamente en las 16 alcaldías de la Ciudad de México."}}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"RealEstateAgent","@id":"https://giofilio.com/#gio-filio","name":"Gio Filio","alternateName":"Gio Filio — Tu espacio ideal","slogan":"Tu espacio ideal","description":"Asesoría inmobiliaria personal en Ciudad de México para comprar, rentar, vender e invertir.","url":"https://giofilio.com/","logo":"https://giofilio.com/assets/img/brand/logo-principal.png","image":"https://giofilio.com/assets/img/gio/retrato-1200.jpg","email":"gio@giofilio.com","telephone":"+5215544876074","priceRange":"$$$","areaServed":{"@type":"City","name":"Ciudad de México","address":{"@type":"PostalAddress","addressLocality":"Ciudad de México","addressRegion":"CDMX","addressCountry":"MX"}},"address":{"@type":"PostalAddress","addressLocality":"Ciudad de México","addressRegion":"CDMX","addressCountry":"MX"},"sameAs":["https://www.instagram.com/gio.filio/","https://www.facebook.com/Giofiliorealestate"],"employee":{"@type":"Person","name":"Gio Filio","jobTitle":"Asesora Inmobiliaria","image":"https://giofilio.com/assets/img/gio/perfil-1200.jpg","worksFor":{"@id":"https://giofilio.com/#gio-filio"}}}</script>
@@ -55,6 +55,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <noscript><div class="demo-bar">Este sitio usa JavaScript para los filtros, el mapa y los favoritos. Puedes navegar el catálogo y las páginas de zona sin JavaScript.</div></noscript>
+<!-- Franja de temporada -- quitar despues de septiembre 2026. -->
+<div class="fiestas-bar" id="fiestasBar">
+<span>🇲🇽 <strong>¡Feliz mes patrio!</strong> Todo el equipo de Gio Filio les desea una linda Independencia.</span>
+<button type="button" class="fiestas-bar-close" id="fiestasBarClose" aria-label="Cerrar aviso">&times;</button>
+</div>
+<script>(function(){try{if(localStorage.getItem('gf_fiestas_2026')){document.getElementById('fiestasBar').remove();}}catch(e){}
+var b=document.getElementById('fiestasBarClose');
+if(b)b.addEventListener('click',function(){document.getElementById('fiestasBar').remove();try{localStorage.setItem('gf_fiestas_2026','1');}catch(e){}});
+})();</script>
 
 <a class="skip-link" href="#main">Saltar al contenido principal</a>
 <header class="site-header">
