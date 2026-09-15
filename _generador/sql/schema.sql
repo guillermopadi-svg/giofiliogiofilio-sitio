@@ -514,6 +514,12 @@ create table if not exists estudios_precio (
 alter table estudios_precio add column if not exists m2t numeric not null default 0;
 alter table estudios_precio add column if not exists propiedades_mercado int not null default 0;
 alter table estudios_precio add column if not exists factor_publicar numeric not null default 55;
+-- Homologar (sumar terreno al m2 de construccion) es opcional: solo tiene
+-- sentido cuando el terreno es mucho mas grande que lo construido (ej. un
+-- terreno de 1000 m2 con 300 construidos) -- en departamentos/condominios
+-- no suele aplicar. Default true para no cambiar el comportamiento de los
+-- estudios que ya existian antes de esta columna.
+alter table estudios_precio add column if not exists homologar_m2 boolean not null default true;
 
 alter table estudios_precio enable row level security;
 

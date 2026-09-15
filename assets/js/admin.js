@@ -1322,6 +1322,22 @@
     });
   }
 
+  // Terrenos y locales comerciales no tienen recamaras/banos "habitables" --
+  // esas columnas se ocultan de la tabla de comparables para esos tipos (ver
+  // estFilaComparableHtml/renderComparablesTable). El valor sigue
+  // preservado en el objeto aunque la columna este oculta (por si cambian
+  // el tipo de vuelta), solo la lectura del DOM necesita ser tolerante a
+  // que el <td> no exista.
+  function comparablesOcultarHabitable() {
+    var tipo = $('#est_tipo').value;
+    return tipo === 'terreno' || tipo === 'local-comercial';
+  }
+
+  function valorInputSiExiste(tr, selector) {
+    var el = tr.querySelector(selector);
+    return el ? el.value : '';
+  }
+
   function leerComparablesDesdeDOM() {
     return $$('#estComparablesBody .est-comp-row').map(function (tr) {
       return {
@@ -1330,8 +1346,8 @@
         m2: Number(tr.querySelector('.est-in-m2').value) || 0,
         m2t: Number(tr.querySelector('.est-in-m2t').value) || 0,
         precio: Number(tr.querySelector('.est-in-precio').value) || 0,
-        rec: Number(tr.querySelector('.est-in-rec').value) || 0,
-        ban: Number(tr.querySelector('.est-in-ban').value) || 0,
+        rec: Number(valorInputSiExiste(tr, '.est-in-rec')) || 0,
+        ban: Number(valorInputSiExiste(tr, '.est-in-ban')) || 0,
         est: Number(tr.querySelector('.est-in-est').value) || 0,
         antig: Number(tr.querySelector('.est-in-antig').value) || 0,
         dias: Number(tr.querySelector('.est-in-dias').value) || 0,
@@ -1343,14 +1359,25 @@
   // grande no se compara injustamente contra una con terreno chico usando
   // solo el $/m² de construcción. En departamentos el terreno normalmente
   // es 0, así que homologado = construcción y no cambia nada.
+  // Es opcional (checkbox #est_homologar): solo tiene sentido cuando el
+  // terreno es mucho mas grande que lo construido (ej. 1000 m2 de terreno,
+  // 300 construidos) -- si no, comparar solo por construccion es mas justo.
   function m2Homologado(m2c, m2t) {
-    return (Number(m2c) || 0) + (Number(m2t) || 0);
+    var el = $('#est_homologar');
+    var homologar = el ? el.checked : true;
+    return (Number(m2c) || 0) + (homologar ? (Number(m2t) || 0) : 0);
   }
+
+  // Tipos donde el terreno normalmente no aplica (departamentos, condominios,
+  // oficinas...) -- se usa solo para decidir el estado inicial del checkbox
+  // de homologar en un estudio nuevo, el asesor lo puede cambiar despues.
+  var TIPOS_SIN_TERRENO_RELEVANTE = { departamento: true, 'casa-en-condominio': true, penthouse: true, loft: true, oficina: true, 'local-comercial': true };
 
   function estFilaComparableHtml(c, i) {
     c = c || {};
     var homo = m2Homologado(c.m2, c.m2t);
     var precioM2 = (homo && c.precio) ? Math.round(c.precio / homo) : '';
+    var ocultarHabitable = comparablesOcultarHabitable();
     return (
       '<tr class="est-comp-row" data-idx="' + i + '">' +
         '<td class="est-liga"><input type="url" class="est-in-liga" placeholder="https://…" value="' + esc(c.liga || '') + '"></td>' +
@@ -1359,8 +1386,9 @@
         '<td><input type="number" min="0" class="est-in-m2t" value="' + (c.m2t || '') + '" title="m² de terreno"></td>' +
         '<td><input type="number" min="0" class="est-in-precio" value="' + (c.precio || '') + '"></td>' +
         '<td><input type="text" class="est-in-preciom2" value="' + (precioM2 ? nf.format(precioM2) : '') + '" readonly title="Precio por m² homologado (construcción + terreno)"></td>' +
-        '<td><input type="number" min="0" class="est-in-rec" value="' + (c.rec || '') + '"></td>' +
-        '<td><input type="number" min="0" class="est-in-ban" value="' + (c.ban || '') + '"></td>' +
+        (ocultarHabitable ? '' :
+          '<td><input type="number" min="0" class="est-in-rec" value="' + (c.rec || '') + '"></td>' +
+          '<td><input type="number" min="0" class="est-in-ban" value="' + (c.ban || '') + '"></td>') +
         '<td><input type="number" min="0" class="est-in-est" value="' + (c.est || '') + '"></td>' +
         '<td><input type="number" min="0" class="est-in-antig" value="' + (c.antig || '') + '"></td>' +
         '<td><input type="number" min="0" class="est-in-dias" value="' + (c.dias || '') + '"></td>' +
@@ -1377,12 +1405,18 @@
       actualizarResumenEstudio();
       return;
     }
+    // Terreno/local comercial no tienen recamaras/banos -- se quitan esas
+    // 2 columnas, y el colspan del renglon de promedio (que cubre desde
+    // Estacionamientos hasta el boton de quitar) se ajusta de 6 a 4.
+    var ocultarHabitable = comparablesOcultarHabitable();
     box.innerHTML =
       '<div style="overflow-x:auto"><table class="est-table"><thead><tr>' +
-        '<th>Liga</th><th>Ubicación</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m²*</th><th>Rec</th><th>Baños</th><th>Coch</th><th>Antig.</th><th>Días</th><th></th>' +
+        '<th>Liga</th><th>Ubicación</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m²*</th>' +
+        (ocultarHabitable ? '' : '<th>Rec</th><th>Baños</th>') +
+        '<th>Coch</th><th>Antig.</th><th>Días</th><th></th>' +
       '</tr></thead><tbody id="estComparablesBody">' +
         lista.map(estFilaComparableHtml).join('') +
-        '<tr class="est-row-avg"><td colspan="5">Promedio (' + lista.length + ')</td><td id="estCompAvgM2">—</td><td colspan="6"></td></tr>' +
+        '<tr class="est-row-avg"><td colspan="5">Promedio (' + lista.length + ')</td><td id="estCompAvgM2">—</td><td colspan="' + (ocultarHabitable ? 4 : 6) + '"></td></tr>' +
       '</tbody></table></div>' +
       '<div class="field-hint" style="margin-top:.3rem">*$/m² homologado (construcción + terreno) — así se comparan de forma justa aunque el terreno varíe.</div>';
     actualizarPromedioComparablesDOM();
@@ -1539,6 +1573,7 @@
     $('#est_colonia').value = e ? (e.colonia || '') : '';
     $('#est_m2c').value = e && e.m2c ? e.m2c : '';
     $('#est_m2t').value = e && e.m2t ? e.m2t : '';
+    $('#est_homologar').checked = e ? (e.homologar_m2 !== false) : !TIPOS_SIN_TERRENO_RELEVANTE[$('#est_tipo').value];
     $('#est_propiedades_mercado').value = e && e.propiedades_mercado ? e.propiedades_mercado : '';
     $('#est_factor_publicar').value = e && e.factor_publicar != null ? e.factor_publicar : 55;
     $('#est_notas').value = e ? (e.notas || '') : '';
@@ -1563,6 +1598,7 @@
       colonia: $('#est_colonia').value.trim(),
       m2c: Number($('#est_m2c').value) || 0,
       m2t: Number($('#est_m2t').value) || 0,
+      homologar_m2: $('#est_homologar').checked,
       propiedades_mercado: Number($('#est_propiedades_mercado').value) || 0,
       factor_publicar: Number($('#est_factor_publicar').value) || 55,
       comparables: leerComparablesDesdeDOM(),
@@ -1739,10 +1775,13 @@
   function exportarEstudioPDF() {
     var d = recopilarDatosReporte();
     var opLabel = d.operacion === 'renta' ? 'renta' : 'venta';
+    var ocultarHabitablePdf = comparablesOcultarHabitable();
     var filasHtml = d.comparables.map(function (c, i) {
       var homo = m2Homologado(c.m2, c.m2t);
       var pm2 = (homo && c.precio) ? Math.round(c.precio / homo) : '';
-      return '<tr><td>' + (i + 1) + '</td><td>' + esc(c.ubicacion) + '</td><td>' + (c.m2 || '') + '</td><td>' + (c.m2t || '') + '</td><td>' + (c.precio ? nf.format(c.precio) : '') + '</td><td>' + (pm2 ? nf.format(pm2) : '') + '</td><td>' + (c.rec || '') + '</td><td>' + (c.ban || '') + '</td><td>' + (c.est || '') + '</td><td>' + (c.antig || '') + '</td><td>' + (c.dias || '') + '</td></tr>';
+      return '<tr><td>' + (i + 1) + '</td><td>' + esc(c.ubicacion) + '</td><td>' + (c.m2 || '') + '</td><td>' + (c.m2t || '') + '</td><td>' + (c.precio ? nf.format(c.precio) : '') + '</td><td>' + (pm2 ? nf.format(pm2) : '') +
+        (ocultarHabitablePdf ? '' : '<td>' + (c.rec || '') + '</td><td>' + (c.ban || '') + '</td>') +
+        '<td>' + (c.est || '') + '</td><td>' + (c.antig || '') + '</td><td>' + (c.dias || '') + '</td></tr>';
     }).join('');
     var inventarioHtml = tablaInventarioHtml(d.inventario);
     var itemsGrafico = d.inventario.map(function (p) { return { label: p.titulo, precioM2: p.precioM2 }; })
@@ -2137,10 +2176,14 @@
     $$('#estOpToggle button').forEach(function (b) {
       b.addEventListener('click', function () { setOperacionEstudio(b.dataset.op); });
     });
-    $('#est_tipo').addEventListener('change', recalcularInventarioEstudio);
+    $('#est_tipo').addEventListener('change', function () {
+      renderComparablesTable(leerComparablesDesdeDOM());
+      recalcularInventarioEstudio();
+    });
     $('#est_colonia').addEventListener('input', recalcularInventarioEstudio);
     $('#est_m2c').addEventListener('input', actualizarResumenEstudio);
     $('#est_m2t').addEventListener('input', actualizarResumenEstudio);
+    $('#est_homologar').addEventListener('change', function () { recalcularInventarioEstudio(); actualizarPromedioComparablesDOM(); });
     $('#est_propiedades_mercado').addEventListener('input', actualizarResumenEstudio);
     $('#est_factor_publicar').addEventListener('input', actualizarResumenEstudio);
     $('#estAddComparableBtn').addEventListener('click', function () {

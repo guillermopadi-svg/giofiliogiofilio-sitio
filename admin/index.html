@@ -579,8 +579,11 @@
         <div class="field">
           <label for="est_m2t">m² de terreno</label>
           <input type="number" id="est_m2t" min="0" placeholder="0">
-          <div class="field-hint">Se usa para homologar el $/m² con casas/terrenos — en departamentos normalmente es 0.</div>
         </div>
+      </div>
+      <div class="field">
+        <label class="switch"><input type="checkbox" id="est_homologar" checked><span class="switch-track"></span>Homologar m² (construcción + terreno)</label>
+        <div class="field-hint">Actívalo solo cuando el terreno es mucho más grande que lo construido y por eso no es justo comparar solo por m² de construcción (ej. un terreno de 1,000 m² con 300 construidos). En departamentos y casas en condominio normalmente no hace falta — el terreno no aplica.</div>
       </div>
 
       <div class="section-label">Tu inventario en esta zona</div>
