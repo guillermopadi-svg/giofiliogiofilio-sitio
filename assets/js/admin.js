@@ -1847,6 +1847,7 @@
       'th{ background:#071F4A; color:#fff; font-weight:600; }' +
       'tbody tr:nth-child(even){ background:#F7F5F0; }' +
       '.resumen{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:.7rem; margin-top:.6rem; }' +
+      '.resumen-bloque{ page-break-inside:avoid; break-inside:avoid; }' +
       '.tarjeta{ background:#F2F4F9; border:1px solid #E4E7EE; border-radius:8px; padding:.75rem .85rem; font-family:Helvetica,Arial,sans-serif; }' +
       '.tarjeta.destacada{ background:#FAF5EA; border-color:#D9BE86; }' +
       '.tarjeta .lbl{ font-size:.62rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#737E92; }' +
@@ -1861,12 +1862,12 @@
       inventarioHtml +
       (filasHtml ? '<h2>Comparables externos</h2><table><thead><tr><th>#</th><th>Ubicación</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m² homolog.</th><th>Rec</th><th>Baños</th><th>Coch</th><th>Antig.</th><th>Días</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' : '') +
       graficoHtml +
-      '<h2>Resumen</h2><div class="resumen">' +
+      '<div class="resumen-bloque"><h2>Resumen</h2><div class="resumen">' +
         '<div class="tarjeta"><div class="lbl">Valor asignado</div><div class="num">' + nf.format(Math.round(d.valorAsignado)) + '</div></div>' +
         '<div class="tarjeta destacada"><div class="lbl">Precio sugerido a publicar</div><div class="num">' + nf.format(Math.round(d.precioSugeridoPublicar)) + '</div></div>' +
         '<div class="tarjeta"><div class="lbl">Precio estimado de cierre</div><div class="num">' + nf.format(Math.round(d.precioCierre)) + '</div></div>' +
       '</div>' +
-      '<p class="nota">Factor de negociación: ' + Math.round(d.factorNegPct * 100) + '% (' + nf.format(Math.round(d.factorNegociacion)) + ').' + (d.propiedadesMercado ? ' Actualmente hay ' + d.propiedadesMercado + ' propiedades similares en el mercado.' : '') + '</p>' +
+      '<p class="nota">Factor de negociación: ' + Math.round(d.factorNegPct * 100) + '% (' + nf.format(Math.round(d.factorNegociacion)) + ').' + (d.propiedadesMercado ? ' Actualmente hay ' + d.propiedadesMercado + ' propiedades similares en el mercado.' : '') + '</p></div>' +
       '<div class="gf-footer"><span>Estudio realizado por ' + esc(d.asesor) + '</span><span>' + esc(d.fecha) + '</span></div>' +
       '</body></html>';
     var w = window.open('', '_blank');
