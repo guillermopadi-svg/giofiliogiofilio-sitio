@@ -1416,10 +1416,27 @@
         '<th>Coch</th><th>Antig.</th><th>Días</th><th></th>' +
       '</tr></thead><tbody id="estComparablesBody">' +
         lista.map(estFilaComparableHtml).join('') +
-        '<tr class="est-row-avg"><td colspan="5">Promedio (' + lista.length + ')</td><td id="estCompAvgM2">—</td><td colspan="' + (ocultarHabitable ? 4 : 6) + '"></td></tr>' +
+        '<tr class="est-row-avg"><td colspan="2">Promedio (' + lista.length + ')</td>' +
+        '<td id="estCompAvgM2c">—</td><td id="estCompAvgM2t">—</td><td id="estCompAvgPrecio">—</td><td id="estCompAvgM2">—</td>' +
+        (ocultarHabitable ? '' : '<td id="estCompAvgRec">—</td><td id="estCompAvgBan">—</td>') +
+        '<td id="estCompAvgCoch">—</td><td id="estCompAvgAntig">—</td><td id="estCompAvgDias">—</td><td></td></tr>' +
       '</tbody></table></div>' +
       '<div class="field-hint" style="margin-top:.3rem">*$/m² homologado (construcción + terreno) — así se comparan de forma justa aunque el terreno varíe.</div>';
     actualizarPromedioComparablesDOM();
+  }
+
+  // Promedio simple de un campo numerico en una lista de comparables --
+  // trata vacio como 0 (igual que el resto del formulario), asi que el
+  // promedio baja si hay filas a medio llenar, igual que pasaria con un
+  // AVERAGE() de Excel sobre celdas en blanco tratadas como 0.
+  function promedioCampo(lista, campo) {
+    if (!lista.length) return 0;
+    return lista.reduce(function (s, c) { return s + (Number(c[campo]) || 0); }, 0) / lista.length;
+  }
+
+  function fmtProm(v) {
+    var r = Math.round(v * 10) / 10;
+    return r ? String(r) : '—';
   }
 
   function actualizarPromedioComparablesDOM() {
@@ -1430,7 +1447,8 @@
       var homo = m2Homologado(m2, m2t);
       tr.querySelector('.est-in-preciom2').value = (homo && precio) ? nf.format(Math.round(precio / homo)) : '';
     });
-    var validas = leerComparablesDesdeDOM().filter(function (f) { return f.m2 > 0 && f.precio > 0; }).slice(0, MAX_COMPARABLES_CALCULO);
+    var todas = leerComparablesDesdeDOM();
+    var validas = todas.filter(function (f) { return f.m2 > 0 && f.precio > 0; }).slice(0, MAX_COMPARABLES_CALCULO);
     var valoresM2 = validas.map(function (f) { return f.precio / m2Homologado(f.m2, f.m2t); });
     var promedio = promedioSimple(valoresM2);
     var promedioTrim = promedioTruncado(valoresM2);
@@ -1440,6 +1458,19 @@
     if (avgEl) avgEl.textContent = promedio ? nf.format(Math.round(promedio)) + '/m²' : '—';
     var avgRow = $('#estComparablesBody .est-row-avg td:first-child');
     if (avgRow) avgRow.textContent = 'Promedio (' + validas.length + ')' + (validas.length > 2 ? ' · sin extremos: ' + nf.format(Math.round(promedioTrim)) + '/m²' : '');
+    // Promedio del resto de columnas (m², precio, rec, baños, coch, antig,
+    // dias) -- para ver de un vistazo con que estas comparando, igual que
+    // el renglon "Promedios" del Excel de Gio.
+    function set(id, texto) { var el = document.getElementById(id); if (el) el.textContent = texto; }
+    set('estCompAvgM2c', fmtProm(promedioCampo(todas, 'm2')));
+    set('estCompAvgM2t', fmtProm(promedioCampo(todas, 'm2t')));
+    var promPrecio = promedioCampo(todas, 'precio');
+    set('estCompAvgPrecio', promPrecio ? nf.format(Math.round(promPrecio)) : '—');
+    set('estCompAvgRec', fmtProm(promedioCampo(todas, 'rec')));
+    set('estCompAvgBan', fmtProm(promedioCampo(todas, 'ban')));
+    set('estCompAvgCoch', fmtProm(promedioCampo(todas, 'est')));
+    set('estCompAvgAntig', fmtProm(promedioCampo(todas, 'antig')));
+    set('estCompAvgDias', fmtProm(promedioCampo(todas, 'dias')));
     actualizarResumenEstudio();
   }
 
@@ -2209,7 +2240,8 @@
       }
     });
     $('#estComparablesBox').addEventListener('input', function (e) {
-      if (e.target.classList.contains('est-in-m2') || e.target.classList.contains('est-in-m2t') || e.target.classList.contains('est-in-precio')) {
+      var campos = ['est-in-m2', 'est-in-m2t', 'est-in-precio', 'est-in-rec', 'est-in-ban', 'est-in-est', 'est-in-antig', 'est-in-dias'];
+      if (campos.some(function (c) { return e.target.classList.contains(c); })) {
         actualizarPromedioComparablesDOM();
       }
     });

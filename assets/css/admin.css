@@ -256,6 +256,11 @@ button{ font-family:inherit; cursor:pointer; }
   font-family:inherit; font-size:.82rem; font-weight:600; color:var(--navy); background:var(--white);
 }
 .switch{ position:relative; display:inline-flex; align-items:center; gap:.5rem; cursor:pointer; font-size:.78rem; color:var(--ink-50); }
+/* Mismo caso que .btn[hidden] y .tabbar-btn[hidden]: ".field label" (dos
+   selectores, mas especifico) le gana a ".switch" (uno) y lo deja en
+   mayusculas/chico/gris como una etiqueta normal en vez de un switch --
+   pasaba con el de "Homologar m2" dentro de un .field. */
+.field label.switch{ display:inline-flex; text-transform:none; font-size:.9rem; font-weight:400; letter-spacing:normal; color:var(--ink); margin-bottom:0; }
 .switch input{ position:absolute; opacity:0; width:1px; height:1px; }
 .switch-track{
   width:36px; height:20px; border-radius:var(--r-full); background:var(--line); position:relative; transition:background .16s var(--ease);
