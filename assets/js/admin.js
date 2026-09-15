@@ -1850,16 +1850,16 @@
     var sujetoGrafico = { label: 'Tu propiedad (sugerido)', precioM2: d.m2Sujeto ? d.precioSugeridoPublicar / d.m2Sujeto : 0 };
     var graficoHtml = graficoPreciosM2Html(itemsGrafico, sujetoGrafico);
     var html = '<!doctype html><html lang="es-MX"><head><meta charset="utf-8"><title>' + esc(d.nombre) + '</title><style>' +
-      '@page{ size:letter; margin:1.9cm 1.8cm 2.2cm; }' +
+      '@page{ size:letter; margin:1.3cm 1.6cm 1.4cm; }' +
       '*{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }' +
       'html{ background:#fff; }' +
-      'body{ font-family:Georgia,"Times New Roman",serif; color:#0E1626; background:#fff; width:100%; margin:0 auto; padding:1.4rem .2rem 2rem; }' +
-      '.gf-header{ display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #B88E3E; padding-bottom:.7rem; margin-bottom:1.4rem; }' +
+      'body{ font-family:Georgia,"Times New Roman",serif; color:#0E1626; background:#fff; width:100%; margin:0 auto; padding:.5rem .2rem .8rem; }' +
+      '.gf-header{ display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #B88E3E; padding-bottom:.5rem; margin-bottom:.9rem; }' +
       '.gf-header img{ height:30px; width:auto; display:block; }' +
       '.gf-header .tag{ font-family:Helvetica,Arial,sans-serif; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#737E92; }' +
       'h1{ font-size:1.5rem; color:#071F4A; margin:0 0 .2rem; font-weight:700; }' +
       '.sub{ font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:#4A5468; margin-bottom:0; }' +
-      'h2{ font-family:Helvetica,Arial,sans-serif; font-size:.78rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#B88E3E; margin:1.8rem 0 .6rem; padding-bottom:.3rem; border-bottom:1px solid #E4E7EE; }' +
+      'h2{ font-family:Helvetica,Arial,sans-serif; font-size:.78rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#B88E3E; margin:.9rem 0 .4rem; padding-bottom:.25rem; border-bottom:1px solid #E4E7EE; }' +
       'table{ width:100%; border-collapse:collapse; font-family:Helvetica,Arial,sans-serif; font-size:.66rem; table-layout:fixed; }' +
       'svg{ display:block; margin:.3rem auto 0; max-width:100%; }' +
       'th,td{ border:1px solid #E4E7EE; padding:.3rem .4rem; text-align:left; overflow-wrap:break-word; }' +
@@ -1873,7 +1873,7 @@
       '.tarjeta.destacada .lbl{ color:#8C6A2F; }' +
       '.tarjeta .num{ font-size:1.05rem; font-weight:700; color:#071F4A; margin-top:.15rem; }' +
       '.nota{ font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:#4A5468; margin-top:.7rem; line-height:1.5; }' +
-      '.gf-footer{ margin-top:2.6rem; padding-top:.7rem; border-top:1px solid #E8DDCF; font-family:Helvetica,Arial,sans-serif; font-size:.75rem; color:#737E92; display:flex; justify-content:space-between; }' +
+      '.gf-footer{ margin-top:1rem; padding-top:.5rem; border-top:1px solid #E8DDCF; font-family:Helvetica,Arial,sans-serif; font-size:.75rem; color:#737E92; display:flex; justify-content:space-between; }' +
       '</style></head><body>' +
       '<div class="gf-header"><img src="https://www.giofilio.com/assets/img/brand/wordmark.png" alt="Gio Filio" id="gfLogoImg"><span class="tag">Estudio de precio</span></div>' +
       '<h1>' + esc(d.nombre) + '</h1>' +
