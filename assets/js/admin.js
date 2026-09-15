@@ -1527,11 +1527,11 @@
     }
 
     var valorAsignado = promCombinado * m2Sujeto;
-    var factorNegPct = Math.max(0, Number($('#est_propiedades_mercado').value) || 0) / 100;
+    var factorNegPct = Math.max(0, Math.min(100, Number($('#est_factor_negociacion').value) || 0)) / 100;
     var factorPublicarPct = Math.max(0, Math.min(100, Number($('#est_factor_publicar').value) || 0)) / 100;
     var factorNegociacion = valorAsignado * factorNegPct;
     var precioCierre = valorAsignado - factorNegociacion;
-    var precioSugeridoPublicar = valorAsignado - factorPublicarPct * factorNegociacion;
+    var precioSugeridoPublicar = precioCierre * (1 + factorPublicarPct);
 
     box.innerHTML = '<div class="est-resumen">' +
       card('Valor asignado', nf.format(Math.round(valorAsignado)), true) +
@@ -1540,7 +1540,7 @@
     '</div>' +
     '<div class="field-hint" style="margin-top:.5rem">' +
       'Promedio simple $/m²: ' + nf.format(Math.round(promCombinado)) + ' (tu inventario: ' + (promInv ? nf.format(Math.round(promInv)) : '—') + (promComp ? ', externos: ' + nf.format(Math.round(promComp)) : '') + ')' +
-      (factorNegPct ? ' · Factor de negociación: ' + Math.round(factorNegPct * 100) + '% (' + nf.format(Math.round(factorNegociacion)) + ')' : ' · Escribe cuántas propiedades similares hay en el mercado para calcular el factor de negociación') +
+      (factorNegPct ? ' · Factor de negociación: ' + Math.round(factorNegPct * 100) + '% (' + nf.format(Math.round(factorNegociacion)) + ')' : ' · Escribe el % del factor de negociación') +
       (diasProm != null ? ' · Promedio de ' + diasProm + ' días publicados' : '') +
     '</div>';
   }
@@ -1575,7 +1575,8 @@
     $('#est_m2t').value = e && e.m2t ? e.m2t : '';
     $('#est_homologar').checked = e ? (e.homologar_m2 !== false) : !TIPOS_SIN_TERRENO_RELEVANTE[$('#est_tipo').value];
     $('#est_propiedades_mercado').value = e && e.propiedades_mercado ? e.propiedades_mercado : '';
-    $('#est_factor_publicar').value = e && e.factor_publicar != null ? e.factor_publicar : 55;
+    $('#est_factor_negociacion').value = e && e.factor_negociacion ? e.factor_negociacion : '';
+    $('#est_factor_publicar').value = e && e.factor_publicar != null ? e.factor_publicar : 5;
     $('#est_notas').value = e ? (e.notas || '') : '';
     setOperacionEstudio(e ? e.operacion : 'venta');
     renderComparablesTable((e && e.comparables) || []);
@@ -1600,7 +1601,8 @@
       m2t: Number($('#est_m2t').value) || 0,
       homologar_m2: $('#est_homologar').checked,
       propiedades_mercado: Number($('#est_propiedades_mercado').value) || 0,
-      factor_publicar: Number($('#est_factor_publicar').value) || 55,
+      factor_negociacion: Number($('#est_factor_negociacion').value) || 0,
+      factor_publicar: Number($('#est_factor_publicar').value) || 5,
       comparables: leerComparablesDesdeDOM(),
       notas: $('#est_notas').value.trim(),
     };
@@ -1648,8 +1650,12 @@
     if (promComp) fuentes.push(promComp);
     var promCombinado = fuentes.length ? promedioSimple(fuentes) : 0;
     var valorAsignado = promCombinado * m2Sujeto;
+    // "Propiedades similares en el mercado" es solo referencia (se anota en
+    // las notas) -- NO entra en ningun calculo, tal como funciona en el
+    // Excel original de Gio. El % de negociacion es un numero que ella
+    // escribe a mano, sin relacion con ese conteo.
     var propiedadesMercado = Math.max(0, Number($('#est_propiedades_mercado').value) || 0);
-    var factorNegPct = propiedadesMercado / 100;
+    var factorNegPct = Math.max(0, Math.min(100, Number($('#est_factor_negociacion').value) || 0)) / 100;
     var factorPublicarPct = Math.max(0, Math.min(100, Number($('#est_factor_publicar').value) || 0)) / 100;
     var factorNegociacion = valorAsignado * factorNegPct;
     return {
@@ -1680,7 +1686,9 @@
       factorNegociacion: factorNegociacion,
       factorPublicarPct: factorPublicarPct,
       precioCierre: valorAsignado - factorNegociacion,
-      precioSugeridoPublicar: valorAsignado - factorPublicarPct * factorNegociacion,
+      // = precio de cierre + un margen (5% en el Excel original de Gio),
+      // no una resta sobre el valor asignado.
+      precioSugeridoPublicar: (valorAsignado - factorNegociacion) * (1 + factorPublicarPct),
       asesor: (STATE.perfil && STATE.perfil.nombre) || (STATE.session && STATE.session.user.email) || '',
       fecha: new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }),
     };
@@ -1827,7 +1835,7 @@
         '<div class="tarjeta destacada"><div class="lbl">Precio sugerido a publicar</div><div class="num">' + nf.format(Math.round(d.precioSugeridoPublicar)) + '</div></div>' +
         '<div class="tarjeta"><div class="lbl">Precio estimado de cierre</div><div class="num">' + nf.format(Math.round(d.precioCierre)) + '</div></div>' +
       '</div>' +
-      '<p class="nota">Factor de negociación: ' + Math.round(d.factorNegPct * 100) + '% (' + nf.format(Math.round(d.factorNegociacion)) + '), basado en ' + d.propiedadesMercado + ' propiedades similares en el mercado.</p>' +
+      '<p class="nota">Factor de negociación: ' + Math.round(d.factorNegPct * 100) + '% (' + nf.format(Math.round(d.factorNegociacion)) + ').' + (d.propiedadesMercado ? ' Actualmente hay ' + d.propiedadesMercado + ' propiedades similares en el mercado.' : '') + '</p>' +
       '<div class="gf-footer"><span>Estudio realizado por ' + esc(d.asesor) + '</span><span>' + esc(d.fecha) + '</span></div>' +
       '</body></html>';
     var w = window.open('', '_blank');
@@ -2185,6 +2193,7 @@
     $('#est_m2t').addEventListener('input', actualizarResumenEstudio);
     $('#est_homologar').addEventListener('change', function () { recalcularInventarioEstudio(); actualizarPromedioComparablesDOM(); });
     $('#est_propiedades_mercado').addEventListener('input', actualizarResumenEstudio);
+    $('#est_factor_negociacion').addEventListener('input', actualizarResumenEstudio);
     $('#est_factor_publicar').addEventListener('input', actualizarResumenEstudio);
     $('#estAddComparableBtn').addEventListener('click', function () {
       var lista = leerComparablesDesdeDOM();

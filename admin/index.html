@@ -596,16 +596,21 @@
       <button type="button" class="btn btn--ghost btn--sm" id="estAddComparableBtn" style="margin-top:.6rem">+ Agregar comparable</button>
 
       <div class="section-label">Factor de negociación</div>
-      <div class="field-grid">
+      <div class="field-grid-3">
         <div class="field">
           <label for="est_propiedades_mercado">Propiedades similares en el mercado</label>
           <input type="number" id="est_propiedades_mercado" min="0" placeholder="Ej. 10">
-          <div class="field-hint">Cuenta cuántas ves en Inmuebles24, EasyBroker, etc. (no solo las tuyas) — ese número se usa como % de negociación.</div>
+          <div class="field-hint">Solo de referencia (cuántas ves en Inmuebles24, EasyBroker, etc.) — no afecta el cálculo, se anota en las notas del estudio.</div>
         </div>
         <div class="field">
-          <label for="est_factor_publicar">% del factor aplicado al precio de publicación</label>
-          <input type="number" id="est_factor_publicar" min="0" max="100" value="55">
-          <div class="field-hint">55% es lo que Gio usa normalmente — ajústalo si este caso lo requiere.</div>
+          <label for="est_factor_negociacion">Factor de negociación (%)</label>
+          <input type="number" id="est_factor_negociacion" min="0" max="100" placeholder="Ej. 8">
+          <div class="field-hint">% que se le resta al valor asignado para llegar al precio de cierre — Gio lo usa entre 8% y 10% normalmente, ajústalo según el caso.</div>
+        </div>
+        <div class="field">
+          <label for="est_factor_publicar">Margen sobre el precio de cierre (%)</label>
+          <input type="number" id="est_factor_publicar" min="0" max="100" value="5">
+          <div class="field-hint">5% es lo que Gio usa normalmente — se suma al precio de cierre para sugerir el precio de publicación.</div>
         </div>
       </div>
 

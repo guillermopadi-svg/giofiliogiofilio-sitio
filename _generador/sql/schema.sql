@@ -512,8 +512,21 @@ create table if not exists estudios_precio (
 );
 
 alter table estudios_precio add column if not exists m2t numeric not null default 0;
+-- Solo de referencia (ver notas del estudio) -- NO entra en ningun calculo,
+-- tal como funciona en el Excel original de Gio ("Actualmente hay N
+-- propiedades en X" es una nota, no una celda usada en formulas).
 alter table estudios_precio add column if not exists propiedades_mercado int not null default 0;
-alter table estudios_precio add column if not exists factor_publicar numeric not null default 55;
+-- El % que Gio escribe a mano para el factor de negociacion (antes se
+-- calculaba mal como propiedades_mercado/100 -- se corrigio tras revisar
+-- su Excel real: ese numero no tiene relacion con el conteo de arriba).
+alter table estudios_precio add column if not exists factor_negociacion numeric not null default 0;
+-- Margen que se SUMA al precio de cierre para sugerir el precio de
+-- publicacion (antes se restaba del valor asignado -- formula equivocada,
+-- corregida tras revisar el Excel real: factor_publicar = 5% ahi).
+alter table estudios_precio add column if not exists factor_publicar numeric not null default 5;
+-- add column if not exists no cambia el default de una columna que ya
+-- existia (se creo antes con default 55) -- se corrige aparte.
+alter table estudios_precio alter column factor_publicar set default 5;
 -- Homologar (sumar terreno al m2 de construccion) es opcional: solo tiene
 -- sentido cuando el terreno es mucho mas grande que lo construido (ej. un
 -- terreno de 1000 m2 con 300 construidos) -- en departamentos/condominios
