@@ -1648,13 +1648,22 @@
     };
     var btn = $('#estSaveBtn');
     setBusy(btn, true, 'Guardando…');
+    // .select() al final es clave para poder detectar un UPDATE que no
+    // toco ninguna fila (ej. RLS bloqueandolo en silencio por permisos) --
+    // sin esto, Supabase regresa 200 con data vacia y no hay res.error,
+    // asi que se mostraria "Estudio guardado" aunque nada se haya escrito.
     var query = STATE.estudioEditando
-      ? sb.from('estudios_precio').update(data).eq('id', STATE.estudioEditando.id)
-      : sb.from('estudios_precio').insert(Object.assign({ asesor_id: STATE.session.user.id }, data));
+      ? sb.from('estudios_precio').update(data).eq('id', STATE.estudioEditando.id).select()
+      : sb.from('estudios_precio').insert(Object.assign({ asesor_id: STATE.session.user.id }, data)).select();
     query.then(function (res) {
       setBusy(btn, false);
       if (res.error) {
         errBox.textContent = 'No se pudo guardar: ' + res.error.message;
+        errBox.classList.add('show');
+        return;
+      }
+      if (!res.data || !res.data.length) {
+        errBox.textContent = 'No se guardó: no tienes permiso para editar este estudio (o ya no existe). Pídele a un admin que revise tu acceso.';
         errBox.classList.add('show');
         return;
       }
