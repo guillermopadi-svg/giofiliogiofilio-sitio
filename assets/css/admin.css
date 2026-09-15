@@ -325,8 +325,8 @@ button{ font-family:inherit; cursor:pointer; }
 .est-remove-btn{ width:24px; height:24px; border-radius:50%; border:none; background:var(--navy-050); color:var(--ink-50); cursor:pointer; font-size:.9rem; line-height:1; }
 .est-remove-btn:hover{ background:#F3D9D3; color:#B4402F; }
 .est-empty-hint{ font-size:.82rem; color:var(--ink-50); padding:.6rem 0; }
-.est-resumen{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:.8rem; }
-@media (max-width:640px){ .est-resumen{ grid-template-columns:1fr; } }
+.est-resumen{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:.8rem; }
+@media (max-width:640px){ .est-resumen{ grid-template-columns:1fr 1fr; } }
 .est-resumen-card{ background:var(--navy-050); border-radius:var(--r-sm); padding:.8rem .9rem; }
 .est-resumen-card .lbl{ font-size:.68rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-50); }
 .est-resumen-card .num{ font-size:1.15rem; font-weight:700; color:var(--navy); margin-top:.2rem; }

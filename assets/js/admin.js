@@ -27,6 +27,10 @@
     });
   }
   var nf = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 });
+  // Con decimales -- solo para el Estimador (igual que el Excel de Gio,
+  // que nunca redondea sus cifras intermedias). El resto del panel (precios
+  // de propiedades, leads...) sigue usando `nf` sin centavos.
+  var nf2 = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   function toast(msg, type) {
     var wrap = $('#toastWrap');
@@ -1445,32 +1449,36 @@
       var m2t = Number(tr.querySelector('.est-in-m2t').value) || 0;
       var precio = Number(tr.querySelector('.est-in-precio').value) || 0;
       var homo = m2Homologado(m2, m2t);
-      tr.querySelector('.est-in-preciom2').value = (homo && precio) ? nf.format(Math.round(precio / homo)) : '';
+      tr.querySelector('.est-in-preciom2').value = (homo && precio) ? nf2.format(precio / homo) : '';
     });
     var todas = leerComparablesDesdeDOM();
     var validas = todas.filter(function (f) { return f.m2 > 0 && f.precio > 0; }).slice(0, MAX_COMPARABLES_CALCULO);
+    // Los promedios de columna usan las mismas filas "validas" que el
+    // $/m2 (no "todas") -- si no, una fila a medio llenar (ej. sin m2)
+    // arrastraba el promedio hacia abajo sin avisar, y no cuadraba con el
+    // "Promedio (N)" que sí cuenta solo las completas.
     var valoresM2 = validas.map(function (f) { return f.precio / m2Homologado(f.m2, f.m2t); });
     var promedio = promedioSimple(valoresM2);
     var promedioTrim = promedioTruncado(valoresM2);
     var dias = validas.filter(function (f) { return f.dias > 0; }).map(function (f) { return f.dias; });
     ULTIMO_PROMEDIO_COMPARABLES = { promedio: promedio, promedioTrim: promedioTrim, n: validas.length, dias: dias };
     var avgEl = $('#estCompAvgM2');
-    if (avgEl) avgEl.textContent = promedio ? nf.format(Math.round(promedio)) + '/m²' : '—';
+    if (avgEl) avgEl.textContent = promedio ? nf2.format(promedio) + '/m²' : '—';
     var avgRow = $('#estComparablesBody .est-row-avg td:first-child');
-    if (avgRow) avgRow.textContent = 'Promedio (' + validas.length + ')' + (validas.length > 2 ? ' · sin extremos: ' + nf.format(Math.round(promedioTrim)) + '/m²' : '');
+    if (avgRow) avgRow.textContent = 'Promedio (' + validas.length + ')' + (validas.length > 2 ? ' · sin extremos: ' + nf2.format(promedioTrim) + '/m²' : '');
     // Promedio del resto de columnas (m², precio, rec, baños, coch, antig,
     // dias) -- para ver de un vistazo con que estas comparando, igual que
     // el renglon "Promedios" del Excel de Gio.
     function set(id, texto) { var el = document.getElementById(id); if (el) el.textContent = texto; }
-    set('estCompAvgM2c', fmtProm(promedioCampo(todas, 'm2')));
-    set('estCompAvgM2t', fmtProm(promedioCampo(todas, 'm2t')));
-    var promPrecio = promedioCampo(todas, 'precio');
-    set('estCompAvgPrecio', promPrecio ? nf.format(Math.round(promPrecio)) : '—');
-    set('estCompAvgRec', fmtProm(promedioCampo(todas, 'rec')));
-    set('estCompAvgBan', fmtProm(promedioCampo(todas, 'ban')));
-    set('estCompAvgCoch', fmtProm(promedioCampo(todas, 'est')));
-    set('estCompAvgAntig', fmtProm(promedioCampo(todas, 'antig')));
-    set('estCompAvgDias', fmtProm(promedioCampo(todas, 'dias')));
+    set('estCompAvgM2c', fmtProm(promedioCampo(validas, 'm2')));
+    set('estCompAvgM2t', fmtProm(promedioCampo(validas, 'm2t')));
+    var promPrecio = promedioCampo(validas, 'precio');
+    set('estCompAvgPrecio', promPrecio ? nf2.format(promPrecio) : '—');
+    set('estCompAvgRec', fmtProm(promedioCampo(validas, 'rec')));
+    set('estCompAvgBan', fmtProm(promedioCampo(validas, 'ban')));
+    set('estCompAvgCoch', fmtProm(promedioCampo(validas, 'est')));
+    set('estCompAvgAntig', fmtProm(promedioCampo(validas, 'antig')));
+    set('estCompAvgDias', fmtProm(promedioCampo(validas, 'dias')));
     actualizarResumenEstudio();
   }
 
@@ -1524,9 +1532,9 @@
             var d = diasDesde(p.publicado);
             var homo = m2Homologado(p.m2c, p.m2t);
             var precioM2 = homo ? p.precio / homo : 0;
-            return '<tr><td><a href="../' + esc(p.url || '') + '" target="_blank" rel="noopener">' + esc(p.titulo) + '</a></td><td>' + (p.m2c || '—') + '</td><td>' + (p.m2t || '—') + '</td><td>' + nf.format(p.precio) + '</td><td>' + (precioM2 ? nf.format(Math.round(precioM2)) : '—') + '</td><td>' + (d == null ? '—' : d) + '</td></tr>';
+            return '<tr><td><a href="../' + esc(p.url || '') + '" target="_blank" rel="noopener">' + esc(p.titulo) + '</a></td><td>' + (p.m2c || '—') + '</td><td>' + (p.m2t || '—') + '</td><td>' + nf.format(p.precio) + '</td><td>' + (precioM2 ? nf2.format(precioM2) : '—') + '</td><td>' + (d == null ? '—' : d) + '</td></tr>';
           }).join('') +
-          '<tr class="est-row-avg"><td colspan="4">Promedio (' + conHomologado.length + (todoElMatch.length > MAX_COMPARABLES_CALCULO ? ' de ' + todoElMatch.length + ' encontrados, los más cercanos' : '') + ')' + (conHomologado.length > 2 ? ' · sin extremos: ' + nf.format(Math.round(promedioTrim)) + '/m²' : '') + '</td><td>' + (promedio ? nf.format(Math.round(promedio)) + '/m²' : '—') + '</td><td></td></tr>' +
+          '<tr class="est-row-avg"><td colspan="4">Promedio (' + conHomologado.length + (todoElMatch.length > MAX_COMPARABLES_CALCULO ? ' de ' + todoElMatch.length + ' encontrados, los más cercanos' : '') + ')' + (conHomologado.length > 2 ? ' · sin extremos: ' + nf2.format(promedioTrim) + '/m²' : '') + '</td><td>' + (promedio ? nf2.format(promedio) + '/m²' : '—') + '</td><td></td></tr>' +
           '</tbody></table></div>' +
           '<div class="field-hint" style="margin-top:.3rem">*$/m² homologado (construcción + terreno).</div>';
       }
@@ -1565,13 +1573,14 @@
     var precioSugeridoPublicar = precioCierre * (1 + factorPublicarPct);
 
     box.innerHTML = '<div class="est-resumen">' +
-      card('Valor asignado', nf.format(Math.round(valorAsignado)), true) +
-      card('Precio sugerido a publicar', nf.format(Math.round(precioSugeridoPublicar))) +
-      card('Precio estimado de cierre', nf.format(Math.round(precioCierre))) +
+      card('Valor asignado', nf2.format(valorAsignado), true) +
+      card('Factor de negociación (' + Math.round(factorNegPct * 100) + '%)', nf2.format(factorNegociacion)) +
+      card('Precio sugerido a publicar', nf2.format(precioSugeridoPublicar)) +
+      card('Precio estimado de cierre', nf2.format(precioCierre)) +
     '</div>' +
     '<div class="field-hint" style="margin-top:.5rem">' +
-      'Promedio simple $/m²: ' + nf.format(Math.round(promCombinado)) + ' (tu inventario: ' + (promInv ? nf.format(Math.round(promInv)) : '—') + (promComp ? ', externos: ' + nf.format(Math.round(promComp)) : '') + ')' +
-      (factorNegPct ? ' · Factor de negociación: ' + Math.round(factorNegPct * 100) + '% (' + nf.format(Math.round(factorNegociacion)) + ')' : ' · Escribe el % del factor de negociación') +
+      'Promedio simple $/m²: ' + nf2.format(promCombinado) + ' (tu inventario: ' + (promInv ? nf2.format(promInv) : '—') + (promComp ? ', externos: ' + nf2.format(promComp) : '') + ')' +
+      (factorNegPct ? ' · Factor de negociación: ' + Math.round(factorNegPct * 100) + '% (' + nf2.format(factorNegociacion) + ')' : ' · Escribe el % del factor de negociación') +
       (diasProm != null ? ' · Promedio de ' + diasProm + ' días publicados' : '') +
     '</div>';
   }
@@ -1748,21 +1757,22 @@
     var opLabel = d.operacion === 'renta' ? 'Renta' : 'Venta';
     var filas = [];
     filas.push(['Unidades', 'Liga', 'Ubicación', 'Inmueble', 'Operación', 'Metros construcción', 'Metros terreno', 'Metros homologados', 'Precio publicado', 'Precio por metro homologado', 'Habitaciones', 'Baños', 'Cocheras', 'Antigüedad', 'Días publicado']);
+    function r2(v) { return Math.round(v * 100) / 100; }
     d.comparables.forEach(function (c, i) {
       var homo = m2Homologado(c.m2, c.m2t);
-      var pm2 = (homo && c.precio) ? Math.round(c.precio / homo) : '';
+      var pm2 = (homo && c.precio) ? r2(c.precio / homo) : '';
       filas.push([i + 1, c.liga, c.ubicacion, d.tipo, opLabel, c.m2 || '', c.m2t || '', homo || '', c.precio || '', pm2, c.rec || '', c.ban || '', c.est || '', c.antig || '', c.dias || '']);
     });
     filas.push([]);
-    filas.push(['Promedio simple $/m² homologado', '', '', '', '', '', '', Math.round(d.promComp || d.promInv || 0)]);
+    filas.push(['Promedio simple $/m² homologado', '', '', '', '', '', '', r2(d.promComp || d.promInv || 0)]);
     filas.push([]);
     filas.push(['Datos de la propiedad', '', d.colonia, d.tipo, opLabel, d.m2c, d.m2t, d.m2Sujeto]);
     filas.push([]);
-    filas.push(['Valor asignado a la propiedad', '', '', '', '', Math.round(d.valorAsignado)]);
+    filas.push(['Valor asignado a la propiedad', '', '', '', '', r2(d.valorAsignado)]);
     filas.push(['Propiedades similares en el mercado', d.propiedadesMercado]);
-    filas.push(['Factor de negociación', '', '', '', '', Math.round(d.factorNegociacion), '', d.factorNegPct]);
-    filas.push(['Precio sugerido a publicar', '', '', '', '', Math.round(d.precioSugeridoPublicar)]);
-    filas.push(['Precio estimado de cierre', '', '', '', '', Math.round(d.precioCierre)]);
+    filas.push(['Factor de negociación', '', '', '', '', r2(d.factorNegociacion), '', d.factorNegPct]);
+    filas.push(['Precio sugerido a publicar', '', '', '', '', r2(d.precioSugeridoPublicar)]);
+    filas.push(['Precio estimado de cierre', '', '', '', '', r2(d.precioCierre)]);
     filas.push([]);
     filas.push(['Estudio realizado por', d.asesor]);
     filas.push(['Fecha', d.fecha]);
@@ -1792,7 +1802,7 @@
       return (
         '<text x="' + (padL - 10) + '" y="' + (y + barH / 2 + 4) + '" text-anchor="end" font-size="10.5" font-family="Helvetica,Arial,sans-serif" font-weight="' + (esSujeto ? '700' : '400') + '" fill="' + (esSujeto ? '#8C6A2F' : '#4A5468') + '">' + esc(x.label) + '</text>' +
         '<rect x="' + padL + '" y="' + y + '" width="' + w + '" height="' + barH + '" rx="3" fill="' + color + '"></rect>' +
-        '<text x="' + (padL + w + 8) + '" y="' + (y + barH / 2 + 4) + '" font-size="10.5" font-family="Helvetica,Arial,sans-serif" font-weight="700" fill="#071F4A">' + nf.format(Math.round(x.precioM2)) + '</text>'
+        '<text x="' + (padL + w + 8) + '" y="' + (y + barH / 2 + 4) + '" font-size="10.5" font-family="Helvetica,Arial,sans-serif" font-weight="700" fill="#071F4A">' + nf2.format(x.precioM2) + '</text>'
       );
     }).join('');
     return (
@@ -1846,7 +1856,7 @@
       'th,td{ border:1px solid #E4E7EE; padding:.3rem .4rem; text-align:left; overflow-wrap:break-word; }' +
       'th{ background:#071F4A; color:#fff; font-weight:600; }' +
       'tbody tr:nth-child(even){ background:#F7F5F0; }' +
-      '.resumen{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:.7rem; margin-top:.6rem; }' +
+      '.resumen{ display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:.7rem; margin-top:.6rem; }' +
       '.resumen-bloque{ page-break-inside:avoid; break-inside:avoid; }' +
       '.tarjeta{ background:#F2F4F9; border:1px solid #E4E7EE; border-radius:8px; padding:.75rem .85rem; font-family:Helvetica,Arial,sans-serif; }' +
       '.tarjeta.destacada{ background:#FAF5EA; border-color:#D9BE86; }' +
@@ -1863,11 +1873,12 @@
       (filasHtml ? '<h2>Comparables externos</h2><table><thead><tr><th>#</th><th>Ubicación</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m² homolog.</th><th>Rec</th><th>Baños</th><th>Coch</th><th>Antig.</th><th>Días</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' : '') +
       graficoHtml +
       '<div class="resumen-bloque"><h2>Resumen</h2><div class="resumen">' +
-        '<div class="tarjeta"><div class="lbl">Valor asignado</div><div class="num">' + nf.format(Math.round(d.valorAsignado)) + '</div></div>' +
-        '<div class="tarjeta destacada"><div class="lbl">Precio sugerido a publicar</div><div class="num">' + nf.format(Math.round(d.precioSugeridoPublicar)) + '</div></div>' +
-        '<div class="tarjeta"><div class="lbl">Precio estimado de cierre</div><div class="num">' + nf.format(Math.round(d.precioCierre)) + '</div></div>' +
+        '<div class="tarjeta"><div class="lbl">Valor asignado</div><div class="num">' + nf2.format(d.valorAsignado) + '</div></div>' +
+        '<div class="tarjeta"><div class="lbl">Factor de negociación (' + Math.round(d.factorNegPct * 100) + '%)</div><div class="num">' + nf2.format(d.factorNegociacion) + '</div></div>' +
+        '<div class="tarjeta destacada"><div class="lbl">Precio sugerido a publicar</div><div class="num">' + nf2.format(d.precioSugeridoPublicar) + '</div></div>' +
+        '<div class="tarjeta"><div class="lbl">Precio estimado de cierre</div><div class="num">' + nf2.format(d.precioCierre) + '</div></div>' +
       '</div>' +
-      '<p class="nota">Factor de negociación: ' + Math.round(d.factorNegPct * 100) + '% (' + nf.format(Math.round(d.factorNegociacion)) + ').' + (d.propiedadesMercado ? ' Actualmente hay ' + d.propiedadesMercado + ' propiedades similares en el mercado.' : '') + '</p></div>' +
+      '<p class="nota">' + (d.propiedadesMercado ? 'Actualmente hay ' + d.propiedadesMercado + ' propiedades similares en el mercado.' : '') + '</p></div>' +
       '<div class="gf-footer"><span>Estudio realizado por ' + esc(d.asesor) + '</span><span>' + esc(d.fecha) + '</span></div>' +
       '</body></html>';
     var w = window.open('', '_blank');
