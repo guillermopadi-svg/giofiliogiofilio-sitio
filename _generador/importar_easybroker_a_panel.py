@@ -47,6 +47,18 @@ def sb(method, path, body=None):
         sys.exit(f"Supabase respondió {e.code} en {method} {path}: {body_txt[:300]}")
 
 
+def _entero(v):
+    """sync_easybroker.py guarda algunos numeros como float (ej. 535.0 m2 de
+    construccion, tal como los da la API de EasyBroker) -- Postgres rechaza
+    ese texto para una columna `int` ("invalid input syntax for type
+    integer: \"535.0\""), aunque el valor sea un entero exacto. Se redondea
+    y castea aqui para que siempre llegue un entero limpio."""
+    try:
+        return int(round(float(v)))
+    except (TypeError, ValueError):
+        return 0
+
+
 def campos_desde_eb(p):
     """Mapea el dict de data_props_live.py (mismas llaves que arma
     sync_easybroker.py) a las columnas de propiedades_manual."""
@@ -56,12 +68,12 @@ def campos_desde_eb(p):
         tipo=p.get("tipo") or "departamento",
         precio=p.get("precio") or 0,
         colonia_slug=p.get("colonia") or "",
-        rec=p.get("rec") or 0,
-        ban=p.get("ban") or 0,
-        medios=p.get("medios") or 0,
-        est=p.get("est") or 0,
-        m2c=p.get("m2c") or 0,
-        m2t=p.get("m2t") or 0,
+        rec=_entero(p.get("rec")),
+        ban=_entero(p.get("ban")),
+        medios=_entero(p.get("medios")),
+        est=_entero(p.get("est")),
+        m2c=_entero(p.get("m2c")),
+        m2t=_entero(p.get("m2t")),
         descripcion=p.get("descripcion") or "",
         amenidades=p.get("amenidades") or [],
         fotos=[f["card"] for f in (p.get("fotos_real") or []) if f.get("card")],
@@ -72,9 +84,9 @@ def campos_desde_eb(p):
         cp=p.get("cp") or "",
         lat=p.get("lat"),
         lng=p.get("lng"),
-        antig=p.get("antig") or 0,
+        antig=_entero(p.get("antig")),
         piso=p.get("piso") or "",
-        niveles=p.get("niveles") or 0,
+        niveles=_entero(p.get("niveles")),
         badges=p.get("badges") or [],
     )
 
