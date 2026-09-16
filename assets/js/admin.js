@@ -266,6 +266,18 @@
     return 'https://www.giofilio.com/propiedad/' + dedup.join('-') + '-' + idParte + '/';
   }
 
+  // Las fotos de EasyBroker se guardan como ruta relativa a la RAIZ del
+  // sitio (ej. "assets/img/properties/eb-xxx-00-card.jpg", igual que las
+  // usa build.py) -- dentro de /admin/ eso resuelve mal (busca
+  // "admin/assets/..." y da 404), hay que subir un nivel. Las fotos
+  // subidas por un asesor (bucket de Supabase Storage) ya son URL
+  // completas y no se tocan.
+  function fotoSrc(url) {
+    if (!url) return '';
+    if (/^https?:\/\//i.test(url) || url.charAt(0) === '/') return url;
+    return '../' + url;
+  }
+
   function pcardHtml(p) {
     var meta = [];
     if (p.rec) meta.push(p.rec + ' rec');
@@ -275,7 +287,7 @@
     var badge = p.estado === 'disponible'
       ? '<span class="pcard-badge">' + (p.operacion === 'renta' ? 'Renta' : 'Venta') + '</span>'
       : '<span class="pcard-badge borrador">' + (p.estado === 'pausada' ? 'Pausada' : 'Borrador') + '</span>';
-    var foto = (p.fotos && p.fotos[0]) || '';
+    var foto = fotoSrc((p.fotos && p.fotos[0]) || '');
     var togglePausa = p.estado !== 'borrador'
       ? '<button class="btn btn--ghost" data-toggle-pausa="' + p.id + '">' + (p.estado === 'pausada' ? 'Activar' : 'Pausar') + '</button>'
       : '';
@@ -489,7 +501,7 @@
     var strip = $('#photoStrip');
     strip.innerHTML = STATE.fotos.map(function (src, i) {
       return (
-        '<div class="photo-thumb"><img src="' + esc(src) + '" alt="">' +
+        '<div class="photo-thumb"><img src="' + esc(fotoSrc(src)) + '" alt="">' +
           '<button type="button" data-photo-del="' + i + '">&times;</button></div>'
       );
     }).join('') + (STATE._subiendo ? '<div class="photo-thumb photo-thumb--loading">Subiendo…</div>' : '');

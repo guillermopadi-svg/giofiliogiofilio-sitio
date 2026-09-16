@@ -87,6 +87,14 @@ def campos_desde_eb(p):
         antig=_entero(p.get("antig")),
         piso=p.get("piso") or "",
         niveles=_entero(p.get("niveles")),
+        # Sin esto, una propiedad fuera del catalogo de colonias con pagina
+        # propia (fuera de CDMX, o una colonia sin pagina) se pierde por
+        # completo al regenerar el sitio -- ver fetch_manual_props.py.
+        colonia_nombre_real=p.get("colonia_nombre_real") or "",
+        alcaldia_real=p.get("alcaldia_real") or "",
+        estado_real=p.get("estado_real") or "",
+        sin_pagina=bool(p.get("sin_pagina")),
+        fuera_cdmx=bool(p.get("fuera_cdmx")),
         badges=p.get("badges") or [],
     )
 

@@ -201,6 +201,15 @@ alter table propiedades_manual add column if not exists antig int not null defau
 alter table propiedades_manual add column if not exists piso text not null default '';
 alter table propiedades_manual add column if not exists niveles int not null default 0;
 alter table propiedades_manual add column if not exists badges text[] not null default '{}';
+-- Para propiedades de EasyBroker fuera del catalogo de colonias con
+-- pagina propia (fuera de CDMX, o una colonia de CDMX sin pagina) --
+-- sin esto, fetch_manual_props.py no tiene forma de reconstruir su
+-- nombre real y las omite por completo al regenerar el sitio (404).
+alter table propiedades_manual add column if not exists colonia_nombre_real text not null default '';
+alter table propiedades_manual add column if not exists alcaldia_real text not null default '';
+alter table propiedades_manual add column if not exists estado_real text not null default '';
+alter table propiedades_manual add column if not exists sin_pagina boolean not null default false;
+alter table propiedades_manual add column if not exists fuera_cdmx boolean not null default false;
 
 alter table propiedades_manual enable row level security;
 

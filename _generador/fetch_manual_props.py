@@ -12,12 +12,17 @@ Uso:
     export SUPABASE_SERVICE_ROLE_KEY="..."
     python3 fetch_manual_props.py
 """
-import os, sys, json
+import os, re, sys, json, unicodedata
 from datetime import date
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
 from data_colonias_todas import COLONIA_TODAS_BY_SLUG
+
+
+def _slug(s):
+    s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-zA-Z0-9]+", "-", s).strip("-").lower()
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
@@ -86,8 +91,25 @@ def main():
     for row in rows:
         colonia = COLONIA_TODAS_BY_SLUG.get(row.get("colonia_slug"))
         if not colonia:
-            warnings.append(f"{row['id']}: colonia_slug '{row.get('colonia_slug')}' no existe en el catálogo — se omite")
-            continue
+            # No esta en el catalogo de colonias con pagina propia -- normal
+            # para propiedades de EasyBroker fuera de CDMX o en una colonia
+            # sin pagina (ver importar_easybroker_a_panel.py, que guarda
+            # colonia_nombre_real para este caso exacto). Se arma un dict
+            # equivalente al que ya usa sync_easybroker.py en vez de omitir
+            # la propiedad por completo.
+            nombre_real = row.get("colonia_nombre_real")
+            if not nombre_real:
+                warnings.append(f"{row['id']}: colonia_slug '{row.get('colonia_slug')}' no existe en el catálogo y no tiene colonia_nombre_real — se omite")
+                continue
+            colonia = {
+                "slug": row.get("colonia_slug") or _slug(f"{nombre_real}-{row['id']}"),
+                "nombre": nombre_real,
+                "alcaldia_nombre": row.get("alcaldia_real") or "",
+                "alcaldia": row.get("alcaldia_real") or "",
+                "estado": row.get("estado_real") or "",
+                "tiene_pagina": False,  # por definicion: si llegamos aqui, no esta en el catalogo
+                "lat": row.get("lat"), "lng": row.get("lng"), "cp": [],
+            }
 
         tipo = row.get("tipo") if row.get("tipo") in TIPO_VALIDOS else "departamento"
         if row.get("tipo") not in TIPO_VALIDOS:
@@ -131,9 +153,9 @@ def main():
             colonia=colonia["slug"],
             colonia_nombre_real=colonia["nombre"],
             alcaldia_real=colonia["alcaldia_nombre"],
-            estado_real="",
+            estado_real=row.get("estado_real") or "",
             sin_pagina=not colonia["tiene_pagina"],
-            fuera_cdmx=False,
+            fuera_cdmx=bool(row.get("fuera_cdmx")),
             precio=row.get("precio") or 0,
             moneda=row.get("moneda") or "MXN",
             mantenimiento=0,
