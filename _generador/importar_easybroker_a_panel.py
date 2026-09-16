@@ -76,7 +76,11 @@ def campos_desde_eb(p):
         m2t=_entero(p.get("m2t")),
         descripcion=p.get("descripcion") or "",
         amenidades=p.get("amenidades") or [],
-        fotos=[f["card"] for f in (p.get("fotos_real") or []) if f.get("card")],
+        # sync_easybroker.py guarda la ruta SIN extension (el sitio publico
+        # le agrega .jpg/.webp al momento de renderizar) -- el panel solo
+        # sabe pintar un <img src> directo, asi que aqui si necesita la
+        # extension real o la imagen nunca carga.
+        fotos=[f["card"] + ".jpg" for f in (p.get("fotos_real") or []) if f.get("card")],
         destacada=bool(p.get("destacada")),
         estado="disponible",
         moneda=p.get("moneda") or "MXN",
