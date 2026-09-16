@@ -1298,11 +1298,12 @@
 
   function estudioRowHtml(e) {
     var lugar = [TIPO_LABEL_EST[e.tipo] || e.tipo, e.colonia].filter(Boolean).join(' en ');
+    var actualizado = e.actualizado_en ? new Date(e.actualizado_en).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
     return (
       '<div class="task-row" data-open-est="' + e.id + '" style="cursor:pointer">' +
         '<div class="task-body">' +
           '<div class="task-titulo">' + esc(e.nombre || lugar) + ' — ' + (e.operacion === 'renta' ? 'Renta' : 'Venta') + '</div>' +
-          '<div class="task-desc">' + esc(lugar || 'Sin colonia') + (e.m2c ? ' · ' + e.m2c + ' m²' : '') + '</div>' +
+          '<div class="task-desc">' + esc(lugar || 'Sin colonia') + (e.m2c ? ' · ' + e.m2c + ' m²' : '') + (actualizado ? ' · Actualizado ' + actualizado : '') + '</div>' +
         '</div>' +
       '</div>'
     );
