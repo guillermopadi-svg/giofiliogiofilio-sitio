@@ -1744,6 +1744,13 @@
     };
   }
 
+  // "Estudio Renta/Venta <nombre>" -- igual a como Gio nombraba sus propios
+  // archivos de Excel a mano (ej. "Estudio Renta Mauricio Kuri.xlsx").
+  function nombreEstudioCompleto(d) {
+    var opLabel = d.operacion === 'renta' ? 'Renta' : 'Venta';
+    return 'Estudio ' + opLabel + (d.nombre ? ' ' + d.nombre : '');
+  }
+
   function csvEsc(v) {
     var s = String(v == null ? '' : v);
     if (/[",\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
@@ -1787,7 +1794,7 @@
     filas.push(['Estudio realizado por', d.asesor]);
     filas.push(['Fecha', d.fecha]);
     var csv = filas.map(function (fila) { return fila.map(csvEsc).join(','); }).join('\r\n');
-    var nombreArchivo = (d.nombre || 'estudio-precio').replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '.csv';
+    var nombreArchivo = nombreEstudioCompleto(d).replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '.csv';
     descargarArchivo(nombreArchivo, '﻿' + csv, 'text/csv;charset=utf-8;');
   }
 
@@ -1850,7 +1857,7 @@
       }));
     var sujetoGrafico = { label: 'Tu propiedad (sugerido)', precioM2: d.m2Sujeto ? d.precioSugeridoPublicar / d.m2Sujeto : 0 };
     var graficoHtml = graficoPreciosM2Html(itemsGrafico, sujetoGrafico);
-    var html = '<!doctype html><html lang="es-MX"><head><meta charset="utf-8"><title>' + esc(d.nombre) + '</title><style>' +
+    var html = '<!doctype html><html lang="es-MX"><head><meta charset="utf-8"><title>' + esc(nombreEstudioCompleto(d)) + '</title><style>' +
       '@page{ size:letter; margin:1.3cm 1.6cm 1.4cm; }' +
       '*{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }' +
       'html{ background:#fff; }' +
