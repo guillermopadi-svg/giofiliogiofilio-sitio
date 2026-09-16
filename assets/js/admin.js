@@ -256,7 +256,13 @@
       var partes = p.titulo.split(' con ');
       detalleParte = partes[partes.length - 1];
     }
-    var base = slugifyPy((TIPO_LABEL_ADMIN[p.tipo] || p.tipo) + ' ' + coloniaLabel(p.colonia_slug) + ' ' + detalleParte);
+    // Si la colonia no esta en el catalogo de CDMX (fuera de la ciudad, o
+    // una colonia sin pagina propia), coloniaLabel() regresaria el slug
+    // interno tal cual (basura, con palabras/ids de mas) -- para esos casos
+    // el nombre real ya viene guardado en colonia_nombre_real (ver
+    // importar_easybroker_a_panel.py), igual que lo usa prep.py.
+    var nombreColonia = p.colonia_nombre_real || coloniaLabel(p.colonia_slug);
+    var base = slugifyPy((TIPO_LABEL_ADMIN[p.tipo] || p.tipo) + ' ' + nombreColonia + ' ' + detalleParte);
     var visto = {}, dedup = [];
     base.split('-').forEach(function (w) { if (!visto[w]) { visto[w] = true; dedup.push(w); } });
     // Una ficha importada de EasyBroker conserva su easybroker_id (ej.
