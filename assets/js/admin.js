@@ -1298,7 +1298,7 @@
 
   function estudioRowHtml(e) {
     var lugar = [TIPO_LABEL_EST[e.tipo] || e.tipo, e.colonia].filter(Boolean).join(' en ');
-    var actualizado = e.actualizado_en ? new Date(e.actualizado_en).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    var actualizado = e.actualizado_en ? new Date(e.actualizado_en).toLocaleString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
     return (
       '<div class="task-row" data-open-est="' + e.id + '" style="cursor:pointer">' +
         '<div class="task-body">' +
