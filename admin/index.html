@@ -78,7 +78,38 @@
       <div class="stat-card"><div class="num" id="statPausadas">0</div><div class="lbl">Pausadas</div></div>
     </div>
 
+    <div class="prop-toolbar">
+      <input type="search" id="propBuscar" class="prop-buscar" placeholder="Buscar por título, colonia, ID...">
+      <select id="propFiltroOperacion">
+        <option value="">Toda operación</option>
+        <option value="venta">Venta</option>
+        <option value="renta">Renta</option>
+      </select>
+      <select id="propFiltroTipo">
+        <option value="">Todo tipo</option>
+      </select>
+      <select id="propFiltroEstado">
+        <option value="">Todo estado</option>
+        <option value="disponible">Publicada</option>
+        <option value="pausada">Pausada</option>
+        <option value="borrador">Borrador</option>
+      </select>
+      <div class="prop-vista-toggle" role="group" aria-label="Vista">
+        <button type="button" id="propVistaGrid" class="is-active" aria-label="Vista de cuadrícula" title="Cuadrícula">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </button>
+        <button type="button" id="propVistaLista" aria-label="Vista de lista" title="Lista">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg>
+        </button>
+      </div>
+    </div>
+
     <div class="grid" id="grid"></div>
+
+    <div class="empty" id="propFiltroEmptyState" style="display:none">
+      <p>Ninguna propiedad coincide con la búsqueda/filtros.</p>
+      <button class="btn btn--ghost" id="propFiltroLimpiarBtn">Quitar filtros</button>
+    </div>
 
     <div class="empty" id="emptyState" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 9l9-6 9 6v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/><path d="M9 21V12h6v9"/></svg>
@@ -177,7 +208,21 @@
       <button class="btn btn--gold" id="addEstudioBtn">+ Nuevo estudio</button>
     </div>
 
+    <div class="prop-toolbar">
+      <input type="search" id="estBuscar" class="prop-buscar" placeholder="Buscar por nombre, colonia...">
+      <select id="estFiltroOperacion">
+        <option value="">Toda operación</option>
+        <option value="venta">Venta</option>
+        <option value="renta">Renta</option>
+      </select>
+    </div>
+
     <div class="task-list" id="estudiosLista"></div>
+
+    <div class="empty" id="estFiltroEmptyState" style="display:none">
+      <p>Ningún estudio coincide con la búsqueda/filtro.</p>
+      <button class="btn btn--ghost" id="estFiltroLimpiarBtn">Quitar filtros</button>
+    </div>
 
     <div class="empty" id="estudiosEmptyState" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-8"/></svg>

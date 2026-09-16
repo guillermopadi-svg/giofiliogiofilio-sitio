@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null };
+  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null, propVista: 'grid' };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -329,14 +329,64 @@
     });
   }
 
+  var TIPO_LABEL_PROP = { departamento: 'Departamento', casa: 'Casa', 'casa-en-condominio': 'Casa en condominio', penthouse: 'Penthouse', loft: 'Loft', terreno: 'Terreno', oficina: 'Oficina', 'local-comercial': 'Local comercial', desarrollo: 'Desarrollo' };
+
+  // Las opciones de "Tipo" del filtro se arman con lo que de verdad hay en
+  // tus propiedades (no una lista fija) -- asi nunca falta ni sobra un tipo.
+  function llenarFiltroTipoPropiedades() {
+    var sel = $('#propFiltroTipo');
+    var actual = sel.value;
+    var tipos = [];
+    STATE.propiedades.forEach(function (p) { if (p.tipo && tipos.indexOf(p.tipo) === -1) tipos.push(p.tipo); });
+    tipos.sort(function (a, b) { return (TIPO_LABEL_PROP[a] || a).localeCompare(TIPO_LABEL_PROP[b] || b); });
+    sel.innerHTML = '<option value="">Todo tipo</option>' + tipos.map(function (t) {
+      return '<option value="' + esc(t) + '">' + esc(TIPO_LABEL_PROP[t] || t) + '</option>';
+    }).join('');
+    sel.value = tipos.indexOf(actual) !== -1 ? actual : '';
+  }
+
+  function normalizaBusqueda(s) {
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+
+  function filtrarPropiedades() {
+    var texto = normalizaBusqueda($('#propBuscar').value.trim());
+    var operacion = $('#propFiltroOperacion').value;
+    var tipo = $('#propFiltroTipo').value;
+    var estado = $('#propFiltroEstado').value;
+    return STATE.propiedades.filter(function (p) {
+      if (operacion && p.operacion !== operacion) return false;
+      if (tipo && p.tipo !== tipo) return false;
+      if (estado && p.estado !== estado) return false;
+      if (texto) {
+        var haystack = normalizaBusqueda([p.titulo, coloniaLabel(p.colonia_slug), p.id, p.easybroker_id].filter(Boolean).join(' '));
+        if (haystack.indexOf(texto) === -1) return false;
+      }
+      return true;
+    });
+  }
+
+  function hayFiltrosPropiedadesActivos() {
+    return !!($('#propBuscar').value.trim() || $('#propFiltroOperacion').value || $('#propFiltroTipo').value || $('#propFiltroEstado').value);
+  }
+
   function renderGrid() {
     var grid = $('#grid');
+    grid.classList.toggle('is-lista', STATE.propVista === 'lista');
     if (!STATE.propiedades.length) {
       grid.innerHTML = '';
       $('#emptyState').style.display = 'block';
+      $('#propFiltroEmptyState').style.display = 'none';
     } else {
       $('#emptyState').style.display = 'none';
-      grid.innerHTML = STATE.propiedades.map(pcardHtml).join('');
+      var filtradas = filtrarPropiedades();
+      if (!filtradas.length && hayFiltrosPropiedadesActivos()) {
+        grid.innerHTML = '';
+        $('#propFiltroEmptyState').style.display = 'block';
+      } else {
+        $('#propFiltroEmptyState').style.display = 'none';
+        grid.innerHTML = filtradas.map(pcardHtml).join('');
+      }
     }
     renderStats();
   }
@@ -356,6 +406,7 @@
         return;
       }
       STATE.propiedades = res.data || [];
+      llenarFiltroTipoPropiedades();
       renderGrid();
     });
   }
@@ -1309,11 +1360,38 @@
     );
   }
 
+  function filtrarEstudios() {
+    var texto = normalizaBusqueda($('#estBuscar').value.trim());
+    var operacion = $('#estFiltroOperacion').value;
+    return STATE.estudios.filter(function (e) {
+      if (operacion && e.operacion !== operacion) return false;
+      if (texto) {
+        var lugar = [TIPO_LABEL_EST[e.tipo] || e.tipo, e.colonia].filter(Boolean).join(' ');
+        var haystack = normalizaBusqueda([e.nombre, lugar].filter(Boolean).join(' '));
+        if (haystack.indexOf(texto) === -1) return false;
+      }
+      return true;
+    });
+  }
+
   function renderEstudios() {
     var lista = STATE.estudios;
     $('#estudiosEmptyState').style.display = lista.length ? 'none' : 'block';
-    $('#estudiosLista').style.display = lista.length ? 'flex' : 'none';
-    $('#estudiosLista').innerHTML = lista.map(estudioRowHtml).join('');
+    if (!lista.length) {
+      $('#estudiosLista').style.display = 'none';
+      $('#estFiltroEmptyState').style.display = 'none';
+      return;
+    }
+    var filtrados = filtrarEstudios();
+    var hayFiltro = !!($('#estBuscar').value.trim() || $('#estFiltroOperacion').value);
+    if (!filtrados.length && hayFiltro) {
+      $('#estudiosLista').style.display = 'none';
+      $('#estFiltroEmptyState').style.display = 'block';
+    } else {
+      $('#estudiosLista').style.display = 'flex';
+      $('#estFiltroEmptyState').style.display = 'none';
+      $('#estudiosLista').innerHTML = filtrados.map(estudioRowHtml).join('');
+    }
   }
 
   function cargarEstudios() {
@@ -2207,6 +2285,30 @@
     $('#emptyAddBtn').addEventListener('click', function () { openModal(null); });
     $('#addPropBtnFab').addEventListener('click', function () { openModal(null); });
 
+    $('#propBuscar').addEventListener('input', renderGrid);
+    $('#propFiltroOperacion').addEventListener('change', renderGrid);
+    $('#propFiltroTipo').addEventListener('change', renderGrid);
+    $('#propFiltroEstado').addEventListener('change', renderGrid);
+    $('#propFiltroLimpiarBtn').addEventListener('click', function () {
+      $('#propBuscar').value = '';
+      $('#propFiltroOperacion').value = '';
+      $('#propFiltroTipo').value = '';
+      $('#propFiltroEstado').value = '';
+      renderGrid();
+    });
+    $('#propVistaGrid').addEventListener('click', function () {
+      STATE.propVista = 'grid';
+      $('#propVistaGrid').classList.add('is-active');
+      $('#propVistaLista').classList.remove('is-active');
+      renderGrid();
+    });
+    $('#propVistaLista').addEventListener('click', function () {
+      STATE.propVista = 'lista';
+      $('#propVistaLista').classList.add('is-active');
+      $('#propVistaGrid').classList.remove('is-active');
+      renderGrid();
+    });
+
     $('#tabPropiedades').addEventListener('click', function () { setView('propiedades'); });
     $('#tabContactos').addEventListener('click', function () { setView('contactos'); });
     $('#tabTareas').addEventListener('click', function () { setView('tareas'); });
@@ -2233,6 +2335,13 @@
     $('#solExportExcelBtn').addEventListener('click', exportarSolicitudesExcel);
 
     $('#addEstudioBtn').addEventListener('click', function () { abrirEstudioModal(null); });
+    $('#estBuscar').addEventListener('input', renderEstudios);
+    $('#estFiltroOperacion').addEventListener('change', renderEstudios);
+    $('#estFiltroLimpiarBtn').addEventListener('click', function () {
+      $('#estBuscar').value = '';
+      $('#estFiltroOperacion').value = '';
+      renderEstudios();
+    });
     $('#estudiosEmptyAddBtn').addEventListener('click', function () { abrirEstudioModal(null); });
     $('#estudiosLista').addEventListener('click', function (e) {
       var row = e.target.closest && e.target.closest('[data-open-est]');

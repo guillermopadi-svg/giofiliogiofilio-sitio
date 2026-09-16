@@ -161,8 +161,36 @@ button{ font-family:inherit; cursor:pointer; }
 .stat-card .num{ font-family:var(--font-display); font-size:1.7rem; color:var(--navy); }
 .stat-card .lbl{ font-size:.78rem; color:var(--ink-50); text-transform:uppercase; letter-spacing:.06em; margin-top:.2rem; }
 
+/* -------------------------------------------------------------- BUSCADOR / FILTROS */
+.prop-toolbar{ display:flex; flex-wrap:wrap; gap:.6rem; margin-bottom:1.1rem; align-items:center; }
+.prop-buscar{
+  flex:1 1 220px; min-width:180px; padding:.6rem .85rem; border:1.5px solid var(--line);
+  border-radius:var(--r-sm); font-family:inherit; font-size:.88rem; color:var(--ink); background:var(--white);
+}
+.prop-toolbar select{
+  padding:.6rem .7rem; border:1.5px solid var(--line); border-radius:var(--r-sm);
+  font-family:inherit; font-size:.85rem; color:var(--ink); background:var(--white);
+}
+.prop-vista-toggle{ display:inline-flex; border:1.5px solid var(--line); border-radius:var(--r-sm); overflow:hidden; margin-left:auto; }
+.prop-vista-toggle button{
+  display:flex; align-items:center; padding:.5rem .65rem; background:var(--white); border:none;
+  color:var(--ink-50); cursor:pointer; border-left:1px solid var(--line);
+}
+.prop-vista-toggle button:first-child{ border-left:none; }
+.prop-vista-toggle button.is-active{ background:var(--navy); color:#fff; }
+.prop-vista-toggle svg{ width:18px; height:18px; }
+
 /* -------------------------------------------------------------- PROPERTY GRID */
 .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:1.2rem; }
+/* Vista de lista: mismo pcard, solo se acuesta en fila en vez de columna. */
+.grid.is-lista{ grid-template-columns:1fr; gap:.6rem; }
+.grid.is-lista .pcard{ display:flex; flex-direction:row; align-items:stretch; }
+.grid.is-lista .pcard:hover{ transform:none; }
+.grid.is-lista .pcard-media{ aspect-ratio:auto; width:150px; flex-shrink:0; }
+.grid.is-lista .pcard-body{ flex:1; display:flex; flex-direction:column; justify-content:center; padding:.7rem 1rem; }
+.grid.is-lista .pcard-actions{ flex-wrap:wrap; }
+.grid.is-lista .pcard-actions .btn{ flex:0 0 auto; }
+@media (max-width:640px){ .grid.is-lista .pcard{ flex-direction:column; } .grid.is-lista .pcard-media{ width:100%; aspect-ratio:16/9; } }
 .pcard{
   background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden;
   transition:transform .2s var(--ease), box-shadow .2s var(--ease); position:relative;
