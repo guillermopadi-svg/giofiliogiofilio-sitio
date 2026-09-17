@@ -284,16 +284,10 @@
     return '../' + url;
   }
 
-  function pcardHtml(p) {
-    var meta = [];
-    if (p.rec) meta.push(p.rec + ' rec');
-    if (p.ban) meta.push(p.ban + ' baños');
-    if (p.m2c) meta.push(p.m2c + ' m²');
-    if (p.m2t) meta.push(p.m2t + ' m² terreno');
-    var badge = p.estado === 'disponible'
-      ? '<span class="pcard-badge">' + (p.operacion === 'renta' ? 'Renta' : 'Venta') + '</span>'
-      : '<span class="pcard-badge borrador">' + (p.estado === 'pausada' ? 'Pausada' : 'Borrador') + '</span>';
-    var foto = fotoSrc((p.fotos && p.fotos[0]) || '');
+  // Botones y etiqueta de origen son identicos en la tarjeta (pcardHtml) y
+  // en la fila de lista (pcardListHtml) -- se arman una sola vez aqui para
+  // que ambas vistas nunca queden desincronizadas.
+  function pcardAcciones(p) {
     var togglePausa = p.estado !== 'borrador'
       ? '<button class="btn btn--ghost" data-toggle-pausa="' + p.id + '">' + (p.estado === 'pausada' ? 'Activar' : 'Pausar') + '</button>'
       : '';
@@ -317,6 +311,23 @@
         origenBadge = '<span class="pcard-tag" title="Se actualiza solo todos los dias desde EasyBroker">Sincronizado con EasyBroker</span>';
       }
     }
+    return {
+      togglePausa: togglePausa, verLink: verLink, origenBadge: origenBadge, reactivarBtn: reactivarBtn,
+      botones: verLink + togglePausa + '<button class="btn btn--ghost" data-edit="' + p.id + '">Editar</button>' + reactivarBtn + '<button class="btn btn--danger" data-del="' + p.id + '">Eliminar</button>'
+    };
+  }
+
+  function pcardHtml(p) {
+    var meta = [];
+    if (p.rec) meta.push(p.rec + ' rec');
+    if (p.ban) meta.push(p.ban + ' baños');
+    if (p.m2c) meta.push(p.m2c + ' m²');
+    if (p.m2t) meta.push(p.m2t + ' m² terreno');
+    var badge = p.estado === 'disponible'
+      ? '<span class="pcard-badge">' + (p.operacion === 'renta' ? 'Renta' : 'Venta') + '</span>'
+      : '<span class="pcard-badge borrador">' + (p.estado === 'pausada' ? 'Pausada' : 'Borrador') + '</span>';
+    var foto = fotoSrc((p.fotos && p.fotos[0]) || '');
+    var acc = pcardAcciones(p);
     return (
       '<div class="pcard" data-id="' + p.id + '">' +
         '<div class="pcard-media">' + badge +
@@ -326,15 +337,41 @@
           '<div class="pcard-price">' + nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') + '</div>' +
           '<div class="pcard-title">' + esc(p.titulo || 'Sin título') + '</div>' +
           '<div class="pcard-meta"><span>' + esc(coloniaLabel(p.colonia_slug)) + '</span><span>' + meta.join(' · ') + '</span></div>' +
-          (origenBadge ? '<div class="pcard-origen">' + origenBadge + '</div>' : '') +
-          '<div class="pcard-actions">' +
-            verLink +
-            togglePausa +
-            '<button class="btn btn--ghost" data-edit="' + p.id + '">Editar</button>' +
-            reactivarBtn +
-            '<button class="btn btn--danger" data-del="' + p.id + '">Eliminar</button>' +
-          '</div>' +
+          (acc.origenBadge ? '<div class="pcard-origen">' + acc.origenBadge + '</div>' : '') +
+          '<div class="pcard-actions">' + acc.botones + '</div>' +
         '</div>' +
+      '</div>'
+    );
+  }
+
+  // Vista de lista: fila compacta tipo tabla (miniatura chica + una linea de
+  // datos), no la misma tarjeta acostada -- para de verdad ganar densidad
+  // frente a la vista de cuadricula en vez de solo rotarla.
+  function pcardListHtml(p) {
+    var meta = [];
+    if (p.rec) meta.push(p.rec + ' rec');
+    if (p.ban) meta.push(p.ban + ' baños');
+    if (p.m2c) meta.push(p.m2c + ' m²');
+    if (p.m2t) meta.push(p.m2t + ' m² terreno');
+    var badgeTxt = p.estado === 'disponible'
+      ? (p.operacion === 'renta' ? 'Renta' : 'Venta')
+      : (p.estado === 'pausada' ? 'Pausada' : 'Borrador');
+    var badgeClase = p.estado === 'disponible' ? 'prow-badge' : 'prow-badge borrador';
+    var foto = fotoSrc((p.fotos && p.fotos[0]) || '');
+    var acc = pcardAcciones(p);
+    return (
+      '<div class="prow" data-id="' + p.id + '">' +
+        '<div class="prow-media">' + (foto ? '<img src="' + esc(foto) + '" alt="" loading="lazy">' : '') + '</div>' +
+        '<div class="prow-body">' +
+          '<div class="prow-main">' +
+            '<span class="prow-price">' + nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') + '</span>' +
+            '<span class="prow-title">' + esc(p.titulo || 'Sin título') + '</span>' +
+            '<span class="' + badgeClase + '">' + badgeTxt + '</span>' +
+            (acc.origenBadge ? acc.origenBadge : '') +
+          '</div>' +
+          '<div class="prow-meta"><span>' + esc(coloniaLabel(p.colonia_slug)) + '</span>' + meta.map(function (m) { return '<span>' + m + '</span>'; }).join('') + '</div>' +
+        '</div>' +
+        '<div class="prow-actions">' + acc.botones + '</div>' +
       '</div>'
     );
   }
@@ -403,7 +440,8 @@
         $('#propFiltroEmptyState').style.display = 'block';
       } else {
         $('#propFiltroEmptyState').style.display = 'none';
-        grid.innerHTML = filtradas.map(pcardHtml).join('');
+        var renderCard = STATE.propVista === 'lista' ? pcardListHtml : pcardHtml;
+        grid.innerHTML = filtradas.map(renderCard).join('');
       }
     }
     renderStats();
@@ -721,13 +759,12 @@
     $('#viewEstimador').hidden = view !== 'estimador';
     $('#viewDocumentos').hidden = view !== 'documentos';
     $('#viewEquipo').hidden = view !== 'equipo';
-    $('#tabPropiedades').classList.toggle('is-active', view === 'propiedades');
-    $('#tabContactos').classList.toggle('is-active', view === 'contactos');
-    $('#tabTareas').classList.toggle('is-active', view === 'tareas');
-    $('#tabSolicitudes').classList.toggle('is-active', view === 'solicitudes');
-    $('#tabEstimador').classList.toggle('is-active', view === 'estimador');
-    $('#tabDocumentos').classList.toggle('is-active', view === 'documentos');
-    $('#tabEquipo').classList.toggle('is-active', view === 'equipo');
+    ['propiedades', 'contactos', 'tareas', 'solicitudes', 'estimador', 'documentos', 'equipo'].forEach(function (v) {
+      var tab = $('#tab' + v.charAt(0).toUpperCase() + v.slice(1));
+      var activo = view === v;
+      tab.classList.toggle('is-active', activo);
+      tab.setAttribute('aria-selected', String(activo));
+    });
     $('#addPropBtnFab').style.display = view === 'propiedades' && STATE.propiedades.length ? 'inline-flex' : 'none';
     if (view === 'documentos') mostrarDocLanding();
   }
@@ -781,11 +818,28 @@
     );
   }
 
+  function filtrarTareas() {
+    var texto = normalizaBusqueda($('#tareaBuscar').value.trim());
+    if (!texto) return STATE.tareas;
+    return STATE.tareas.filter(function (t) {
+      return normalizaBusqueda([t.titulo, t.descripcion].filter(Boolean).join(' ')).indexOf(texto) !== -1;
+    });
+  }
+
   function renderTareas() {
     var lista = STATE.tareas;
     $('#tareasEmptyState').style.display = lista.length ? 'none' : 'block';
-    $('#tareasLista').style.display = lista.length ? 'flex' : 'none';
-    $('#tareasLista').innerHTML = lista.map(taskRowHtml).join('');
+    if (lista.length) {
+      var filtradas = filtrarTareas();
+      var hayBusqueda = !!$('#tareaBuscar').value.trim();
+      $('#tareaFiltroEmptyState').style.display = !filtradas.length && hayBusqueda ? 'block' : 'none';
+      $('#tareasLista').style.display = filtradas.length ? 'flex' : 'none';
+      $('#tareasLista').innerHTML = filtradas.map(taskRowHtml).join('');
+    } else {
+      $('#tareaFiltroEmptyState').style.display = 'none';
+      $('#tareasLista').style.display = 'none';
+      $('#tareasLista').innerHTML = '';
+    }
     var pendientes = lista.filter(function (t) { return t.estado === 'pendiente'; });
     $('#statTareasPendientes').textContent = pendientes.length;
     $('#statTareasVencidas').textContent = pendientes.filter(tareaVencidaP).length;
@@ -898,12 +952,29 @@
     'local-comercial': 'Local comercial', desarrollo: 'Desarrollo',
   };
 
+  function filtrarSolicitudesLista() {
+    var texto = normalizaBusqueda($('#solBuscar').value.trim());
+    if (!texto) return STATE.solicitudes;
+    return STATE.solicitudes.filter(function (s) {
+      return normalizaBusqueda([s.nombre, s.apellido, s.colonia, s.alcaldia].filter(Boolean).join(' ')).indexOf(texto) !== -1;
+    });
+  }
+
   function renderSolicitudes() {
     var lista = STATE.solicitudes;
     $('#solicitudesEmptyState').style.display = lista.length ? 'none' : 'block';
     $('#altaLinkTexto').textContent = location.origin + '/alta-propiedad/';
-    $('#solicitudesLista').style.display = lista.length ? 'flex' : 'none';
-    $('#solicitudesLista').innerHTML = lista.map(solRowHtml).join('');
+    if (lista.length) {
+      var filtradas = filtrarSolicitudesLista();
+      var hayBusqueda = !!$('#solBuscar').value.trim();
+      $('#solFiltroEmptyState').style.display = !filtradas.length && hayBusqueda ? 'block' : 'none';
+      $('#solicitudesLista').style.display = filtradas.length ? 'flex' : 'none';
+      $('#solicitudesLista').innerHTML = filtradas.map(solRowHtml).join('');
+    } else {
+      $('#solFiltroEmptyState').style.display = 'none';
+      $('#solicitudesLista').style.display = 'none';
+      $('#solicitudesLista').innerHTML = '';
+    }
     var nuevas = lista.filter(function (s) { return s.estado === 'nueva'; });
     $('#statSolicitudesNuevas').textContent = nuevas.length;
     $('#statSolicitudesRevisadas').textContent = lista.filter(function (s) { return s.estado === 'revisada' || s.estado === 'publicada'; }).length;
@@ -2069,10 +2140,24 @@
     );
   }
 
+  function filtrarEquipoLista() {
+    var texto = normalizaBusqueda($('#equipoBuscar').value.trim());
+    if (!texto) return { equipo: STATE.equipo, invitaciones: STATE.invitaciones };
+    var coincide = function (nombre, email) { return normalizaBusqueda([nombre, email].filter(Boolean).join(' ')).indexOf(texto) !== -1; };
+    return {
+      equipo: STATE.equipo.filter(function (p) { return coincide(p.nombre, p.email); }),
+      invitaciones: STATE.invitaciones.filter(function (inv) { return coincide(inv.nombre, inv.email); }),
+    };
+  }
+
   function renderEquipo() {
+    var filtrado = filtrarEquipoLista();
+    var hayBusqueda = !!$('#equipoBuscar').value.trim();
+    var sinResultados = hayBusqueda && !filtrado.equipo.length && !filtrado.invitaciones.length;
+    $('#equipoFiltroEmptyState').style.display = sinResultados ? 'block' : 'none';
     $('#equipoLista').innerHTML =
-      STATE.equipo.map(teamRowHtml).join('') +
-      STATE.invitaciones.map(invitacionRowHtml).join('');
+      filtrado.equipo.map(teamRowHtml).join('') +
+      filtrado.invitaciones.map(invitacionRowHtml).join('');
     $('#statAsesoresActivos').textContent = STATE.equipo.filter(function (p) { return p.activo; }).length;
     $('#statAsesoresInactivos').textContent = STATE.equipo.filter(function (p) { return !p.activo; }).length;
     $('#statInvitacionesPendientes').textContent = STATE.invitaciones.length;
@@ -2325,6 +2410,22 @@
       $('#propVistaLista').classList.add('is-active');
       $('#propVistaGrid').classList.remove('is-active');
       renderGrid();
+    });
+
+    $('#tareaBuscar').addEventListener('input', renderTareas);
+    $('#tareaFiltroLimpiarBtn').addEventListener('click', function () {
+      $('#tareaBuscar').value = '';
+      renderTareas();
+    });
+    $('#solBuscar').addEventListener('input', renderSolicitudes);
+    $('#solFiltroLimpiarBtn').addEventListener('click', function () {
+      $('#solBuscar').value = '';
+      renderSolicitudes();
+    });
+    $('#equipoBuscar').addEventListener('input', renderEquipo);
+    $('#equipoFiltroLimpiarBtn').addEventListener('click', function () {
+      $('#equipoBuscar').value = '';
+      renderEquipo();
     });
 
     $('#tabPropiedades').addEventListener('click', function () { setView('propiedades'); });

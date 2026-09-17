@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="../assets/css/admin.css">
+<link rel="stylesheet" href="../assets/css/admin.css?v=2">
 </head>
 <body>
 
@@ -35,31 +35,31 @@
 <!-- ---------------------------------------------------------- APP ---------------------------------------------------------- -->
 <div class="app" id="app">
   <header class="topbar">
-    <div class="topbar-brand">
-      <img src="../assets/img/brand/isotipo-gf.png" alt="Gio Filio">
-      <span>Panel de asesores</span>
+    <div class="topbar-top">
+      <div class="topbar-brand">
+        <img src="../assets/img/brand/isotipo-gf.png" alt="Gio Filio">
+        <div class="topbar-brand-text">
+          <span class="topbar-brand-name">Panel de asesores</span>
+          <span class="topbar-greeting"><span id="greetingSaludo">Hola</span> <span id="greetingMsg"></span></span>
+        </div>
+      </div>
+      <div class="topbar-user">
+        <div class="avatar" id="userAvatar">G</div>
+        <span id="userName">Asesor</span>
+        <button class="btn btn--ghost btn--sm" id="logoutBtn">Cerrar sesión</button>
+      </div>
     </div>
-    <div class="topbar-user">
-      <div class="avatar" id="userAvatar">G</div>
-      <span id="userName">Asesor</span>
-      <button class="btn btn--ghost btn--sm" id="logoutBtn">Cerrar sesión</button>
-    </div>
+
+    <nav class="tabbar" role="tablist" aria-label="Secciones del panel">
+      <button type="button" class="tabbar-btn is-active" id="tabPropiedades" data-view="propiedades" role="tab" aria-selected="true">Propiedades</button>
+      <button type="button" class="tabbar-btn" id="tabContactos" data-view="contactos" role="tab" aria-selected="false">Contactos<span class="tabbar-badge" id="tabContactosBadge" hidden>0</span></button>
+      <button type="button" class="tabbar-btn" id="tabTareas" data-view="tareas" role="tab" aria-selected="false">Tareas<span class="tabbar-badge" id="tabTareasBadge" hidden>0</span></button>
+      <button type="button" class="tabbar-btn" id="tabSolicitudes" data-view="solicitudes" role="tab" aria-selected="false">Solicitudes<span class="tabbar-badge" id="tabSolicitudesBadge" hidden>0</span></button>
+      <button type="button" class="tabbar-btn" id="tabEstimador" data-view="estimador" role="tab" aria-selected="false">Estimador</button>
+      <button type="button" class="tabbar-btn" id="tabDocumentos" data-view="documentos" role="tab" aria-selected="false">Documentos</button>
+      <button type="button" class="tabbar-btn" id="tabEquipo" data-view="equipo" role="tab" aria-selected="false" hidden>Equipo</button>
+    </nav>
   </header>
-
-  <div class="greeting-bar">
-    <h2 id="greetingSaludo">Hola</h2>
-    <p id="greetingMsg"></p>
-  </div>
-
-  <nav class="tabbar">
-    <button type="button" class="tabbar-btn is-active" id="tabPropiedades" data-view="propiedades">Propiedades</button>
-    <button type="button" class="tabbar-btn" id="tabContactos" data-view="contactos">Contactos<span class="tabbar-badge" id="tabContactosBadge" hidden>0</span></button>
-    <button type="button" class="tabbar-btn" id="tabTareas" data-view="tareas">Tareas<span class="tabbar-badge" id="tabTareasBadge" hidden>0</span></button>
-    <button type="button" class="tabbar-btn" id="tabSolicitudes" data-view="solicitudes">Solicitudes<span class="tabbar-badge" id="tabSolicitudesBadge" hidden>0</span></button>
-    <button type="button" class="tabbar-btn" id="tabEstimador" data-view="estimador">Estimador</button>
-    <button type="button" class="tabbar-btn" id="tabDocumentos" data-view="documentos">Documentos</button>
-    <button type="button" class="tabbar-btn" id="tabEquipo" data-view="equipo" hidden>Equipo</button>
-  </nav>
 
   <main class="shell" id="viewPropiedades">
     <div class="shell-head">
@@ -166,7 +166,16 @@
       <div class="stat-card"><div class="num" id="statTareasHechas">0</div><div class="lbl">Hechas</div></div>
     </div>
 
+    <div class="prop-toolbar">
+      <input type="search" id="tareaBuscar" class="prop-buscar" placeholder="Buscar por título o notas...">
+    </div>
+
     <div class="task-list" id="tareasLista"></div>
+
+    <div class="empty" id="tareaFiltroEmptyState" style="display:none">
+      <p>Ninguna tarea coincide con la búsqueda.</p>
+      <button class="btn btn--ghost" id="tareaFiltroLimpiarBtn">Quitar búsqueda</button>
+    </div>
 
     <div class="empty" id="tareasEmptyState" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -190,7 +199,16 @@
       <div class="stat-card"><div class="num" id="statSolicitudesTotal">0</div><div class="lbl">Total</div></div>
     </div>
 
+    <div class="prop-toolbar">
+      <input type="search" id="solBuscar" class="prop-buscar" placeholder="Buscar por nombre, colonia...">
+    </div>
+
     <div class="task-list" id="solicitudesLista"></div>
+
+    <div class="empty" id="solFiltroEmptyState" style="display:none">
+      <p>Ninguna solicitud coincide con la búsqueda.</p>
+      <button class="btn btn--ghost" id="solFiltroLimpiarBtn">Quitar búsqueda</button>
+    </div>
 
     <div class="empty" id="solicitudesEmptyState" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -377,7 +395,16 @@
       </div>
     </div>
 
+    <div class="prop-toolbar">
+      <input type="search" id="equipoBuscar" class="prop-buscar" placeholder="Buscar por nombre o correo...">
+    </div>
+
     <div class="team-list" id="equipoLista"></div>
+
+    <div class="empty" id="equipoFiltroEmptyState" style="display:none">
+      <p>Nadie coincide con la búsqueda.</p>
+      <button class="btn btn--ghost" id="equipoFiltroLimpiarBtn">Quitar búsqueda</button>
+    </div>
   </main>
 
   <button class="btn btn--gold fab" id="addPropBtnFab" style="display:none">+ Nueva propiedad</button>
@@ -685,7 +712,7 @@
 <script src="../assets/js/vendor/supabase.js"></script>
 <script src="../assets/js/vendor/heic2any.min.js"></script>
 <script src="../assets/js/vendor/exceljs.min.js"></script>
-<script src="../assets/js/admin-config.js"></script>
-<script src="../assets/js/admin.js"></script>
+<script src="../assets/js/admin-config.js?v=2"></script>
+<script src="../assets/js/admin.js?v=2"></script>
 </body>
 </html>
