@@ -1240,6 +1240,8 @@
     var nombreContacto = [s.nombre, s.apellido].filter(Boolean).join(' ');
     var btn = $('#solCrearEstudioBtn');
     setBusy(btn, true, 'Creando…');
+    var notas = 'Generado desde la solicitud de alta de ' + (nombreContacto || 'un propietario') + ' (' + tipoLabel + ' en ' + opLabel + (s.colonia ? ', ' + s.colonia : '') + ').';
+    if (s.descripcion) notas += '\n\nComentarios del propietario: ' + s.descripcion;
     sb.from('estudios_precio').insert({
       asesor_id: STATE.session.user.id,
       nombre: nombreContacto || (tipoLabel + ' en ' + opLabel),
@@ -1249,7 +1251,11 @@
       m2c: s.m2c || 0,
       m2t: s.m2t || 0,
       solicitud_id: s.id,
-      notas: 'Generado desde la solicitud de alta de ' + (nombreContacto || 'un propietario') + ' (' + tipoLabel + ' en ' + opLabel + (s.colonia ? ', ' + s.colonia : '') + ').',
+      notas: notas,
+      // Solo de referencia dentro del estudio (ver abrirEstudioModal) --
+      // nunca se incluyen en el PDF exportado.
+      fotos: s.fotos || [],
+      homologar_m2: false,
     }).then(function (res) {
       setBusy(btn, false);
       if (res.error) { toast('No se pudo crear el estudio: ' + res.error.message, 'err'); return; }
@@ -1540,11 +1546,6 @@
     return (Number(m2c) || 0) + (homologar ? (Number(m2t) || 0) : 0);
   }
 
-  // Tipos donde el terreno normalmente no aplica (departamentos, condominios,
-  // oficinas...) -- se usa solo para decidir el estado inicial del checkbox
-  // de homologar en un estudio nuevo, el asesor lo puede cambiar despues.
-  var TIPOS_SIN_TERRENO_RELEVANTE = { departamento: true, 'casa-en-condominio': true, penthouse: true, loft: true, oficina: true, 'local-comercial': true };
-
   function estFilaComparableHtml(c, i) {
     c = c || {};
     var homo = m2Homologado(c.m2, c.m2t);
@@ -1781,11 +1782,20 @@
     $('#est_colonia').value = e ? (e.colonia || '') : '';
     $('#est_m2c').value = e && e.m2c ? e.m2c : '';
     $('#est_m2t').value = e && e.m2t ? e.m2t : '';
-    $('#est_homologar').checked = e ? (e.homologar_m2 !== false) : !TIPOS_SIN_TERRENO_RELEVANTE[$('#est_tipo').value];
+    // Gio pidio que en un estudio nuevo siempre empiece apagado, sin
+    // importar el tipo -- lo activa a mano solo en el caso puntual donde
+    // el terreno es mucho mas grande que lo construido. Un estudio ya
+    // guardado respeta el valor que tenga (el asesor pudo haberlo prendido).
+    $('#est_homologar').checked = e ? (e.homologar_m2 !== false) : false;
     $('#est_propiedades_mercado').value = e && e.propiedades_mercado ? e.propiedades_mercado : '';
     $('#est_factor_negociacion').value = e && e.factor_negociacion ? e.factor_negociacion : '';
     $('#est_factor_publicar').value = e && e.factor_publicar != null ? e.factor_publicar : 5;
     $('#est_notas').value = e ? (e.notas || '') : '';
+    var fotosRef = (e && e.fotos) || [];
+    $('#estFotosReferenciaBox').hidden = !fotosRef.length;
+    $('#estFotosReferencia').innerHTML = fotosRef.map(function (u) {
+      return '<div class="photo-thumb"><img src="' + esc(u) + '" alt=""></div>';
+    }).join('');
     setOperacionEstudio(e ? e.operacion : 'venta');
     renderComparablesTable((e && e.comparables) || []);
     $('#estDeleteBtn').style.display = e ? 'inline-flex' : 'none';

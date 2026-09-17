@@ -542,6 +542,12 @@ alter table estudios_precio alter column factor_publicar set default 5;
 -- no suele aplicar. Default true para no cambiar el comportamiento de los
 -- estudios que ya existian antes de esta columna.
 alter table estudios_precio add column if not exists homologar_m2 boolean not null default true;
+-- Cuando el estudio nace de una solicitud de alta (ver
+-- crearEstudioDeSolicitud en admin.js), se copian aqui las fotos que el
+-- propietario subio en el formulario publico -- solo para que el asesor
+-- las vea de referencia dentro del estudio, NUNCA se incluyen en el PDF
+-- exportado (ese va al cliente, no lleva fotos sin curar del propietario).
+alter table estudios_precio add column if not exists fotos jsonb not null default '[]'::jsonb;
 
 alter table estudios_precio enable row level security;
 
