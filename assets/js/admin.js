@@ -1908,6 +1908,7 @@
       precioSugeridoPublicar: (valorAsignado - factorNegociacion) * (1 + factorPublicarPct),
       asesor: (STATE.perfil && STATE.perfil.nombre) || (STATE.session && STATE.session.user.email) || '',
       fecha: new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }),
+      notas: $('#est_notas').value.trim(),
     };
   }
 
@@ -1960,6 +1961,7 @@
     filas.push([]);
     filas.push(['Estudio realizado por', d.asesor]);
     filas.push(['Fecha', d.fecha]);
+    if (d.notas) filas.push(['Notas', d.notas]);
     var csv = filas.map(function (fila) { return fila.map(csvEsc).join(','); }).join('\r\n');
     var nombreArchivo = nombreEstudioCompleto(d).replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '.csv';
     descargarArchivo(nombreArchivo, '﻿' + csv, 'text/csv;charset=utf-8;');
@@ -2054,7 +2056,9 @@
       '<h1>' + esc(d.nombre) + '</h1>' +
       '<p class="sub">' + esc(d.tipo) + ' en ' + opLabel + (d.colonia ? ' — ' + esc(d.colonia) : '') + (d.m2Sujeto ? ' · ' + d.m2c + ' m² constr.' + (d.m2t ? ' + ' + d.m2t + ' m² terreno' : '') : '') + '</p>' +
       inventarioHtml +
-      (filasHtml ? '<h2>Comparables externos</h2><table><thead><tr><th>#</th><th>Ubicación</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m² homolog.</th><th>Rec</th><th>Baños</th><th>Coch</th><th>Antig.</th><th>Días</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' : '') +
+      (filasHtml ? '<h2>Comparables externos</h2><table><thead><tr><th>#</th><th>Ubicación</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m² homolog.</th>' +
+        (ocultarHabitablePdf ? '' : '<th>Rec</th><th>Baños</th>') +
+        '<th>Coch</th><th>Antig.</th><th>Días</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' : '') +
       graficoHtml +
       '<div class="resumen-bloque"><h2>Resumen</h2><div class="resumen">' +
         '<div class="tarjeta"><div class="lbl">Valor asignado</div><div class="num">' + nf2.format(d.valorAsignado) + '</div></div>' +
@@ -2062,7 +2066,9 @@
         '<div class="tarjeta destacada"><div class="lbl">Precio sugerido a publicar</div><div class="num">' + nf2.format(d.precioSugeridoPublicar) + '</div></div>' +
         '<div class="tarjeta"><div class="lbl">Precio estimado de cierre</div><div class="num">' + nf2.format(d.precioCierre) + '</div></div>' +
       '</div>' +
-      '<p class="nota">' + (d.propiedadesMercado ? 'Actualmente hay ' + d.propiedadesMercado + ' propiedades similares en el mercado.' : '') + '</p></div>' +
+      '<p class="nota">' + (d.propiedadesMercado ? 'Actualmente hay ' + d.propiedadesMercado + ' propiedades similares en el mercado.' : '') + '</p>' +
+      (d.notas ? '<p class="nota">' + esc(d.notas).replace(/\n/g, '<br>') + '</p>' : '') +
+      '</div>' +
       '<div class="gf-footer"><span>Estudio realizado por ' + esc(d.asesor) + '</span><span>' + esc(d.fecha) + '</span></div>' +
       '</body></html>';
     var w = window.open('', '_blank');
