@@ -89,10 +89,15 @@ $$;
 
 grant execute on function is_activo() to authenticated;
 
+-- Antes solo veias tu propio perfil (o todos si eras admin) -- se abrio a
+-- "cualquier activo ve a todo el equipo" porque el @mencionar en
+-- tarea_comentarios necesita poder listar/nombrar a cualquier compañero,
+-- no solo a uno mismo.
 drop policy if exists "cada quien lee su propio perfil, admin lee todos" on perfiles;
-create policy "cada quien lee su propio perfil, admin lee todos"
+drop policy if exists "cualquier activo ve a todo el equipo, admin ve todos" on perfiles;
+create policy "cualquier activo ve a todo el equipo, admin ve todos"
   on perfiles for select
-  using (auth.uid() = id or is_admin());
+  using (is_activo() or is_admin() or auth.uid() = id);
 
 drop policy if exists "cada quien edita su propio perfil" on perfiles;
 drop policy if exists "cada quien edita su propio perfil, admin edita cualquiera" on perfiles;
@@ -359,10 +364,16 @@ alter table tareas enable row level security;
 
 grant select, insert, update, delete on tareas to authenticated;
 
+-- Las tareas eran privadas (solo dueño + admin) hasta que se agrego el
+-- seguimiento por comentarios/menciones entre asesores -- para que alguien
+-- pueda comentar/dar seguimiento en una tarea de otro, primero necesita
+-- poder verla, asi que ahora es un pipeline compartido de todo el equipo
+-- activo (ver tarea_comentarios abajo).
 drop policy if exists "cada quien ve y gestiona sus propias tareas, admin ve todas" on tareas;
-create policy "cada quien ve y gestiona sus propias tareas, admin ve todas"
+drop policy if exists "cualquier asesor activo ve todas las tareas del equipo" on tareas;
+create policy "cualquier asesor activo ve todas las tareas del equipo"
   on tareas for select
-  using (is_activo() and (asesor_id = auth.uid() or is_admin()));
+  using (is_activo());
 
 drop policy if exists "cada quien crea sus propias tareas" on tareas;
 create policy "cada quien crea sus propias tareas"
@@ -383,6 +394,75 @@ drop trigger if exists on_tarea_updated on tareas;
 create trigger on_tarea_updated
   before update on tareas
   for each row execute function set_actualizado_en();
+
+-- ------------------------------------------------------- tarea_comentarios
+-- Hilo de seguimiento tipo Slack debajo de cada tarea -- cualquier asesor
+-- activo puede comentar en cualquier tarea (ya son visibles a todo el
+-- equipo, ver policy de select en tareas arriba). `menciones` guarda los
+-- ids de perfiles mencionados con @; `leido_por` guarda quien de esos
+-- mencionados ya vio el comentario (asi se calcula el badge de "@menciones
+-- sin leer" sin necesitar tiempo real, solo se recalcula al cargar/entrar).
+create table if not exists tarea_comentarios (
+  id uuid primary key default gen_random_uuid(),
+  tarea_id uuid not null references tareas(id) on delete cascade,
+  autor_id uuid not null references auth.users(id) on delete cascade,
+  texto text not null,
+  menciones uuid[] not null default '{}',
+  leido_por uuid[] not null default '{}',
+  creado_en timestamptz not null default now()
+);
+
+alter table tarea_comentarios enable row level security;
+
+grant select, insert, update, delete on tarea_comentarios to authenticated;
+
+drop policy if exists "cualquier asesor activo ve los comentarios" on tarea_comentarios;
+create policy "cualquier asesor activo ve los comentarios"
+  on tarea_comentarios for select
+  using (is_activo());
+
+drop policy if exists "cualquier asesor activo comenta" on tarea_comentarios;
+create policy "cualquier asesor activo comenta"
+  on tarea_comentarios for insert
+  with check (is_activo() and autor_id = auth.uid());
+
+-- El UPDATE solo existe para que un mencionado se agregue a si mismo en
+-- leido_por (marcar la mencion como vista) -- el trigger de abajo bloquea
+-- cualquier intento de tocar el texto/autor/menciones ya guardados.
+drop policy if exists "cualquier asesor activo marca como leido" on tarea_comentarios;
+create policy "cualquier asesor activo marca como leido"
+  on tarea_comentarios for update
+  using (is_activo())
+  with check (is_activo());
+
+drop policy if exists "cada quien borra su comentario, admin cualquiera" on tarea_comentarios;
+create policy "cada quien borra su comentario, admin cualquiera"
+  on tarea_comentarios for delete
+  using (is_activo() and (autor_id = auth.uid() or is_admin()));
+
+-- Sin esto, la policy de update de arriba (necesaria para que cualquiera
+-- pueda marcar una mencion como leida) tambien dejaria editar el texto de
+-- un comentario ajeno via la REST API directo -- este trigger corre para
+-- TODO update sin importar la policy y tira error si algo aparte de
+-- leido_por esta cambiando.
+create or replace function proteger_comentario_tarea()
+returns trigger as $$
+begin
+  if new.texto is distinct from old.texto
+    or new.autor_id is distinct from old.autor_id
+    or new.tarea_id is distinct from old.tarea_id
+    or new.menciones is distinct from old.menciones
+    or new.creado_en is distinct from old.creado_en then
+    raise exception 'un comentario ya guardado no se puede editar, solo marcar como leido';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+drop trigger if exists on_tarea_comentario_updated on tarea_comentarios;
+create trigger on_tarea_comentario_updated
+  before update on tarea_comentarios
+  for each row execute function proteger_comentario_tarea();
 
 -- ------------------------------------------------------------ solicitudes_alta
 -- Formulario público de alta de propiedad (/alta-propiedad/) -- lo llena

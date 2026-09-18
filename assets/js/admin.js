@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null, propVista: 'grid' };
+  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null, propVista: 'grid', comentariosPorTarea: {}, tareasAbiertas: {}, tareasConMencionSinLeer: {} };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -157,7 +157,18 @@
     cargarTareas();
     cargarSolicitudes();
     cargarEstudios();
+    cargarMencionesSinLeer();
     if (esAdmin) cargarEquipo();
+    else cargarEquipoBasico();
+  }
+
+  // Solo id/nombre/email/activo -- lo necesita cualquiera (no solo admin)
+  // para poder @mencionar a un compañero en un comentario de tarea.
+  function cargarEquipoBasico() {
+    sb.from('perfiles').select('id,nombre,email,activo').eq('activo', true).then(function (res) {
+      if (res.error) { console.warn('[Panel] no se pudo cargar el equipo:', res.error.message); return; }
+      STATE.equipo = res.data || [];
+    });
   }
 
   function showGate() {
@@ -804,25 +815,223 @@
     return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
   }
 
+  // Las tareas son un pipeline del equipo (ver cargarTareas) -- resuelve el
+  // id del dueño a un nombre para mostrarlo, y lo mismo para @menciones.
+  function nombrePerfil(id) {
+    var p = (STATE.equipo || []).filter(function (x) { return x.id === id; })[0];
+    if (p) return p.nombre || p.email || 'Alguien';
+    if (STATE.perfil && STATE.perfil.id === id) return STATE.perfil.nombre || 'Tú';
+    return 'Alguien';
+  }
+
   function taskRowHtml(t) {
     var vencida = tareaVencidaP(t);
     var hecha = t.estado === 'hecha';
     var venceTexto = t.vence ? formatFechaCorta(t.vence) : '';
+    var esMia = STATE.session && t.asesor_id === STATE.session.user.id;
+    var abierto = !!STATE.tareasAbiertas[t.id];
+    var comentarios = STATE.comentariosPorTarea[t.id];
+    var tieneMencionSinLeer = !!STATE.tareasConMencionSinLeer[t.id];
     return (
+      '<div class="task-row-wrap">' +
       '<div class="task-row' + (hecha ? ' is-hecha' : '') + '">' +
         '<button type="button" class="task-check' + (hecha ? ' is-checked' : '') + '" data-toggle-tarea="' + t.id + '" title="' + (hecha ? 'Marcar como pendiente' : 'Marcar como hecha') + '">' +
           (hecha ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>' : '') +
         '</button>' +
         '<div class="task-body">' +
-          '<div class="task-titulo">' + esc(t.titulo) + '</div>' +
+          '<div class="task-titulo">' + esc(t.titulo) + (esMia ? '' : ' <span class="task-de">· ' + esc(nombrePerfil(t.asesor_id)) + '</span>') + '</div>' +
           (t.descripcion ? '<div class="task-desc">' + esc(t.descripcion) + '</div>' : '') +
         '</div>' +
         (venceTexto ? '<span class="task-vence' + (vencida ? ' is-vencida' : '') + '">' + (vencida ? 'Venció ' : '') + venceTexto + '</span>' : '') +
+        '<button type="button" class="task-hilo-btn' + (abierto ? ' is-active' : '') + '" data-hilo-tarea="' + t.id + '" title="Comentarios">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>' +
+          (comentarios ? '<span class="task-hilo-count">' + comentarios.length + '</span>' : '') +
+          (tieneMencionSinLeer ? '<span class="task-hilo-dot" title="Te mencionaron"></span>' : '') +
+        '</button>' +
         '<button type="button" class="task-del" data-del-tarea="' + t.id + '" title="Eliminar">' +
           '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>' +
         '</button>' +
+      '</div>' +
+      '<div class="task-thread" id="hilo-' + t.id + '"' + (abierto ? '' : ' hidden') + '>' + (abierto ? hiloTareaHtml(t.id) : '') + '</div>' +
       '</div>'
     );
+  }
+
+  // -------------------------------------------------------- HILO DE TAREA
+  // Comentarios estilo Slack debajo de cada tarea, con @menciones simples:
+  // se detecta "@" + texto sin espacio al final del textarea y se muestra
+  // un dropdown con los compañeros que hacen match; al enviar, se vuelve a
+  // escanear el texto final contra los nombres del equipo para armar el
+  // arreglo de ids mencionados (ver extraerMenciones).
+  function iniciales(nombre) {
+    return (nombre || '?').trim().charAt(0).toUpperCase();
+  }
+
+  function formatFechaHora(iso) {
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    return d.toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  }
+
+  // Envuelve "@Nombre Completo" en <strong> para que resalte en el hilo --
+  // solo si ese nombre existe de verdad en el equipo (evita resaltar un
+  // "@" suelto que no es una mención real).
+  function resaltarMenciones(texto) {
+    var out = esc(texto);
+    (STATE.equipo || []).forEach(function (p) {
+      if (!p.nombre) return;
+      var arroba = '@' + esc(p.nombre);
+      out = out.split(arroba).join('<strong class="task-mencion">' + arroba + '</strong>');
+    });
+    return out;
+  }
+
+  function comentarioHtml(c) {
+    return (
+      '<div class="task-comentario">' +
+        '<div class="avatar task-comentario-avatar">' + esc(iniciales(nombrePerfil(c.autor_id))) + '</div>' +
+        '<div class="task-comentario-body">' +
+          '<div class="task-comentario-meta"><strong>' + esc(nombrePerfil(c.autor_id)) + '</strong> <span>' + formatFechaHora(c.creado_en) + '</span></div>' +
+          '<div class="task-comentario-texto">' + resaltarMenciones(c.texto) + '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function hiloTareaHtml(tareaId) {
+    var comentarios = STATE.comentariosPorTarea[tareaId];
+    if (!comentarios) return '<div class="task-hilo-cargando">Cargando comentarios…</div>';
+    return (
+      '<div class="task-hilo-lista">' +
+        (comentarios.length ? comentarios.map(comentarioHtml).join('') : '<div class="task-hilo-vacio">Sin comentarios todavía — @menciona a alguien para pedirle seguimiento.</div>') +
+      '</div>' +
+      '<div class="task-comment-compose">' +
+        '<textarea class="task-comment-input" data-tarea-id="' + tareaId + '" rows="2" placeholder="Escribe un comentario… usa @ para mencionar a alguien"></textarea>' +
+        '<div class="task-mention-dropdown" hidden></div>' +
+        '<button type="button" class="btn btn--gold btn--sm task-comment-send" data-tarea-id="' + tareaId + '">Comentar</button>' +
+      '</div>'
+    );
+  }
+
+  function toggleHiloTarea(tareaId) {
+    var abrir = !STATE.tareasAbiertas[tareaId];
+    STATE.tareasAbiertas[tareaId] = abrir;
+    var cont = document.getElementById('hilo-' + tareaId);
+    if (!cont) return;
+    cont.hidden = !abrir;
+    if (abrir) {
+      cont.innerHTML = hiloTareaHtml(tareaId);
+      if (!STATE.comentariosPorTarea[tareaId]) cargarComentariosTarea(tareaId);
+    }
+    var btn = document.querySelector('[data-hilo-tarea="' + tareaId + '"]');
+    if (btn) btn.classList.toggle('is-active', abrir);
+  }
+
+  function cargarComentariosTarea(tareaId) {
+    sb.from('tarea_comentarios').select('*').eq('tarea_id', tareaId).order('creado_en', { ascending: true }).then(function (res) {
+      if (res.error) { console.warn('[Panel] no se pudieron cargar los comentarios:', res.error.message); return; }
+      STATE.comentariosPorTarea[tareaId] = res.data || [];
+      marcarComentariosLeidos(res.data || []);
+      delete STATE.tareasConMencionSinLeer[tareaId];
+      var cont = document.getElementById('hilo-' + tareaId);
+      if (cont && !cont.hidden) cont.innerHTML = hiloTareaHtml(tareaId);
+      var btn = document.querySelector('[data-hilo-tarea="' + tareaId + '"] .task-hilo-dot');
+      if (btn) btn.remove();
+      var count = document.querySelector('[data-hilo-tarea="' + tareaId + '"] .task-hilo-count');
+      if (count) count.textContent = (STATE.comentariosPorTarea[tareaId] || []).length;
+    });
+  }
+
+  // No hay tiempo real -- "leido" se marca al abrir el hilo que contiene la
+  // mención, no al instante en que se publica.
+  function marcarComentariosLeidos(comentarios) {
+    var miId = STATE.session && STATE.session.user.id;
+    if (!miId) return;
+    comentarios.forEach(function (c) {
+      var menciones = c.menciones || [];
+      var leidoPor = c.leido_por || [];
+      if (menciones.indexOf(miId) !== -1 && leidoPor.indexOf(miId) === -1) {
+        sb.from('tarea_comentarios').update({ leido_por: leidoPor.concat([miId]) }).eq('id', c.id).then(function () {});
+      }
+    });
+  }
+
+  function cargarMencionesSinLeer() {
+    var miId = STATE.session && STATE.session.user.id;
+    if (!miId) return;
+    sb.from('tarea_comentarios').select('tarea_id,menciones,leido_por').contains('menciones', [miId]).then(function (res) {
+      if (res.error) { console.warn('[Panel] no se pudieron revisar las menciones:', res.error.message); return; }
+      STATE.tareasConMencionSinLeer = {};
+      (res.data || []).forEach(function (c) {
+        if ((c.leido_por || []).indexOf(miId) === -1) STATE.tareasConMencionSinLeer[c.tarea_id] = true;
+      });
+      var totalMenciones = Object.keys(STATE.tareasConMencionSinLeer).length;
+      var badge = $('#statMencionesSinLeer');
+      if (badge) badge.textContent = totalMenciones;
+      renderTareas();
+    });
+  }
+
+  function extraerMenciones(texto) {
+    var ids = [];
+    (STATE.equipo || []).forEach(function (p) {
+      if (p.nombre && texto.indexOf('@' + p.nombre) !== -1) ids.push(p.id);
+    });
+    return ids;
+  }
+
+  function enviarComentarioTarea(tareaId) {
+    var input = document.querySelector('.task-comment-input[data-tarea-id="' + tareaId + '"]');
+    if (!input) return;
+    var texto = input.value.trim();
+    if (!texto) return;
+    sb.from('tarea_comentarios').insert({
+      tarea_id: tareaId,
+      autor_id: STATE.session.user.id,
+      texto: texto,
+      menciones: extraerMenciones(texto),
+    }).then(function (res) {
+      if (res.error) { toast('No se pudo comentar: ' + res.error.message, 'err'); return; }
+      cargarComentariosTarea(tareaId);
+    });
+  }
+
+  // Deteccion simple de mencion en progreso: todo lo que sigue a la ULTIMA
+  // "@" del texto, mientras no tenga un espacio despues -- evita tener que
+  // trackear la posicion exacta del cursor.
+  function mencionEnProgreso(texto) {
+    var idx = texto.lastIndexOf('@');
+    if (idx === -1) return null;
+    var resto = texto.slice(idx + 1);
+    if (/\s/.test(resto)) return null;
+    return { inicio: idx, query: resto };
+  }
+
+  function actualizarDropdownMencion(textarea) {
+    var dropdown = textarea.parentElement.querySelector('.task-mention-dropdown');
+    if (!dropdown) return;
+    var m = mencionEnProgreso(textarea.value);
+    if (!m) { dropdown.hidden = true; dropdown.innerHTML = ''; return; }
+    var query = normalizaBusqueda(m.query);
+    var candidatos = (STATE.equipo || []).filter(function (p) {
+      return p.nombre && normalizaBusqueda(p.nombre).indexOf(query) !== -1;
+    }).slice(0, 5);
+    if (!candidatos.length) { dropdown.hidden = true; dropdown.innerHTML = ''; return; }
+    dropdown.hidden = false;
+    dropdown.innerHTML = candidatos.map(function (p) {
+      return '<button type="button" class="task-mention-opcion" data-mencion-nombre="' + esc(p.nombre) + '">' +
+        '<span class="avatar" style="width:20px;height:20px;font-size:.68rem">' + esc(iniciales(p.nombre)) + '</span>' + esc(p.nombre) +
+      '</button>';
+    }).join('');
+  }
+
+  function insertarMencion(textarea, nombre) {
+    var m = mencionEnProgreso(textarea.value);
+    if (!m) return;
+    textarea.value = textarea.value.slice(0, m.inicio) + '@' + nombre + ' ';
+    textarea.focus();
+    var dropdown = textarea.parentElement.querySelector('.task-mention-dropdown');
+    if (dropdown) { dropdown.hidden = true; dropdown.innerHTML = ''; }
   }
 
   function filtrarTareas() {
@@ -857,9 +1066,9 @@
   }
 
   function cargarTareas() {
-    var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
+    // Las tareas son un pipeline del equipo (ver policy de select en el
+    // schema) -- cualquier asesor activo ve todas, no solo las suyas.
     var q = sb.from('tareas').select('*').order('vence', { ascending: true, nullsFirst: false }).order('creado_en', { ascending: true });
-    if (!esAdmin) q = q.eq('asesor_id', STATE.session.user.id);
     q.then(function (res) {
       if (res.error) { console.warn('[Panel] no se pudieron cargar las tareas:', res.error.message); return; }
       // Pendientes primero (vencidas arriba de todas), hechas al final.
@@ -2624,8 +2833,26 @@
     $('#tareasLista').addEventListener('click', function (e) {
       var toggleId = e.target.closest && e.target.closest('[data-toggle-tarea]');
       var delId = e.target.closest && e.target.closest('[data-del-tarea]');
+      var hiloId = e.target.closest && e.target.closest('[data-hilo-tarea]');
+      var sendId = e.target.closest && e.target.closest('.task-comment-send');
+      var mencionBtn = e.target.closest && e.target.closest('.task-mention-opcion');
       if (toggleId) toggleTarea(toggleId.dataset.toggleTarea);
       else if (delId) eliminarTarea(delId.dataset.delTarea);
+      else if (hiloId) toggleHiloTarea(hiloId.dataset.hiloTarea);
+      else if (sendId) enviarComentarioTarea(sendId.dataset.tareaId);
+      else if (mencionBtn) {
+        var textarea = mencionBtn.parentElement.previousElementSibling;
+        if (textarea && textarea.classList.contains('task-comment-input')) insertarMencion(textarea, mencionBtn.dataset.mencionNombre);
+      }
+    });
+    $('#tareasLista').addEventListener('input', function (e) {
+      if (e.target.classList.contains('task-comment-input')) actualizarDropdownMencion(e.target);
+    });
+    $('#tareasLista').addEventListener('keydown', function (e) {
+      if (e.target.classList.contains('task-comment-input') && e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        enviarComentarioTarea(e.target.dataset.tareaId);
+      }
     });
 
     $('#addAsesorBtn').addEventListener('click', openInviteModal);

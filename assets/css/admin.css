@@ -299,6 +299,52 @@ button{ font-family:inherit; cursor:pointer; }
   display:flex; align-items:center; justify-content:center; flex-shrink:0;
 }
 .task-share:hover{ background:var(--gold-050); color:var(--gold-ink); }
+.task-de{ font-weight:400; color:var(--ink-50); font-size:.82rem; }
+
+/* ---------------------------------------------------- HILO DE TAREA (Slack-like) */
+.task-row-wrap{ display:flex; flex-direction:column; }
+.task-hilo-btn{
+  position:relative; width:28px; height:28px; border-radius:50%; border:none;
+  background:var(--navy-050); color:var(--ink-50); display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.task-hilo-btn:hover, .task-hilo-btn.is-active{ background:var(--navy); color:#fff; }
+.task-hilo-count{
+  position:absolute; top:-4px; right:-4px; background:var(--gold); color:#fff; font-size:.6rem; font-weight:700;
+  line-height:1; padding:.15rem .3rem; border-radius:var(--r-full); min-width:1em; text-align:center;
+}
+.task-hilo-dot{
+  position:absolute; bottom:-1px; right:-1px; width:9px; height:9px; border-radius:50%;
+  background:var(--danger); border:1.5px solid var(--white);
+}
+.task-thread{
+  background:var(--navy-050); border:1px solid var(--line); border-top:none; border-radius:0 0 var(--r-lg) var(--r-lg);
+  margin-top:-.6rem; padding:.9rem 1.2rem 1rem; padding-top:1.4rem;
+}
+.task-hilo-cargando, .task-hilo-vacio{ font-size:.82rem; color:var(--ink-50); padding:.4rem 0; }
+.task-hilo-lista{ display:flex; flex-direction:column; gap:.7rem; margin-bottom:.7rem; }
+.task-comentario{ display:flex; gap:.6rem; align-items:flex-start; }
+.task-comentario-avatar{ width:26px; height:26px; font-size:.72rem; flex-shrink:0; }
+.task-comentario-body{ flex:1; min-width:0; }
+.task-comentario-meta{ font-size:.76rem; color:var(--ink-50); }
+.task-comentario-meta strong{ color:var(--navy); font-weight:700; }
+.task-comentario-texto{ font-size:.86rem; color:var(--ink); margin-top:.1rem; white-space:pre-wrap; word-break:break-word; }
+.task-mencion{ color:var(--gold-ink); background:var(--gold-050); padding:0 .2rem; border-radius:var(--r-xs); }
+.task-comment-compose{ position:relative; display:flex; gap:.5rem; align-items:flex-end; }
+.task-comment-input{
+  flex:1; min-height:2.2rem; padding:.5rem .7rem; border:1.5px solid var(--line); border-radius:var(--r-sm);
+  font-family:inherit; font-size:.85rem; color:var(--ink); background:var(--white); resize:vertical;
+}
+.task-comment-input:focus{ outline:none; border-color:var(--navy-300); }
+.task-mention-dropdown{
+  position:absolute; left:0; bottom:100%; margin-bottom:.3rem; background:var(--white); border:1px solid var(--line);
+  border-radius:var(--r-sm); box-shadow:var(--sh-3); overflow:hidden; z-index:5; min-width:200px;
+}
+.task-mention-opcion{
+  display:flex; align-items:center; gap:.5rem; width:100%; padding:.5rem .7rem; border:none; background:var(--white);
+  font-size:.84rem; color:var(--ink); text-align:left;
+}
+.task-mention-opcion:hover{ background:var(--navy-050); }
 
 /* -------------------------------------------------------------- EQUIPO */
 .team-list{ display:flex; flex-direction:column; gap:.7rem; }
