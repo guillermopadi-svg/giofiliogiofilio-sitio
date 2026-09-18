@@ -305,6 +305,12 @@ button{ font-family:inherit; cursor:pointer; }
 .team-row-id{ display:flex; align-items:center; gap:.7rem; flex:1 1 220px; min-width:0; }
 .team-row-id .avatar{ flex-shrink:0; }
 .team-row-name{ font-weight:700; color:var(--navy); font-size:.92rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.team-row-edit-nombre{
+  display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;
+  width:20px; height:20px; padding:0; margin-left:.15rem; border:none; background:transparent;
+  color:var(--ink-30); border-radius:var(--r-xs); flex-shrink:0;
+}
+.team-row-edit-nombre:hover{ background:var(--navy-050); color:var(--navy); }
 .team-row-email{ font-size:.78rem; color:var(--ink-50); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .team-row-badge{
   font-size:.68rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase;

@@ -2127,7 +2127,11 @@
       '<div class="team-row' + (p.activo ? '' : ' is-inactivo') + '">' +
         '<div class="team-row-id">' +
           '<div class="avatar">' + esc(inicial) + '</div>' +
-          '<div><div class="team-row-name">' + esc(p.nombre || 'Sin nombre') + '</div>' +
+          '<div><div class="team-row-name">' + esc(p.nombre || 'Sin nombre') +
+            ' <button type="button" class="team-row-edit-nombre" data-editar-nombre-id="' + p.id + '" data-nombre-actual="' + esc(p.nombre || '') + '" title="Editar nombre">' +
+              '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
+            '</button>' +
+          '</div>' +
           '<div class="team-row-email">' + esc(p.email || '') + '</div></div>' +
         '</div>' +
         '<span class="team-row-props">' + n + ' propiedad' + (n === 1 ? '' : 'es') + ' activa' + (n === 1 ? '' : 's') + '</span>' +
@@ -2261,6 +2265,18 @@
     sb.from('perfiles').update({ rol: rol }).eq('id', id).then(function (res) {
       if (res.error) { toast('No se pudo cambiar el rol: ' + res.error.message, 'err'); cargarEquipo(); return; }
       toast('Rol actualizado');
+      cargarEquipo();
+    });
+  }
+
+  function renombrarAsesor(id, nombreActual) {
+    var nuevo = prompt('Nuevo nombre para mostrar en el panel:', nombreActual || '');
+    if (nuevo == null) return; // cancelado
+    nuevo = nuevo.trim();
+    if (!nuevo || nuevo === nombreActual) return;
+    sb.from('perfiles').update({ nombre: nuevo }).eq('id', id).then(function (res) {
+      if (res.error) { toast('No se pudo renombrar: ' + res.error.message, 'err'); return; }
+      toast('Nombre actualizado');
       cargarEquipo();
     });
   }
@@ -2555,7 +2571,9 @@
     });
     $('#equipoLista').addEventListener('click', function (e) {
       var email = e.target.dataset.cancelarInvitacion;
+      var editarBtn = e.target.closest && e.target.closest('[data-editar-nombre-id]');
       if (email) cancelarInvitacion(email);
+      else if (editarBtn) renombrarAsesor(editarBtn.dataset.editarNombreId, editarBtn.dataset.nombreActual);
     });
 
     $('#kanban').addEventListener('dragstart', function (e) {
