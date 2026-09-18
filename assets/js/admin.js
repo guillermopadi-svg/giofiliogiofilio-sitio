@@ -790,17 +790,24 @@
 
   // --------------------------------------------------------------- TAREAS
   function tareaVencidaP(t) {
-    return t.estado === 'pendiente' && t.vence && new Date(t.vence) < new Date(new Date().toDateString());
+    if (!t.vence) return false;
+    var d = new Date(t.vence);
+    return t.estado === 'pendiente' && !isNaN(d) && d < new Date(new Date().toDateString());
   }
 
+  // Si vence trae un valor que no es una fecha valida (dato viejo o
+  // corrupto), no mostramos nada en vez de renderizar literalmente
+  // "Invalid Date" en la fila de la tarea.
   function formatFechaCorta(iso) {
     var d = new Date(iso + 'T00:00:00');
+    if (isNaN(d)) return '';
     return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
   }
 
   function taskRowHtml(t) {
     var vencida = tareaVencidaP(t);
     var hecha = t.estado === 'hecha';
+    var venceTexto = t.vence ? formatFechaCorta(t.vence) : '';
     return (
       '<div class="task-row' + (hecha ? ' is-hecha' : '') + '">' +
         '<button type="button" class="task-check' + (hecha ? ' is-checked' : '') + '" data-toggle-tarea="' + t.id + '" title="' + (hecha ? 'Marcar como pendiente' : 'Marcar como hecha') + '">' +
@@ -810,7 +817,7 @@
           '<div class="task-titulo">' + esc(t.titulo) + '</div>' +
           (t.descripcion ? '<div class="task-desc">' + esc(t.descripcion) + '</div>' : '') +
         '</div>' +
-        (t.vence ? '<span class="task-vence' + (vencida ? ' is-vencida' : '') + '">' + (vencida ? 'Venció ' : '') + formatFechaCorta(t.vence) + '</span>' : '') +
+        (venceTexto ? '<span class="task-vence' + (vencida ? ' is-vencida' : '') + '">' + (vencida ? 'Venció ' : '') + venceTexto + '</span>' : '') +
         '<button type="button" class="task-del" data-del-tarea="' + t.id + '" title="Eliminar">' +
           '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>' +
         '</button>' +
