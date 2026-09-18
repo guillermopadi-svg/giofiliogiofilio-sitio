@@ -1451,8 +1451,51 @@
           '<div class="task-titulo">' + esc(e.nombre || lugar) + ' — ' + (e.operacion === 'renta' ? 'Renta' : 'Venta') + '</div>' +
           '<div class="task-desc">' + esc(lugar || 'Sin colonia') + (e.m2c ? ' · ' + e.m2c + ' m²' : '') + (actualizado ? ' · Actualizado ' + actualizado : '') + '</div>' +
         '</div>' +
+        '<button type="button" class="task-share" data-compartir-est="' + e.id + '" title="Compartir">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5 15.4 6.5M8.6 13.5l6.8 4"/></svg>' +
+        '</button>' +
       '</div>'
     );
+  }
+
+  // Comparte un resumen del estudio (nombre, tipo, colonia y precio
+  // sugerido aproximado) via el share sheet nativo del sistema -- deja
+  // elegir WhatsApp, Mail o cualquier otra app instalada. El precio se
+  // calcula solo con los comparables externos guardados (sin volver a
+  // cruzar contra el inventario propio, que solo se recalcula al abrir
+  // el estudio), asi que puede diferir un poco del valor final del PDF.
+  function compartirEstudio(id) {
+    var e = STATE.estudios.filter(function (x) { return x.id === id; })[0];
+    if (!e) return;
+    var lugar = [TIPO_LABEL_EST[e.tipo] || e.tipo, e.colonia].filter(Boolean).join(' en ');
+    var opLabel = e.operacion === 'renta' ? 'renta' : 'venta';
+    var m2Sujeto = m2HomologadoConFlag(e.m2c, e.m2t, e.homologar_m2 !== false);
+    var comparables = e.comparables || [];
+    var precios = comparables.map(function (c) {
+      var homo = m2HomologadoConFlag(c.m2, c.m2t, e.homologar_m2 !== false);
+      return (homo && c.precio) ? c.precio / homo : 0;
+    }).filter(function (v) { return v > 0; });
+    var promComp = precios.length ? precios.reduce(function (a, b) { return a + b; }, 0) / precios.length : 0;
+    var factorNegPct = Math.max(0, Math.min(100, Number(e.factor_negociacion) || 0)) / 100;
+    var factorPublicarPct = Math.max(0, Math.min(100, e.factor_publicar != null ? Number(e.factor_publicar) : 5)) / 100;
+    var valorAsignado = promComp * m2Sujeto;
+    var precioSugerido = valorAsignado ? (valorAsignado - valorAsignado * factorNegPct) * (1 + factorPublicarPct) : 0;
+    var texto = 'Estudio de mercado — ' + (e.nombre || lugar) + '\n' +
+      (lugar ? lugar + ' — ' : '') + (e.operacion === 'renta' ? 'Renta' : 'Venta') +
+      (e.m2c ? ' · ' + e.m2c + ' m²' + (e.m2t ? ' + ' + e.m2t + ' m² terreno' : '') : '') + '\n' +
+      (precioSugerido ? 'Precio sugerido a publicar: ' + nf2.format(precioSugerido) + (opLabel === 'renta' ? '/mes' : '') : 'Precio sugerido: pendiente de comparables') +
+      '\n\nEstudio realizado por Gio Filio.';
+    if (navigator.share) {
+      navigator.share({ title: 'Estudio de mercado — ' + (e.nombre || lugar), text: texto }).catch(function () {});
+    } else {
+      window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
+    }
+  }
+
+  // Igual que m2Homologado() pero sin depender del checkbox del modal --
+  // sirve para recalcular desde datos ya guardados (ver compartirEstudio).
+  function m2HomologadoConFlag(m2c, m2t, homologar) {
+    return (Number(m2c) || 0) + (homologar ? (Number(m2t) || 0) : 0);
   }
 
   function filtrarEstudios() {
@@ -2503,6 +2546,8 @@
     });
     $('#estudiosEmptyAddBtn').addEventListener('click', function () { abrirEstudioModal(null); });
     $('#estudiosLista').addEventListener('click', function (e) {
+      var shareBtn = e.target.closest && e.target.closest('[data-compartir-est]');
+      if (shareBtn) { compartirEstudio(shareBtn.dataset.compartirEst); return; }
       var row = e.target.closest && e.target.closest('[data-open-est]');
       if (row) abrirEstudioModal(row.dataset.openEst);
     });

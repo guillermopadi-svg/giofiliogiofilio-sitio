@@ -294,6 +294,11 @@ button{ font-family:inherit; cursor:pointer; }
   display:flex; align-items:center; justify-content:center; flex-shrink:0;
 }
 .task-del:hover{ background:#FBEDEA; color:var(--danger); }
+.task-share{
+  width:28px; height:28px; border-radius:50%; border:none; background:var(--navy-050); color:var(--ink-50);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.task-share:hover{ background:var(--gold-050); color:var(--gold-ink); }
 
 /* -------------------------------------------------------------- EQUIPO */
 .team-list{ display:flex; flex-direction:column; gap:.7rem; }
