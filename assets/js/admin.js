@@ -2062,7 +2062,7 @@
       '.nota{ font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:#4A5468; margin-top:.7rem; line-height:1.5; }' +
       '.gf-footer{ margin-top:1rem; padding-top:.5rem; border-top:1px solid #E8DDCF; font-family:Helvetica,Arial,sans-serif; font-size:.75rem; color:#737E92; display:flex; justify-content:space-between; }' +
       '</style></head><body>' +
-      '<div class="gf-header"><img src="https://www.giofilio.com/assets/img/brand/wordmark.png" alt="Gio Filio" id="gfLogoImg"><span class="tag">Estudio de precio</span></div>' +
+      '<div class="gf-header"><img src="https://www.giofilio.com/assets/img/brand/wordmark.png" alt="Gio Filio" id="gfLogoImg"><span class="tag">Estudio de mercado</span></div>' +
       '<h1>' + esc(d.nombre) + '</h1>' +
       '<p class="sub">' + esc(d.tipo) + ' en ' + opLabel + (d.colonia ? ' — ' + esc(d.colonia) : '') + (d.m2Sujeto ? ' · ' + d.m2c + ' m² constr.' + (d.m2t ? ' + ' + d.m2t + ' m² terreno' : '') : '') + '</p>' +
       inventarioHtml +
