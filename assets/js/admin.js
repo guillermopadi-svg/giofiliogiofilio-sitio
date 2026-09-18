@@ -1451,6 +1451,9 @@
           '<div class="task-titulo">' + esc(e.nombre || lugar) + ' — ' + (e.operacion === 'renta' ? 'Renta' : 'Venta') + '</div>' +
           '<div class="task-desc">' + esc(lugar || 'Sin colonia') + (e.m2c ? ' · ' + e.m2c + ' m²' : '') + (actualizado ? ' · Actualizado ' + actualizado : '') + '</div>' +
         '</div>' +
+        '<button type="button" class="task-share" data-editar-nombre-est="' + e.id + '" data-nombre-actual="' + esc(e.nombre || '') + '" title="Editar nombre">' +
+          '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
+        '</button>' +
         '<button type="button" class="task-share" data-compartir-est="' + e.id + '" title="Compartir">' +
           '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5 15.4 6.5M8.6 13.5l6.8 4"/></svg>' +
         '</button>' +
@@ -1890,6 +1893,18 @@
       }
       cerrarEstudioModal();
       toast('Estudio guardado');
+      cargarEstudios();
+    });
+  }
+
+  function renombrarEstudio(id, nombreActual) {
+    var nuevo = prompt('Nuevo nombre del estudio:', nombreActual || '');
+    if (nuevo == null) return; // cancelado
+    nuevo = nuevo.trim();
+    if (!nuevo || nuevo === nombreActual) return;
+    sb.from('estudios_precio').update({ nombre: nuevo }).eq('id', id).then(function (res) {
+      if (res.error) { toast('No se pudo renombrar: ' + res.error.message, 'err'); return; }
+      toast('Nombre actualizado');
       cargarEstudios();
     });
   }
@@ -2548,6 +2563,8 @@
     $('#estudiosLista').addEventListener('click', function (e) {
       var shareBtn = e.target.closest && e.target.closest('[data-compartir-est]');
       if (shareBtn) { compartirEstudio(shareBtn.dataset.compartirEst); return; }
+      var editarBtn = e.target.closest && e.target.closest('[data-editar-nombre-est]');
+      if (editarBtn) { renombrarEstudio(editarBtn.dataset.editarNombreEst, editarBtn.dataset.nombreActual); return; }
       var row = e.target.closest && e.target.closest('[data-open-est]');
       if (row) abrirEstudioModal(row.dataset.openEst);
     });
