@@ -1265,7 +1265,7 @@
         if (STATE.solEstudioId) {
           verEstudioDeSolicitud();
         } else {
-          toast('Estudio de precio creado');
+          toast('Estudio de mercado creado');
           ponerModoSolModal('ver');
         }
       });
@@ -1775,7 +1775,7 @@
   function abrirEstudioModal(id) {
     var e = id ? STATE.estudios.filter(function (x) { return x.id === id; })[0] : null;
     STATE.estudioEditando = e || null;
-    $('#estudioModalTitle').textContent = e ? 'Editar estudio' : 'Nuevo estudio de precio';
+    $('#estudioModalTitle').textContent = e ? 'Editar estudio' : 'Nuevo estudio de mercado';
     $('#estudioError').classList.remove('show');
     $('#est_nombre').value = e ? (e.nombre || '') : '';
     $('#est_tipo').value = e ? e.tipo : 'departamento';
@@ -1853,7 +1853,7 @@
 
   function eliminarEstudio() {
     if (!STATE.estudioEditando) return;
-    if (!confirm('¿Eliminar este estudio de precio?')) return;
+    if (!confirm('¿Eliminar este estudio de mercado?')) return;
     sb.from('estudios_precio').delete().eq('id', STATE.estudioEditando.id).then(function (res) {
       if (res.error) { toast('No se pudo eliminar: ' + res.error.message, 'err'); return; }
       cerrarEstudioModal();
@@ -1886,7 +1886,7 @@
     var factorPublicarPct = Math.max(0, Math.min(100, Number($('#est_factor_publicar').value) || 0)) / 100;
     var factorNegociacion = valorAsignado * factorNegPct;
     return {
-      nombre: $('#est_nombre').value.trim() || 'Estudio de precio',
+      nombre: $('#est_nombre').value.trim() || 'Estudio de mercado',
       operacion: $('#est_operacion').value,
       tipo: TIPO_LABEL_EST[$('#est_tipo').value] || $('#est_tipo').value,
       colonia: $('#est_colonia').value.trim(),
@@ -1919,6 +1919,7 @@
       asesor: (STATE.perfil && STATE.perfil.nombre) || (STATE.session && STATE.session.user.email) || '',
       fecha: new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }),
       notas: $('#est_notas').value.trim(),
+      homologar: $('#est_homologar').checked,
     };
   }
 
@@ -1951,7 +1952,9 @@
     var d = recopilarDatosReporte();
     var opLabel = d.operacion === 'renta' ? 'Renta' : 'Venta';
     var filas = [];
-    filas.push(['Unidades', 'Liga', 'Ubicación', 'Inmueble', 'Operación', 'Metros construcción', 'Metros terreno', 'Metros homologados', 'Precio publicado', 'Precio por metro homologado', 'Habitaciones', 'Baños', 'Cocheras', 'Antigüedad', 'Días publicado']);
+    var pm2Label = d.homologar ? 'Metros homologados' : 'Metros de construcción';
+    var precioPm2Label = d.homologar ? 'Precio por metro homologado' : 'Precio por metro de construcción';
+    filas.push(['Unidades', 'Liga', 'Ubicación', 'Inmueble', 'Operación', 'Metros construcción', 'Metros terreno', pm2Label, 'Precio publicado', precioPm2Label, 'Habitaciones', 'Baños', 'Cocheras', 'Antigüedad', 'Días publicado']);
     function r2(v) { return Math.round(v * 100) / 100; }
     d.comparables.forEach(function (c, i) {
       var homo = m2Homologado(c.m2, c.m2t);
@@ -1959,7 +1962,7 @@
       filas.push([i + 1, c.liga, c.ubicacion, d.tipo, opLabel, c.m2 || '', c.m2t || '', homo || '', c.precio || '', pm2, c.rec || '', c.ban || '', c.est || '', c.antig || '', c.dias || '']);
     });
     filas.push([]);
-    filas.push(['Promedio simple $/m² homologado', '', '', '', '', '', '', r2(d.promComp || d.promInv || 0)]);
+    filas.push(['Promedio simple $/m²' + (d.homologar ? ' homologado' : ''), '', '', '', '', '', '', r2(d.promComp || d.promInv || 0)]);
     filas.push([]);
     filas.push(['Datos de la propiedad', '', d.colonia, d.tipo, opLabel, d.m2c, d.m2t, d.m2Sujeto]);
     filas.push([]);
@@ -1982,7 +1985,7 @@
   // compara el $/m² homologado de cada comparable contra el precio sugerido
   // de la propia propiedad, para que el cliente vea de un vistazo donde
   // queda parado su inmueble frente al mercado.
-  function graficoPreciosM2Html(items, sujeto) {
+  function graficoPreciosM2Html(items, sujeto, homologar) {
     var datos = items.filter(function (x) { return x.precioM2 > 0; })
       .sort(function (a, b) { return b.precioM2 - a.precioM2; });
     if (sujeto && sujeto.precioM2 > 0) datos.push(sujeto);
@@ -2002,19 +2005,24 @@
       );
     }).join('');
     return (
-      '<h2>Precio por m² homologado — comparativo</h2>' +
+      '<h2>Precio por m²' + (homologar ? ' homologado' : '') + ' — comparativo</h2>' +
       '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H + '" xmlns="http://www.w3.org/2000/svg">' + filas + '</svg>' +
       '<p class="nota" style="margin-top:.3rem">En dorado, el precio sugerido para tu propiedad frente a las demás.</p>'
     );
   }
 
-  function tablaInventarioHtml(inventario) {
+  function tablaInventarioHtml(inventario, homologar) {
     if (!inventario.length) return '';
     var filas = inventario.map(function (p, i) {
       var pm2 = p.precioM2 ? Math.round(p.precioM2) : '';
       return '<tr><td>' + (i + 1) + '</td><td>' + (p.url ? '<a href="../' + esc(p.url) + '">' + esc(p.titulo) + '</a>' : esc(p.titulo)) + '</td><td>' + (p.m2 || '') + '</td><td>' + (p.m2t || '') + '</td><td>' + (p.precio ? nf.format(p.precio) : '') + '</td><td>' + (pm2 ? nf.format(pm2) : '') + '</td><td>' + (p.dias == null ? '' : p.dias) + '</td></tr>';
     }).join('');
-    return '<h2>Tu inventario (propiedades publicadas comparables)</h2><table><thead><tr><th>#</th><th>Propiedad</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m² homolog.</th><th>Días</th></tr></thead><tbody>' + filas + '</tbody></table>';
+    // La columna solo es "homologado" de verdad si el toggle de Homologar
+    // m2 estaba activo -- si no, es un $/m2 normal (solo construccion) y
+    // llamarla "homolog." confunde (parece que se sumo el terreno cuando
+    // en realidad no se uso).
+    var pm2Label = homologar ? '$/m² homolog.' : '$/m²';
+    return '<h2>Tu inventario (propiedades publicadas comparables)</h2><table><thead><tr><th>#</th><th>Propiedad</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>' + pm2Label + '</th><th>Días</th></tr></thead><tbody>' + filas + '</tbody></table>';
   }
 
   function exportarEstudioPDF() {
@@ -2028,14 +2036,14 @@
         (ocultarHabitablePdf ? '' : '<td>' + (c.rec || '') + '</td><td>' + (c.ban || '') + '</td>') +
         '<td>' + (c.est || '') + '</td><td>' + (c.antig || '') + '</td><td>' + (c.dias || '') + '</td></tr>';
     }).join('');
-    var inventarioHtml = tablaInventarioHtml(d.inventario);
+    var inventarioHtml = tablaInventarioHtml(d.inventario, d.homologar);
     var itemsGrafico = d.inventario.map(function (p) { return { label: p.titulo, precioM2: p.precioM2 }; })
       .concat(d.comparables.map(function (c) {
         var homo = m2Homologado(c.m2, c.m2t);
         return { label: c.ubicacion || 'Comparable', precioM2: homo && c.precio ? c.precio / homo : 0 };
       }));
     var sujetoGrafico = { label: 'Tu propiedad (sugerido)', precioM2: d.m2Sujeto ? d.precioSugeridoPublicar / d.m2Sujeto : 0 };
-    var graficoHtml = graficoPreciosM2Html(itemsGrafico, sujetoGrafico);
+    var graficoHtml = graficoPreciosM2Html(itemsGrafico, sujetoGrafico, d.homologar);
     var html = '<!doctype html><html lang="es-MX"><head><meta charset="utf-8"><title>' + esc(nombreEstudioCompleto(d)) + '</title><style>' +
       '@page{ size:letter; margin:1.3cm 1.6cm 1.4cm; }' +
       '*{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }' +
@@ -2066,7 +2074,7 @@
       '<h1>' + esc(d.nombre) + '</h1>' +
       '<p class="sub">' + esc(d.tipo) + ' en ' + opLabel + (d.colonia ? ' — ' + esc(d.colonia) : '') + (d.m2Sujeto ? ' · ' + d.m2c + ' m² constr.' + (d.m2t ? ' + ' + d.m2t + ' m² terreno' : '') : '') + '</p>' +
       inventarioHtml +
-      (filasHtml ? '<h2>Comparables externos</h2><table><thead><tr><th>#</th><th>Ubicación</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>$/m² homolog.</th>' +
+      (filasHtml ? '<h2>Comparables externos</h2><table><thead><tr><th>#</th><th>Ubicación</th><th>m² constr.</th><th>m² terreno</th><th>Precio</th><th>' + (d.homologar ? '$/m² homolog.' : '$/m²') + '</th>' +
         (ocultarHabitablePdf ? '' : '<th>Rec</th><th>Baños</th>') +
         '<th>Coch</th><th>Antig.</th><th>Días</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' : '') +
       graficoHtml +
