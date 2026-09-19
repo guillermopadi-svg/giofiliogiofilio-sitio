@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null, propVista: 'grid', comentariosPorTarea: {}, tareasAbiertas: {}, tareasConMencionSinLeer: {} };
+  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null, propVista: 'grid', comentariosPorTarea: {}, tareasConMencionSinLeer: {}, tareaSeleccionada: null, tareaBandeja: 'todo' };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -800,6 +800,16 @@
   }
 
   // --------------------------------------------------------------- TAREAS
+  // Workspace de coordinacion del equipo: cada tarea tiene un responsable
+  // (asesor_id) y quien la creo/asigno (creado_por -- puede ser otra persona,
+  // ver schema.sql). El panel usa un layout tipo canal: `tareasLista` es la
+  // barra lateral (como los canales de Slack) y `tareaDetalle` muestra la
+  // tarea seleccionada con su feed de actividad -- comentarios humanos y
+  // eventos de sistema conviven en `tarea_comentarios`, distinguidos por
+  // `tipo` (ver registrarEventoSistema).
+  var PRIORIDAD_LABEL = { baja: 'Baja', normal: 'Normal', alta: 'Alta' };
+  var BANDEJA_LABEL = { todo: 'Todo', mias: 'Mías', asignadas: 'Asignadas por mí', menciones: 'Menciones', vencidas: 'Vencidas', hechas: 'Completadas' };
+
   function tareaVencidaP(t) {
     if (!t.vence) return false;
     var d = new Date(t.vence);
@@ -824,45 +834,56 @@
     return 'Alguien';
   }
 
-  function taskRowHtml(t) {
+  function nombrePropiedad(id) {
+    var p = (STATE.propiedades || []).filter(function (x) { return x.id === id; })[0];
+    return p ? p.titulo : '';
+  }
+
+  function nombreLead(id) {
+    var l = (STATE.leads || []).filter(function (x) { return x.id === id; })[0];
+    return l ? l.nombre : '';
+  }
+
+  // ------------------------------------------------------ BARRA LATERAL
+  function tareaSidebarItemHtml(t) {
     var vencida = tareaVencidaP(t);
     var hecha = t.estado === 'hecha';
     var venceTexto = t.vence ? formatFechaCorta(t.vence) : '';
-    var esMia = STATE.session && t.asesor_id === STATE.session.user.id;
-    var abierto = !!STATE.tareasAbiertas[t.id];
+    var activa = STATE.tareaSeleccionada === t.id;
     var comentarios = STATE.comentariosPorTarea[t.id];
-    var tieneMencionSinLeer = !!STATE.tareasConMencionSinLeer[t.id];
+    var relacion = t.propiedad_id ? nombrePropiedad(t.propiedad_id) : (t.lead_id ? nombreLead(t.lead_id) : '');
     return (
-      '<div class="task-row-wrap">' +
-      '<div class="task-row' + (hecha ? ' is-hecha' : '') + '">' +
-        '<button type="button" class="task-check' + (hecha ? ' is-checked' : '') + '" data-toggle-tarea="' + t.id + '" title="' + (hecha ? 'Marcar como pendiente' : 'Marcar como hecha') + '">' +
+      '<div class="tasks-channel-item' + (activa ? ' is-active' : '') + (hecha ? ' is-hecha' : '') + '" data-select-tarea="' + t.id + '">' +
+        '<button type="button" class="tasks-channel-check' + (hecha ? ' is-checked' : '') + '" data-toggle-tarea="' + t.id + '" title="' + (hecha ? 'Marcar como pendiente' : 'Marcar como hecha') + '">' +
           (hecha ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>' : '') +
         '</button>' +
-        '<div class="task-body">' +
-          '<div class="task-titulo">' + esc(t.titulo) + (esMia ? '' : ' <span class="task-de">· ' + esc(nombrePerfil(t.asesor_id)) + '</span>') + '</div>' +
-          (t.descripcion ? '<div class="task-desc">' + esc(t.descripcion) + '</div>' : '') +
+        '<div class="tasks-channel-body">' +
+          '<div class="tasks-channel-title">' + esc(t.titulo) + '</div>' +
+          '<div class="tasks-channel-meta">' +
+            '<span>' + esc(nombrePerfil(t.asesor_id)) + '</span>' +
+            (relacion ? '<span>· ' + esc(relacion) + '</span>' : '') +
+            (venceTexto ? '<span class="' + (vencida ? 'is-vencida' : '') + '">· ' + (vencida ? 'Venció ' : '') + venceTexto + '</span>' : '') +
+          '</div>' +
         '</div>' +
-        (venceTexto ? '<span class="task-vence' + (vencida ? ' is-vencida' : '') + '">' + (vencida ? 'Venció ' : '') + venceTexto + '</span>' : '') +
-        '<button type="button" class="task-hilo-btn' + (abierto ? ' is-active' : '') + '" data-hilo-tarea="' + t.id + '" title="Comentarios">' +
-          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>' +
-          (comentarios ? '<span class="task-hilo-count">' + comentarios.length + '</span>' : '') +
-          (tieneMencionSinLeer ? '<span class="task-hilo-dot" title="Te mencionaron"></span>' : '') +
-        '</button>' +
-        '<button type="button" class="task-del" data-del-tarea="' + t.id + '" title="Eliminar">' +
-          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>' +
-        '</button>' +
-      '</div>' +
-      '<div class="task-thread" id="hilo-' + t.id + '"' + (abierto ? '' : ' hidden') + '>' + (abierto ? hiloTareaHtml(t.id) : '') + '</div>' +
+        '<div class="tasks-channel-badges">' +
+          (t.prioridad === 'alta' && !hecha ? '<span class="tasks-channel-dot" title="Prioridad alta"></span>' : '') +
+          (tareaTieneMencionSinLeer(t.id) ? '<span class="tasks-channel-dot tasks-channel-dot--mencion" title="Te mencionaron"></span>' : '') +
+          (comentarios && comentarios.length ? '<span class="tasks-channel-count">' + comentarios.length + '</span>' : '') +
+        '</div>' +
       '</div>'
     );
   }
 
-  // -------------------------------------------------------- HILO DE TAREA
-  // Comentarios estilo Slack debajo de cada tarea, con @menciones simples:
-  // se detecta "@" + texto sin espacio al final del textarea y se muestra
-  // un dropdown con los compañeros que hacen match; al enviar, se vuelve a
-  // escanear el texto final contra los nombres del equipo para armar el
-  // arreglo de ids mencionados (ver extraerMenciones).
+  function tareaTieneMencionSinLeer(id) {
+    return !!STATE.tareasConMencionSinLeer[id];
+  }
+
+  // ------------------------------------------------------- PANEL DE DETALLE
+  // Comentarios estilo Slack en el hilo de cada tarea, con @menciones
+  // simples: se detecta "@" + texto sin espacio al final del textarea y se
+  // muestra un dropdown con los compañeros que hacen match; al enviar, se
+  // vuelve a escanear el texto final contra los nombres del equipo para
+  // armar el arreglo de ids mencionados (ver extraerMenciones).
   function iniciales(nombre) {
     return (nombre || '?').trim().charAt(0).toUpperCase();
   }
@@ -886,7 +907,18 @@
     return out;
   }
 
+  // Eventos de sistema (cambio de estado, reasignacion, prioridad...)
+  // conviven en el mismo hilo que los comentarios humanos, distinguidos por
+  // `tipo` -- se redactan como una linea centrada y discreta, sin avatar.
   function comentarioHtml(c) {
+    if (c.tipo === 'sistema') {
+      return (
+        '<div class="task-sistema">' +
+          '<span>' + esc(nombrePerfil(c.autor_id)) + ' ' + esc(c.texto) + '</span>' +
+          '<span class="task-sistema-hora">' + formatFechaHora(c.creado_en) + '</span>' +
+        '</div>'
+      );
+    }
     return (
       '<div class="task-comentario">' +
         '<div class="avatar task-comentario-avatar">' + esc(iniciales(nombrePerfil(c.autor_id))) + '</div>' +
@@ -900,10 +932,10 @@
 
   function hiloTareaHtml(tareaId) {
     var comentarios = STATE.comentariosPorTarea[tareaId];
-    if (!comentarios) return '<div class="task-hilo-cargando">Cargando comentarios…</div>';
+    if (!comentarios) return '<div class="task-hilo-cargando">Cargando actividad…</div>';
     return (
       '<div class="task-hilo-lista">' +
-        (comentarios.length ? comentarios.map(comentarioHtml).join('') : '<div class="task-hilo-vacio">Sin comentarios todavía — @menciona a alguien para pedirle seguimiento.</div>') +
+        (comentarios.length ? comentarios.map(comentarioHtml).join('') : '<div class="task-hilo-vacio">Sin actividad todavía — @menciona a alguien para pedirle seguimiento.</div>') +
       '</div>' +
       '<div class="task-comment-compose">' +
         '<textarea class="task-comment-input" data-tarea-id="' + tareaId + '" rows="2" placeholder="Escribe un comentario… usa @ para mencionar a alguien"></textarea>' +
@@ -913,18 +945,81 @@
     );
   }
 
-  function toggleHiloTarea(tareaId) {
-    var abrir = !STATE.tareasAbiertas[tareaId];
-    STATE.tareasAbiertas[tareaId] = abrir;
-    var cont = document.getElementById('hilo-' + tareaId);
-    if (!cont) return;
-    cont.hidden = !abrir;
-    if (abrir) {
-      cont.innerHTML = hiloTareaHtml(tareaId);
-      if (!STATE.comentariosPorTarea[tareaId]) cargarComentariosTarea(tareaId);
+  function opcionesEquipoHtml(seleccionadoId) {
+    return (STATE.equipo || []).map(function (p) {
+      return '<option value="' + p.id + '"' + (p.id === seleccionadoId ? ' selected' : '') + '>' + esc(p.nombre || p.email) + '</option>';
+    }).join('');
+  }
+
+  function relacionChipsHtml(t) {
+    var chips = '';
+    if (t.propiedad_id && nombrePropiedad(t.propiedad_id)) chips += '<span class="tasks-chip">🏠 ' + esc(nombrePropiedad(t.propiedad_id)) + '</span>';
+    if (t.lead_id && nombreLead(t.lead_id)) chips += '<span class="tasks-chip">👤 ' + esc(nombreLead(t.lead_id)) + '</span>';
+    return chips;
+  }
+
+  function tareaDetalleHtml(t) {
+    var hecha = t.estado === 'hecha';
+    var venceTexto = t.vence ? formatFechaCorta(t.vence) : '';
+    var vencida = tareaVencidaP(t);
+    var miId = STATE.session && STATE.session.user.id;
+    var puedeGestionar = !!miId && (t.asesor_id === miId || t.creado_por === miId || (STATE.perfil && STATE.perfil.rol === 'admin'));
+    var chips = relacionChipsHtml(t);
+    return (
+      '<button type="button" class="tasks-detail-back" data-cerrar-detalle>' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg> Tareas' +
+      '</button>' +
+      '<div class="tasks-detail-head">' +
+        '<div>' +
+          '<div class="tasks-detail-titulo' + (hecha ? ' is-hecha' : '') + '">' + esc(t.titulo) + '</div>' +
+          '<div class="tasks-detail-sub">' +
+            '<span>Responsable: ' + (puedeGestionar ?
+              '<select class="tasks-detail-select" data-reasignar-tarea="' + t.id + '">' + opcionesEquipoHtml(t.asesor_id) + '</select>' :
+              esc(nombrePerfil(t.asesor_id))) + '</span>' +
+            '<span>Prioridad: ' + (puedeGestionar ?
+              '<select class="tasks-detail-select" data-prioridad-tarea="' + t.id + '">' +
+                Object.keys(PRIORIDAD_LABEL).map(function (k) { return '<option value="' + k + '"' + (k === t.prioridad ? ' selected' : '') + '>' + PRIORIDAD_LABEL[k] + '</option>'; }).join('') +
+              '</select>' : esc(PRIORIDAD_LABEL[t.prioridad] || 'Normal')) + '</span>' +
+            (venceTexto ? '<span class="' + (vencida ? 'is-vencida' : '') + '">' + (vencida ? 'Venció ' : 'Vence ') + venceTexto + '</span>' : '') +
+          '</div>' +
+          (chips ? '<div class="tasks-detail-chips">' + chips + '</div>' : '') +
+          (t.descripcion ? '<div class="tasks-detail-desc">' + esc(t.descripcion) + '</div>' : '') +
+        '</div>' +
+        '<div class="tasks-detail-actions">' +
+          '<button type="button" class="btn btn--ghost btn--sm" data-toggle-tarea="' + t.id + '">' + (hecha ? 'Reabrir' : 'Marcar hecha') + '</button>' +
+          (puedeGestionar ? '<button type="button" class="btn btn--danger btn--sm" data-del-tarea="' + t.id + '">Eliminar</button>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="tasks-detail-body" id="tareaActividad-' + t.id + '">' + hiloTareaHtml(t.id) + '</div>'
+    );
+  }
+
+  function seleccionarTarea(tareaId) {
+    STATE.tareaSeleccionada = tareaId;
+    $('#tasksApp').classList.add('is-detalle');
+    renderTareas();
+    renderDetalleTarea();
+    if (!STATE.comentariosPorTarea[tareaId]) cargarComentariosTarea(tareaId);
+  }
+
+  function cerrarDetalleTarea() {
+    $('#tasksApp').classList.remove('is-detalle');
+  }
+
+  function renderDetalleTarea() {
+    var cont = $('#tareaDetalle');
+    var t = STATE.tareas.filter(function (x) { return x.id === STATE.tareaSeleccionada; })[0];
+    if (!t) {
+      STATE.tareaSeleccionada = null;
+      cont.innerHTML = (
+        '<div class="tasks-detail-empty">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>' +
+          '<p>Selecciona una tarea para ver el detalle y la actividad.</p>' +
+        '</div>'
+      );
+      return;
     }
-    var btn = document.querySelector('[data-hilo-tarea="' + tareaId + '"]');
-    if (btn) btn.classList.toggle('is-active', abrir);
+    cont.innerHTML = tareaDetalleHtml(t);
   }
 
   function cargarComentariosTarea(tareaId) {
@@ -933,12 +1028,9 @@
       STATE.comentariosPorTarea[tareaId] = res.data || [];
       marcarComentariosLeidos(res.data || []);
       delete STATE.tareasConMencionSinLeer[tareaId];
-      var cont = document.getElementById('hilo-' + tareaId);
-      if (cont && !cont.hidden) cont.innerHTML = hiloTareaHtml(tareaId);
-      var btn = document.querySelector('[data-hilo-tarea="' + tareaId + '"] .task-hilo-dot');
-      if (btn) btn.remove();
-      var count = document.querySelector('[data-hilo-tarea="' + tareaId + '"] .task-hilo-count');
-      if (count) count.textContent = (STATE.comentariosPorTarea[tareaId] || []).length;
+      var cont = document.getElementById('tareaActividad-' + tareaId);
+      if (cont) cont.innerHTML = hiloTareaHtml(tareaId);
+      renderTareas();
     });
   }
 
@@ -996,6 +1088,24 @@
     });
   }
 
+  // Registra un evento generado por la app (cambio de estado, reasignacion,
+  // prioridad...) en el mismo hilo que los comentarios humanos -- ver
+  // tarea_comentarios.tipo en schema.sql. El autor del evento es quien lo
+  // disparo, no un usuario "sistema" generico -- asi la policy de insert que
+  // ya existe (autor_id = auth.uid()) sirve tal cual.
+  function registrarEventoSistema(tareaId, texto, metadata) {
+    sb.from('tarea_comentarios').insert({
+      tarea_id: tareaId,
+      autor_id: STATE.session.user.id,
+      texto: texto,
+      tipo: 'sistema',
+      metadata: metadata || {},
+    }).then(function (res) {
+      if (res.error) { console.warn('[Panel] no se pudo registrar el evento:', res.error.message); return; }
+      cargarComentariosTarea(tareaId);
+    });
+  }
+
   // Deteccion simple de mencion en progreso: todo lo que sigue a la ULTIMA
   // "@" del texto, mientras no tenga un espacio despues -- evita tener que
   // trackear la posicion exacta del cursor.
@@ -1034,23 +1144,49 @@
     if (dropdown) { dropdown.hidden = true; dropdown.innerHTML = ''; }
   }
 
+  // ------------------------------------------------------------ BANDEJA
+  // Filtros 100% client-side sobre STATE.tareas ya cargado -- "Mias",
+  // "Asignadas por mi", "Menciones", "Vencidas", "Completadas" son distintas
+  // vistas del mismo pipeline compartido, no datos nuevos.
+  function tareasDeBandeja(bandeja) {
+    var miId = STATE.session && STATE.session.user.id;
+    switch (bandeja) {
+      case 'mias': return STATE.tareas.filter(function (t) { return t.asesor_id === miId; });
+      case 'asignadas': return STATE.tareas.filter(function (t) { return t.creado_por === miId && t.asesor_id !== miId; });
+      case 'menciones': return STATE.tareas.filter(function (t) { return tareaTieneMencionSinLeer(t.id); });
+      case 'vencidas': return STATE.tareas.filter(tareaVencidaP);
+      case 'hechas': return STATE.tareas.filter(function (t) { return t.estado === 'hecha'; });
+      default: return STATE.tareas;
+    }
+  }
+
   function filtrarTareas() {
+    var lista = tareasDeBandeja(STATE.tareaBandeja);
     var texto = normalizaBusqueda($('#tareaBuscar').value.trim());
-    if (!texto) return STATE.tareas;
-    return STATE.tareas.filter(function (t) {
+    if (!texto) return lista;
+    return lista.filter(function (t) {
       return normalizaBusqueda([t.titulo, t.descripcion].filter(Boolean).join(' ')).indexOf(texto) !== -1;
     });
   }
 
+  function renderBandejaChips() {
+    var cont = $('#tareaBandejaChips');
+    if (!cont) return;
+    cont.innerHTML = Object.keys(BANDEJA_LABEL).map(function (k) {
+      return '<button type="button" class="tasks-bandeja-chip' + (STATE.tareaBandeja === k ? ' is-active' : '') + '" data-bandeja="' + k + '">' + BANDEJA_LABEL[k] + '</button>';
+    }).join('');
+  }
+
   function renderTareas() {
     var lista = STATE.tareas;
+    renderBandejaChips();
     $('#tareasEmptyState').style.display = lista.length ? 'none' : 'block';
     if (lista.length) {
       var filtradas = filtrarTareas();
-      var hayBusqueda = !!$('#tareaBuscar').value.trim();
-      $('#tareaFiltroEmptyState').style.display = !filtradas.length && hayBusqueda ? 'block' : 'none';
+      var hayFiltro = !!$('#tareaBuscar').value.trim() || STATE.tareaBandeja !== 'todo';
+      $('#tareaFiltroEmptyState').style.display = !filtradas.length && hayFiltro ? 'block' : 'none';
       $('#tareasLista').style.display = filtradas.length ? 'flex' : 'none';
-      $('#tareasLista').innerHTML = filtradas.map(taskRowHtml).join('');
+      $('#tareasLista').innerHTML = filtradas.map(tareaSidebarItemHtml).join('');
     } else {
       $('#tareaFiltroEmptyState').style.display = 'none';
       $('#tareasLista').style.display = 'none';
@@ -1079,6 +1215,7 @@
       });
       STATE.tareas = data;
       renderTareas();
+      if (STATE.tareaSeleccionada) renderDetalleTarea();
     });
   }
 
@@ -1086,6 +1223,14 @@
     $('#tarea_titulo').value = '';
     $('#tarea_vence').value = '';
     $('#tarea_descripcion').value = '';
+    $('#tarea_prioridad').value = 'normal';
+    $('#tarea_responsable').innerHTML = opcionesEquipoHtml(STATE.session && STATE.session.user.id);
+    $('#tarea_propiedad').innerHTML = '<option value="">Ninguna</option>' + (STATE.propiedades || []).map(function (p) {
+      return '<option value="' + p.id + '">' + esc(p.titulo) + '</option>';
+    }).join('');
+    $('#tarea_lead').innerHTML = '<option value="">Ninguno</option>' + (STATE.leads || []).map(function (l) {
+      return '<option value="' + l.id + '">' + esc(l.nombre) + '</option>';
+    }).join('');
     $('#tareaError').classList.remove('show');
     $('#tareaModalBackdrop').classList.add('is-open');
   }
@@ -1103,13 +1248,18 @@
       errBox.classList.add('show');
       return;
     }
+    var responsableId = $('#tarea_responsable').value || STATE.session.user.id;
     var btn = $('#tareaGuardarBtn');
     setBusy(btn, true, 'Guardando…');
     sb.from('tareas').insert({
-      asesor_id: STATE.session.user.id,
+      asesor_id: responsableId,
+      creado_por: STATE.session.user.id,
       titulo: titulo,
       descripcion: $('#tarea_descripcion').value.trim(),
       vence: $('#tarea_vence').value || null,
+      prioridad: $('#tarea_prioridad').value || 'normal',
+      propiedad_id: $('#tarea_propiedad').value || null,
+      lead_id: $('#tarea_lead').value || null,
     }).then(function (res) {
       setBusy(btn, false);
       if (res.error) {
@@ -1118,7 +1268,7 @@
         return;
       }
       closeTareaModal();
-      toast('Tarea guardada');
+      toast(responsableId !== STATE.session.user.id ? 'Tarea asignada a ' + nombrePerfil(responsableId) : 'Tarea guardada');
       cargarTareas();
     });
   }
@@ -1129,6 +1279,27 @@
     var nuevoEstado = t.estado === 'hecha' ? 'pendiente' : 'hecha';
     sb.from('tareas').update({ estado: nuevoEstado }).eq('id', id).then(function (res) {
       if (res.error) { toast('No se pudo actualizar: ' + res.error.message, 'err'); return; }
+      registrarEventoSistema(id, nuevoEstado === 'hecha' ? 'completó la tarea.' : 'reabrió la tarea.', { campo: 'estado', de: t.estado, a: nuevoEstado });
+      cargarTareas();
+    });
+  }
+
+  function reasignarTarea(id, nuevoAsesorId) {
+    var t = STATE.tareas.filter(function (x) { return x.id === id; })[0];
+    if (!t || t.asesor_id === nuevoAsesorId) return;
+    sb.from('tareas').update({ asesor_id: nuevoAsesorId }).eq('id', id).then(function (res) {
+      if (res.error) { toast('No se pudo reasignar: ' + res.error.message, 'err'); return; }
+      registrarEventoSistema(id, 'asignó esta tarea a ' + nombrePerfil(nuevoAsesorId) + '.', { campo: 'asesor_id', de: t.asesor_id, a: nuevoAsesorId });
+      cargarTareas();
+    });
+  }
+
+  function cambiarPrioridadTarea(id, prioridad) {
+    var t = STATE.tareas.filter(function (x) { return x.id === id; })[0];
+    if (!t || t.prioridad === prioridad) return;
+    sb.from('tareas').update({ prioridad: prioridad }).eq('id', id).then(function (res) {
+      if (res.error) { toast('No se pudo cambiar la prioridad: ' + res.error.message, 'err'); return; }
+      registrarEventoSistema(id, 'cambió la prioridad a ' + PRIORIDAD_LABEL[prioridad] + '.', { campo: 'prioridad', de: t.prioridad, a: prioridad });
       cargarTareas();
     });
   }
@@ -1137,6 +1308,7 @@
     if (!confirm('¿Eliminar esta tarea?')) return;
     sb.from('tareas').delete().eq('id', id).then(function (res) {
       if (res.error) { toast('No se pudo eliminar: ' + res.error.message, 'err'); return; }
+      if (STATE.tareaSeleccionada === id) { STATE.tareaSeleccionada = null; cerrarDetalleTarea(); }
       cargarTareas();
     });
   }
@@ -2729,6 +2901,13 @@
     $('#tareaBuscar').addEventListener('input', renderTareas);
     $('#tareaFiltroLimpiarBtn').addEventListener('click', function () {
       $('#tareaBuscar').value = '';
+      STATE.tareaBandeja = 'todo';
+      renderTareas();
+    });
+    $('#tareaBandejaChips').addEventListener('click', function (e) {
+      var chip = e.target.closest && e.target.closest('[data-bandeja]');
+      if (!chip) return;
+      STATE.tareaBandeja = chip.dataset.bandeja;
       renderTareas();
     });
     $('#solBuscar').addEventListener('input', renderSolicitudes);
@@ -2832,23 +3011,35 @@
     $('#tareaGuardarBtn').addEventListener('click', guardarTarea);
     $('#tareasLista').addEventListener('click', function (e) {
       var toggleId = e.target.closest && e.target.closest('[data-toggle-tarea]');
+      if (toggleId) { toggleTarea(toggleId.dataset.toggleTarea); return; }
+      var selectId = e.target.closest && e.target.closest('[data-select-tarea]');
+      if (selectId) seleccionarTarea(selectId.dataset.selectTarea);
+    });
+    $('#tareaDetalle').addEventListener('click', function (e) {
+      var toggleId = e.target.closest && e.target.closest('[data-toggle-tarea]');
       var delId = e.target.closest && e.target.closest('[data-del-tarea]');
-      var hiloId = e.target.closest && e.target.closest('[data-hilo-tarea]');
       var sendId = e.target.closest && e.target.closest('.task-comment-send');
       var mencionBtn = e.target.closest && e.target.closest('.task-mention-opcion');
+      var backBtn = e.target.closest && e.target.closest('[data-cerrar-detalle]');
       if (toggleId) toggleTarea(toggleId.dataset.toggleTarea);
       else if (delId) eliminarTarea(delId.dataset.delTarea);
-      else if (hiloId) toggleHiloTarea(hiloId.dataset.hiloTarea);
       else if (sendId) enviarComentarioTarea(sendId.dataset.tareaId);
       else if (mencionBtn) {
         var textarea = mencionBtn.parentElement.previousElementSibling;
         if (textarea && textarea.classList.contains('task-comment-input')) insertarMencion(textarea, mencionBtn.dataset.mencionNombre);
       }
+      else if (backBtn) cerrarDetalleTarea();
     });
-    $('#tareasLista').addEventListener('input', function (e) {
+    $('#tareaDetalle').addEventListener('change', function (e) {
+      var reasignarId = e.target.closest && e.target.closest('[data-reasignar-tarea]');
+      var prioridadId = e.target.closest && e.target.closest('[data-prioridad-tarea]');
+      if (reasignarId) reasignarTarea(reasignarId.dataset.reasignarTarea, e.target.value);
+      else if (prioridadId) cambiarPrioridadTarea(prioridadId.dataset.prioridadTarea, e.target.value);
+    });
+    $('#tareaDetalle').addEventListener('input', function (e) {
       if (e.target.classList.contains('task-comment-input')) actualizarDropdownMencion(e.target);
     });
-    $('#tareasLista').addEventListener('keydown', function (e) {
+    $('#tareaDetalle').addEventListener('keydown', function (e) {
       if (e.target.classList.contains('task-comment-input') && e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         enviarComentarioTarea(e.target.dataset.tareaId);

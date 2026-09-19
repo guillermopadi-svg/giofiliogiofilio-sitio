@@ -464,6 +464,74 @@ create trigger on_tarea_comentario_updated
   before update on tarea_comentarios
   for each row execute function proteger_comentario_tarea();
 
+-- ---------------------------------------------------- TAREAS COMO WORKSPACE
+-- Evolucion del modulo de Tareas: antes "responsable" (asesor_id) y "quien la
+-- creo" eran siempre la misma persona porque solo podias crear tareas para ti
+-- mismo. `creado_por` separa ambos roles para poder asignarle una tarea a
+-- alguien mas ("Gio asigna a Carlos") sin perder de vista quien la genero.
+alter table tareas add column if not exists creado_por uuid references auth.users(id) on delete set null;
+update tareas set creado_por = asesor_id where creado_por is null;
+
+alter table tareas add column if not exists prioridad text not null default 'normal'
+  check (prioridad in ('baja', 'normal', 'alta'));
+
+-- Antes solo se podia crear una tarea para uno mismo (with check asesor_id =
+-- auth.uid()) -- se abre para poder asignarla a otro asesor del equipo
+-- (equipo chico, misma confianza que ya existe para ver/comentar cualquier
+-- tarea). creado_por = auth.uid() sigue siendo obligatorio, asi que siempre
+-- queda registro real de quien la genero, sin importar a quien se la asigne.
+drop policy if exists "cada quien crea sus propias tareas" on tareas;
+create policy "cualquier asesor activo crea tareas, para si mismo o para otro"
+  on tareas for insert
+  with check (is_activo() and creado_por = auth.uid());
+
+-- Se agrega "or creado_por = auth.uid()" -- quien genero/asigno la tarea
+-- tambien puede editarla o borrarla despues, ademas del responsable actual
+-- y de un admin.
+drop policy if exists "cada quien edita/borra sus propias tareas, admin todas (upd)" on tareas;
+create policy "responsable, creador o admin editan"
+  on tareas for update
+  using (is_activo() and (asesor_id = auth.uid() or creado_por = auth.uid() or is_admin()));
+
+drop policy if exists "cada quien edita/borra sus propias tareas, admin todas (del)" on tareas;
+create policy "responsable, creador o admin borran"
+  on tareas for delete
+  using (is_activo() and (asesor_id = auth.uid() or creado_por = auth.uid() or is_admin()));
+
+-- `tarea_comentarios` se reusa como el feed de actividad completo de la
+-- tarea, no solo comentarios humanos: `tipo='sistema'` son eventos generados
+-- por la app misma (cambio de estado, reasignacion, prioridad...), con
+-- `metadata` guardando el detalle estructurado (ej. {"campo":"estado","de":
+-- "pendiente","a":"hecha"}) para poder redactar el texto en el momento que
+-- se necesite sin perder el dato crudo. autor_id de una fila de sistema es
+-- quien disparo la accion (no un usuario "sistema" generico) -- asi la
+-- policy de insert existente (autor_id = auth.uid()) sirve tal cual, sin
+-- policy nueva ni usuario tecnico.
+alter table tarea_comentarios add column if not exists tipo text not null default 'comentario'
+  check (tipo in ('comentario', 'sistema'));
+alter table tarea_comentarios add column if not exists metadata jsonb not null default '{}'::jsonb;
+
+-- proteger_comentario_tarea (arriba) no cubria tipo/metadata porque no
+-- existian cuando se escribio -- se amplia para que tampoco se puedan
+-- alterar despues de creado un evento, por la misma razon que ya aplica a
+-- texto/autor_id/menciones: la unica mutacion legitima de una fila ya
+-- guardada es agregarse a leido_por.
+create or replace function proteger_comentario_tarea()
+returns trigger as $$
+begin
+  if new.texto is distinct from old.texto
+    or new.autor_id is distinct from old.autor_id
+    or new.tarea_id is distinct from old.tarea_id
+    or new.menciones is distinct from old.menciones
+    or new.creado_en is distinct from old.creado_en
+    or new.tipo is distinct from old.tipo
+    or new.metadata is distinct from old.metadata then
+    raise exception 'un comentario ya guardado no se puede editar, solo marcar como leido';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
 -- ------------------------------------------------------------ solicitudes_alta
 -- Formulario público de alta de propiedad (/alta-propiedad/) -- lo llena
 -- directo el dueño de la propiedad, sin necesidad de cuenta ni login. Vive
