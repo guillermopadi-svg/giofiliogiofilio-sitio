@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null, propVista: 'grid', comentariosPorTarea: {}, tareasConMencionSinLeer: {}, tareaSeleccionada: null, tareaBandeja: 'todo' };
+  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null, propVista: 'grid', hilos: {}, adjuntosPendientes: {}, tareasConMencionSinLeer: {}, tareaSeleccionada: null, tareaBandeja: 'todo' };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -545,6 +545,17 @@
       chk.checked = !!(prop && prop.amenidades && prop.amenidades.indexOf(chk.value) !== -1);
     });
     renderPhotoStrip();
+    // La actividad (comentarios internos + seguimiento con el vendedor) solo
+    // tiene sentido en una propiedad que ya existe -- una ficha nueva aun no
+    // tiene id para engancharla.
+    $('#propActividadLabel').hidden = !prop;
+    $('#propActividadCont').hidden = !prop;
+    if (prop) {
+      $('#propActividadCont').innerHTML = '<div id="hiloCont-propiedad-' + prop.id + '">' + hiloHtml('propiedad', prop.id) + '</div>';
+      if (!comentariosDe('propiedad', prop.id)) cargarHilo('propiedad', prop.id);
+    } else {
+      $('#propActividadCont').innerHTML = '';
+    }
     $('#modalBackdrop').classList.add('is-open');
   }
 
@@ -850,7 +861,7 @@
     var hecha = t.estado === 'hecha';
     var venceTexto = t.vence ? formatFechaCorta(t.vence) : '';
     var activa = STATE.tareaSeleccionada === t.id;
-    var comentarios = STATE.comentariosPorTarea[t.id];
+    var comentarios = comentariosDe('tarea', t.id);
     var relacion = t.propiedad_id ? nombrePropiedad(t.propiedad_id) : (t.lead_id ? nombreLead(t.lead_id) : '');
     return (
       '<div class="tasks-channel-item' + (activa ? ' is-active' : '') + (hecha ? ' is-hecha' : '') + '" data-select-tarea="' + t.id + '">' +
@@ -907,9 +918,41 @@
     return out;
   }
 
+  // ---------------------------------------------------------- HILO GENERICO
+  // El hilo de actividad (comentarios + eventos de sistema + adjuntos) es el
+  // mismo componente para Tareas y para Propiedades -- solo cambia la tabla
+  // y la columna de referencia (ver HILO_CONFIG). Asi se evita duplicar toda
+  // la logica de @menciones/adjuntos/render para cada entidad nueva.
+  var HILO_CONFIG = {
+    tarea: { tabla: 'tarea_comentarios', columna: 'tarea_id' },
+    propiedad: { tabla: 'propiedad_comentarios', columna: 'propiedad_id' },
+  };
+
+  function hiloKey(entidad, id) { return entidad + ':' + id; }
+  function comentariosDe(entidad, id) { return STATE.hilos[hiloKey(entidad, id)]; }
+  function contenedorHilo(entidad, id) { return document.getElementById('hiloCont-' + entidad + '-' + id); }
+
+  function iconoArchivo(tipo) {
+    if (/^image\//.test(tipo || '')) return '🖼️';
+    if (tipo === 'application/pdf') return '📄';
+    if (/sheet|excel|csv|opendocument\.spreadsheet/.test(tipo || '')) return '📊';
+    if (/word|document|opendocument\.text/.test(tipo || '')) return '📝';
+    if (/presentation|powerpoint/.test(tipo || '')) return '📽️';
+    return '📎';
+  }
+
+  function archivosHtml(archivos) {
+    if (!archivos || !archivos.length) return '';
+    return '<div class="task-comentario-archivos">' + archivos.map(function (a) {
+      return '<a class="task-adjunto-chip" href="' + esc(a.url) + '" target="_blank" rel="noopener">' + iconoArchivo(a.tipo) + ' ' + esc(a.nombre) + '</a>';
+    }).join('') + '</div>';
+  }
+
   // Eventos de sistema (cambio de estado, reasignacion, prioridad...)
   // conviven en el mismo hilo que los comentarios humanos, distinguidos por
   // `tipo` -- se redactan como una linea centrada y discreta, sin avatar.
+  // `tipo='vendedor'` (solo en propiedades) marca una interaccion con el
+  // dueño/vendedor en vez de un comentario interno del equipo.
   function comentarioHtml(c) {
     if (c.tipo === 'sistema') {
       return (
@@ -919,30 +962,122 @@
         '</div>'
       );
     }
+    var esVendedor = c.tipo === 'vendedor';
     return (
-      '<div class="task-comentario">' +
+      '<div class="task-comentario' + (esVendedor ? ' is-vendedor' : '') + '">' +
         '<div class="avatar task-comentario-avatar">' + esc(iniciales(nombrePerfil(c.autor_id))) + '</div>' +
         '<div class="task-comentario-body">' +
-          '<div class="task-comentario-meta"><strong>' + esc(nombrePerfil(c.autor_id)) + '</strong> <span>' + formatFechaHora(c.creado_en) + '</span></div>' +
-          '<div class="task-comentario-texto">' + resaltarMenciones(c.texto) + '</div>' +
+          '<div class="task-comentario-meta"><strong>' + esc(nombrePerfil(c.autor_id)) + '</strong>' +
+            (esVendedor ? ' <span class="task-comentario-tag">Vendedor</span>' : '') +
+            ' <span>' + formatFechaHora(c.creado_en) + '</span></div>' +
+          (c.texto ? '<div class="task-comentario-texto">' + resaltarMenciones(c.texto) + '</div>' : '') +
+          archivosHtml(c.archivos) +
         '</div>' +
       '</div>'
     );
   }
 
-  function hiloTareaHtml(tareaId) {
-    var comentarios = STATE.comentariosPorTarea[tareaId];
+  function composeHtml(entidad, id) {
+    var key = hiloKey(entidad, id);
+    var pendientes = STATE.adjuntosPendientes[key] || [];
+    return (
+      '<div class="task-comment-compose">' +
+        (pendientes.length ? '<div class="task-comment-adjuntos-pendientes">' + pendientes.map(function (a, i) {
+          return '<span class="task-adjunto-chip task-adjunto-chip--pendiente">' + iconoArchivo(a.tipo) + ' ' + esc(a.nombre) +
+            ' <button type="button" data-quitar-adjunto="' + i + '" data-entidad="' + entidad + '" data-id="' + id + '">&times;</button></span>';
+        }).join('') + '</div>' : '') +
+        (entidad === 'propiedad' ? '<label class="task-comment-vendedor"><input type="checkbox" class="task-comment-es-vendedor" data-entidad="' + entidad + '" data-id="' + id + '"> Fue una interacción con el vendedor</label>' : '') +
+        '<div class="task-comment-row">' +
+          '<textarea class="task-comment-input" data-entidad="' + entidad + '" data-id="' + id + '" rows="2" placeholder="Escribe un comentario… usa @ para mencionar a alguien"></textarea>' +
+          '<div class="task-mention-dropdown" hidden></div>' +
+          '<label class="task-comment-adjuntar" title="Adjuntar archivo">📎<input type="file" multiple hidden class="task-comment-file" data-entidad="' + entidad + '" data-id="' + id + '"></label>' +
+          '<button type="button" class="btn btn--gold btn--sm task-comment-send" data-entidad="' + entidad + '" data-id="' + id + '">Comentar</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function hiloHtml(entidad, id) {
+    var comentarios = comentariosDe(entidad, id);
     if (!comentarios) return '<div class="task-hilo-cargando">Cargando actividad…</div>';
     return (
       '<div class="task-hilo-lista">' +
         (comentarios.length ? comentarios.map(comentarioHtml).join('') : '<div class="task-hilo-vacio">Sin actividad todavía — @menciona a alguien para pedirle seguimiento.</div>') +
       '</div>' +
-      '<div class="task-comment-compose">' +
-        '<textarea class="task-comment-input" data-tarea-id="' + tareaId + '" rows="2" placeholder="Escribe un comentario… usa @ para mencionar a alguien"></textarea>' +
-        '<div class="task-mention-dropdown" hidden></div>' +
-        '<button type="button" class="btn btn--gold btn--sm task-comment-send" data-tarea-id="' + tareaId + '">Comentar</button>' +
-      '</div>'
+      composeHtml(entidad, id)
     );
+  }
+
+  function cargarHilo(entidad, id) {
+    var cfg = HILO_CONFIG[entidad];
+    sb.from(cfg.tabla).select('*').eq(cfg.columna, id).order('creado_en', { ascending: true }).then(function (res) {
+      if (res.error) { console.warn('[Panel] no se pudo cargar la actividad:', res.error.message); return; }
+      STATE.hilos[hiloKey(entidad, id)] = res.data || [];
+      marcarComentariosLeidos(cfg.tabla, res.data || []);
+      if (entidad === 'tarea') { delete STATE.tareasConMencionSinLeer[id]; renderTareas(); }
+      var cont = contenedorHilo(entidad, id);
+      if (cont) cont.innerHTML = hiloHtml(entidad, id);
+    });
+  }
+
+  function subirAdjuntosComentario(entidad, id, files) {
+    var key = hiloKey(entidad, id);
+    var carpeta = entidad + '/' + id;
+    var lista = Array.prototype.slice.call(files);
+    toast('Subiendo ' + lista.length + ' archivo' + (lista.length > 1 ? 's' : '') + '…');
+    Promise.all(lista.map(function (file) {
+      var ruta = carpeta + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '-' + file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      return sb.storage.from('panel-adjuntos').upload(ruta, file).then(function (res) {
+        if (res.error) { toast('No se pudo subir ' + file.name + ': ' + res.error.message, 'err'); return null; }
+        return { nombre: file.name, url: sb.storage.from('panel-adjuntos').getPublicUrl(ruta).data.publicUrl, tipo: file.type, tamano: file.size };
+      });
+    })).then(function (subidos) {
+      var ok = subidos.filter(Boolean);
+      if (!ok.length) return;
+      STATE.adjuntosPendientes[key] = (STATE.adjuntosPendientes[key] || []).concat(ok);
+      var cont = contenedorHilo(entidad, id);
+      if (cont) cont.innerHTML = hiloHtml(entidad, id);
+    });
+  }
+
+  function quitarAdjuntoPendiente(entidad, id, idx) {
+    var key = hiloKey(entidad, id);
+    (STATE.adjuntosPendientes[key] || []).splice(idx, 1);
+    var cont = contenedorHilo(entidad, id);
+    if (cont) cont.innerHTML = hiloHtml(entidad, id);
+  }
+
+  // Wiring compartido entre el hilo de Tareas (#tareaDetalle) y el de
+  // Propiedades (#propActividadCont) -- mismos botones/inputs, misma logica.
+  function wireHiloClick(e) {
+    var sendBtn = e.target.closest && e.target.closest('.task-comment-send');
+    var mencionBtn = e.target.closest && e.target.closest('.task-mention-opcion');
+    var quitarBtn = e.target.closest && e.target.closest('[data-quitar-adjunto]');
+    if (sendBtn) enviarComentario(sendBtn.dataset.entidad, sendBtn.dataset.id);
+    else if (quitarBtn) quitarAdjuntoPendiente(quitarBtn.dataset.entidad, quitarBtn.dataset.id, Number(quitarBtn.dataset.quitarAdjunto));
+    else if (mencionBtn) {
+      var textarea = mencionBtn.parentElement.previousElementSibling;
+      if (textarea && textarea.classList.contains('task-comment-input')) insertarMencion(textarea, mencionBtn.dataset.mencionNombre);
+    }
+  }
+
+  function wireHiloChange(e) {
+    var fileInput = e.target.closest && e.target.closest('.task-comment-file');
+    if (fileInput && fileInput.files.length) {
+      subirAdjuntosComentario(fileInput.dataset.entidad, fileInput.dataset.id, fileInput.files);
+      fileInput.value = '';
+    }
+  }
+
+  function wireHiloInput(e) {
+    if (e.target.classList.contains('task-comment-input')) actualizarDropdownMencion(e.target);
+  }
+
+  function wireHiloKeydown(e) {
+    if (e.target.classList.contains('task-comment-input') && e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      enviarComentario(e.target.dataset.entidad, e.target.dataset.id);
+    }
   }
 
   function opcionesEquipoHtml(seleccionadoId) {
@@ -990,7 +1125,7 @@
           (puedeGestionar ? '<button type="button" class="btn btn--danger btn--sm" data-del-tarea="' + t.id + '">Eliminar</button>' : '') +
         '</div>' +
       '</div>' +
-      '<div class="tasks-detail-body" id="tareaActividad-' + t.id + '">' + hiloTareaHtml(t.id) + '</div>'
+      '<div class="tasks-detail-body" id="hiloCont-tarea-' + t.id + '">' + hiloHtml('tarea', t.id) + '</div>'
     );
   }
 
@@ -999,7 +1134,7 @@
     $('#tasksApp').classList.add('is-detalle');
     renderTareas();
     renderDetalleTarea();
-    if (!STATE.comentariosPorTarea[tareaId]) cargarComentariosTarea(tareaId);
+    if (!comentariosDe('tarea', tareaId)) cargarHilo('tarea', tareaId);
   }
 
   function cerrarDetalleTarea() {
@@ -1022,28 +1157,16 @@
     cont.innerHTML = tareaDetalleHtml(t);
   }
 
-  function cargarComentariosTarea(tareaId) {
-    sb.from('tarea_comentarios').select('*').eq('tarea_id', tareaId).order('creado_en', { ascending: true }).then(function (res) {
-      if (res.error) { console.warn('[Panel] no se pudieron cargar los comentarios:', res.error.message); return; }
-      STATE.comentariosPorTarea[tareaId] = res.data || [];
-      marcarComentariosLeidos(res.data || []);
-      delete STATE.tareasConMencionSinLeer[tareaId];
-      var cont = document.getElementById('tareaActividad-' + tareaId);
-      if (cont) cont.innerHTML = hiloTareaHtml(tareaId);
-      renderTareas();
-    });
-  }
-
   // No hay tiempo real -- "leido" se marca al abrir el hilo que contiene la
   // mención, no al instante en que se publica.
-  function marcarComentariosLeidos(comentarios) {
+  function marcarComentariosLeidos(tabla, comentarios) {
     var miId = STATE.session && STATE.session.user.id;
     if (!miId) return;
     comentarios.forEach(function (c) {
       var menciones = c.menciones || [];
       var leidoPor = c.leido_por || [];
       if (menciones.indexOf(miId) !== -1 && leidoPor.indexOf(miId) === -1) {
-        sb.from('tarea_comentarios').update({ leido_por: leidoPor.concat([miId]) }).eq('id', c.id).then(function () {});
+        sb.from(tabla).update({ leido_por: leidoPor.concat([miId]) }).eq('id', c.id).then(function () {});
       }
     });
   }
@@ -1072,27 +1195,32 @@
     return ids;
   }
 
-  function enviarComentarioTarea(tareaId) {
-    var input = document.querySelector('.task-comment-input[data-tarea-id="' + tareaId + '"]');
+  function enviarComentario(entidad, id) {
+    var key = hiloKey(entidad, id);
+    var input = document.querySelector('.task-comment-input[data-entidad="' + entidad + '"][data-id="' + id + '"]');
     if (!input) return;
     var texto = input.value.trim();
-    if (!texto) return;
-    sb.from('tarea_comentarios').insert({
-      tarea_id: tareaId,
-      autor_id: STATE.session.user.id,
-      texto: texto,
-      menciones: extraerMenciones(texto),
-    }).then(function (res) {
+    var archivos = STATE.adjuntosPendientes[key] || [];
+    if (!texto && !archivos.length) return;
+    var cfg = HILO_CONFIG[entidad];
+    var payload = { autor_id: STATE.session.user.id, texto: texto, menciones: extraerMenciones(texto), archivos: archivos };
+    payload[cfg.columna] = id;
+    if (entidad === 'propiedad') {
+      var esVendedor = document.querySelector('.task-comment-es-vendedor[data-entidad="propiedad"][data-id="' + id + '"]');
+      if (esVendedor && esVendedor.checked) payload.tipo = 'vendedor';
+    }
+    sb.from(cfg.tabla).insert(payload).then(function (res) {
       if (res.error) { toast('No se pudo comentar: ' + res.error.message, 'err'); return; }
-      cargarComentariosTarea(tareaId);
+      STATE.adjuntosPendientes[key] = [];
+      cargarHilo(entidad, id);
     });
   }
 
   // Registra un evento generado por la app (cambio de estado, reasignacion,
-  // prioridad...) en el mismo hilo que los comentarios humanos -- ver
-  // tarea_comentarios.tipo en schema.sql. El autor del evento es quien lo
-  // disparo, no un usuario "sistema" generico -- asi la policy de insert que
-  // ya existe (autor_id = auth.uid()) sirve tal cual.
+  // prioridad...) en el hilo de la tarea -- ver tarea_comentarios.tipo en
+  // schema.sql. El autor del evento es quien lo disparo, no un usuario
+  // "sistema" generico -- asi la policy de insert que ya existe
+  // (autor_id = auth.uid()) sirve tal cual. Solo aplica a tareas por ahora.
   function registrarEventoSistema(tareaId, texto, metadata) {
     sb.from('tarea_comentarios').insert({
       tarea_id: tareaId,
@@ -1102,7 +1230,7 @@
       metadata: metadata || {},
     }).then(function (res) {
       if (res.error) { console.warn('[Panel] no se pudo registrar el evento:', res.error.message); return; }
-      cargarComentariosTarea(tareaId);
+      cargarHilo('tarea', tareaId);
     });
   }
 
@@ -3018,33 +3146,26 @@
     $('#tareaDetalle').addEventListener('click', function (e) {
       var toggleId = e.target.closest && e.target.closest('[data-toggle-tarea]');
       var delId = e.target.closest && e.target.closest('[data-del-tarea]');
-      var sendId = e.target.closest && e.target.closest('.task-comment-send');
-      var mencionBtn = e.target.closest && e.target.closest('.task-mention-opcion');
       var backBtn = e.target.closest && e.target.closest('[data-cerrar-detalle]');
-      if (toggleId) toggleTarea(toggleId.dataset.toggleTarea);
-      else if (delId) eliminarTarea(delId.dataset.delTarea);
-      else if (sendId) enviarComentarioTarea(sendId.dataset.tareaId);
-      else if (mencionBtn) {
-        var textarea = mencionBtn.parentElement.previousElementSibling;
-        if (textarea && textarea.classList.contains('task-comment-input')) insertarMencion(textarea, mencionBtn.dataset.mencionNombre);
-      }
-      else if (backBtn) cerrarDetalleTarea();
+      if (toggleId) { toggleTarea(toggleId.dataset.toggleTarea); return; }
+      if (delId) { eliminarTarea(delId.dataset.delTarea); return; }
+      if (backBtn) { cerrarDetalleTarea(); return; }
+      wireHiloClick(e);
     });
     $('#tareaDetalle').addEventListener('change', function (e) {
       var reasignarId = e.target.closest && e.target.closest('[data-reasignar-tarea]');
       var prioridadId = e.target.closest && e.target.closest('[data-prioridad-tarea]');
-      if (reasignarId) reasignarTarea(reasignarId.dataset.reasignarTarea, e.target.value);
-      else if (prioridadId) cambiarPrioridadTarea(prioridadId.dataset.prioridadTarea, e.target.value);
+      if (reasignarId) { reasignarTarea(reasignarId.dataset.reasignarTarea, e.target.value); return; }
+      if (prioridadId) { cambiarPrioridadTarea(prioridadId.dataset.prioridadTarea, e.target.value); return; }
+      wireHiloChange(e);
     });
-    $('#tareaDetalle').addEventListener('input', function (e) {
-      if (e.target.classList.contains('task-comment-input')) actualizarDropdownMencion(e.target);
-    });
-    $('#tareaDetalle').addEventListener('keydown', function (e) {
-      if (e.target.classList.contains('task-comment-input') && e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        enviarComentarioTarea(e.target.dataset.tareaId);
-      }
-    });
+    $('#tareaDetalle').addEventListener('input', wireHiloInput);
+    $('#tareaDetalle').addEventListener('keydown', wireHiloKeydown);
+
+    $('#propActividadCont').addEventListener('click', wireHiloClick);
+    $('#propActividadCont').addEventListener('change', wireHiloChange);
+    $('#propActividadCont').addEventListener('input', wireHiloInput);
+    $('#propActividadCont').addEventListener('keydown', wireHiloKeydown);
 
     $('#addAsesorBtn').addEventListener('click', openInviteModal);
     $('#inviteModalClose').addEventListener('click', closeInviteModal);

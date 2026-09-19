@@ -525,12 +525,150 @@ begin
     or new.menciones is distinct from old.menciones
     or new.creado_en is distinct from old.creado_en
     or new.tipo is distinct from old.tipo
-    or new.metadata is distinct from old.metadata then
+    or new.metadata is distinct from old.metadata
+    or new.archivos is distinct from old.archivos then
     raise exception 'un comentario ya guardado no se puede editar, solo marcar como leido';
   end if;
   return new;
 end;
 $$ language plpgsql security definer set search_path = public;
+
+-- Cada comentario (de tareas o de propiedades) puede llevar archivos
+-- adjuntos -- no solo fotos como en los buckets existentes, tambien PDFs/
+-- Excel/Word (contratos, identificaciones, comparativos...).
+alter table tarea_comentarios add column if not exists archivos jsonb not null default '[]'::jsonb;
+
+-- --------------------------------------------------- PROPIEDAD_COMENTARIOS
+-- Mismo patron que tarea_comentarios (hilo tipo Slack, comentarios humanos +
+-- eventos de sistema, @menciones, adjuntos) pero anclado a una propiedad en
+-- vez de una tarea -- sirve tanto para coordinacion interna del equipo sobre
+-- esa ficha como para llevar registro de la comunicacion con el vendedor
+-- (tipo='vendedor' marca esas interacciones sin ser un comentario del
+-- equipo). Es tabla aparte (no polimorfica con tarea_comentarios) porque
+-- quien puede VER una propiedad sigue reglas distintas a quien ve una tarea
+-- (propiedades_manual restringe por asesor_id/estado; tareas es bandeja
+-- compartida de todo el equipo) -- mezclar ambas en una sola tabla
+-- complicaria las policies sin necesidad real.
+create table if not exists propiedad_comentarios (
+  id uuid primary key default gen_random_uuid(),
+  propiedad_id uuid not null references propiedades_manual(id) on delete cascade,
+  autor_id uuid not null references auth.users(id) on delete cascade,
+  texto text not null default '',
+  tipo text not null default 'comentario' check (tipo in ('comentario', 'sistema', 'vendedor')),
+  menciones uuid[] not null default '{}',
+  leido_por uuid[] not null default '{}',
+  archivos jsonb not null default '[]'::jsonb,
+  creado_en timestamptz not null default now()
+);
+
+alter table propiedad_comentarios enable row level security;
+
+grant select, insert, update, delete on propiedad_comentarios to authenticated;
+
+-- "Quien puede ver la propiedad" repite exactamente la formula de la policy
+-- de select de propiedades_manual (arriba) -- si cambia alla, debe cambiar
+-- aqui tambien.
+drop policy if exists "quien puede ver la propiedad ve su hilo" on propiedad_comentarios;
+create policy "quien puede ver la propiedad ve su hilo"
+  on propiedad_comentarios for select
+  using (exists (
+    select 1 from propiedades_manual p
+    where p.id = propiedad_comentarios.propiedad_id
+      and (p.estado = 'disponible' or (is_activo() and (p.asesor_id = auth.uid() or is_admin())))
+  ));
+
+drop policy if exists "quien puede ver la propiedad comenta" on propiedad_comentarios;
+create policy "quien puede ver la propiedad comenta"
+  on propiedad_comentarios for insert
+  with check (
+    is_activo() and autor_id = auth.uid() and exists (
+      select 1 from propiedades_manual p
+      where p.id = propiedad_comentarios.propiedad_id
+        and (p.estado = 'disponible' or (is_activo() and (p.asesor_id = auth.uid() or is_admin())))
+    )
+  );
+
+-- El UPDATE solo existe para marcar un comentario como leido (igual que en
+-- tarea_comentarios) -- el trigger de abajo bloquea cualquier otro cambio.
+drop policy if exists "quien puede ver la propiedad marca como leido" on propiedad_comentarios;
+create policy "quien puede ver la propiedad marca como leido"
+  on propiedad_comentarios for update
+  using (exists (
+    select 1 from propiedades_manual p
+    where p.id = propiedad_comentarios.propiedad_id
+      and (p.estado = 'disponible' or (is_activo() and (p.asesor_id = auth.uid() or is_admin())))
+  ))
+  with check (is_activo());
+
+drop policy if exists "cada quien borra su comentario de propiedad, admin cualquiera" on propiedad_comentarios;
+create policy "cada quien borra su comentario de propiedad, admin cualquiera"
+  on propiedad_comentarios for delete
+  using (is_activo() and (autor_id = auth.uid() or is_admin()));
+
+create or replace function proteger_comentario_propiedad()
+returns trigger as $$
+begin
+  if new.texto is distinct from old.texto
+    or new.autor_id is distinct from old.autor_id
+    or new.propiedad_id is distinct from old.propiedad_id
+    or new.menciones is distinct from old.menciones
+    or new.creado_en is distinct from old.creado_en
+    or new.tipo is distinct from old.tipo
+    or new.archivos is distinct from old.archivos then
+    raise exception 'un comentario ya guardado no se puede editar, solo marcar como leido';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+drop trigger if exists on_propiedad_comentario_updated on propiedad_comentarios;
+create trigger on_propiedad_comentario_updated
+  before update on propiedad_comentarios
+  for each row execute function proteger_comentario_propiedad();
+
+-- ------------------------------------------------------------- PANEL_ADJUNTOS
+-- Bucket compartido para archivos adjuntos a comentarios (de tareas o de
+-- propiedades) -- separado de `propiedades-manual`/`solicitudes-alta` porque
+-- aqui SI se permiten documentos (PDF/Word/Excel), no solo imagenes.
+insert into storage.buckets (id, name, public)
+values ('panel-adjuntos', 'panel-adjuntos', true)
+on conflict (id) do nothing;
+
+drop policy if exists "cualquiera puede ver los adjuntos (bucket publico)" on storage.objects;
+create policy "cualquiera puede ver los adjuntos (bucket publico)"
+  on storage.objects for select
+  using (bucket_id = 'panel-adjuntos');
+
+drop policy if exists "un asesor activo puede subir adjuntos" on storage.objects;
+create policy "un asesor activo puede subir adjuntos"
+  on storage.objects for insert
+  with check (bucket_id = 'panel-adjuntos' and auth.role() = 'authenticated' and is_activo());
+
+drop policy if exists "un asesor activo puede borrar adjuntos que subio" on storage.objects;
+create policy "un asesor activo puede borrar adjuntos que subio"
+  on storage.objects for delete
+  using (bucket_id = 'panel-adjuntos' and auth.uid() = owner and is_activo());
+
+-- Mismo criterio de seguridad que GIO-001 (propiedades-manual/solicitudes-alta):
+-- tipo y tamano de archivo restringidos desde el dia uno, no despues de un
+-- hallazgo de auditoria. La lista cubre "cualquier documento de oficina" en
+-- la practica (fotos, PDF, Word, Excel/CSV, lo que exporta Google Sheets/
+-- Docs/Slides, PowerPoint, texto plano) -- se deja fuera .zip/.exe y otros
+-- ejecutables/comprimidos, que no tienen uso legitimo aqui y son el vector
+-- clasico para convertir un bucket publico en hosting de malware. Tope mas
+-- alto que las fotos (20 MB) porque aqui tambien van PDFs de contratos
+-- escaneados.
+update storage.buckets
+set allowed_mime_types = array[
+      'image/jpeg','image/png','image/webp','image/heic','image/heif','image/gif',
+      'application/pdf','text/plain','text/csv',
+      'application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.oasis.opendocument.spreadsheet','application/vnd.oasis.opendocument.text',
+      'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ],
+    file_size_limit = 20971520
+where id = 'panel-adjuntos';
 
 -- ------------------------------------------------------------ solicitudes_alta
 -- Formulario público de alta de propiedad (/alta-propiedad/) -- lo llena
