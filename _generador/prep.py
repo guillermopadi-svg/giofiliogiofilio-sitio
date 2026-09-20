@@ -126,6 +126,22 @@ def pick(pool, seed, k=1):
     return r.sample(pool, min(k, len(pool)))
 
 
+# Las rutas locales de fotos "sin extension" (convencion de sync_easybroker.py,
+# ver comentario abajo) deberian llegar aqui pelonas -- pero una propiedad de
+# EasyBroker importada al panel (importar_easybroker_a_panel.py) guarda sus
+# fotos en propiedades_manual.fotos YA con ".jpg" incluido, y
+# fetch_manual_props.py las reenvuelve como si fueran "sin extension" otra
+# vez. Sin esto, se les pega un ".jpg"/".webp" encima del que ya traian
+# (ej. "...-00-card.jpg.webp", 404 real en produccion) -- quitar cualquier
+# extension conocida antes de agregar la que corresponde lo vuelve seguro
+# sin importar de cual de los dos formatos venga.
+def _ruta_sin_ext(ruta):
+    for ext in (".jpg", ".jpeg", ".png", ".webp"):
+        if ruta.lower().endswith(ext):
+            return ruta[: -len(ext)]
+    return ruta
+
+
 def normalize(images):
     props = []
     for n, raw in enumerate(PROPIEDADES):
@@ -195,11 +211,11 @@ def normalize(images):
                 p["foto_card"] = fotos_real[0]["card"]
                 p["foto_card_webp"] = fotos_real[0]["card"]
             else:
-                p["fotos"] = [f["hero"] + ".jpg" for f in fotos_real]
-                p["fotos_webp"] = [f["hero"] + ".webp" for f in fotos_real]
-                p["fotos_thumb"] = [f["thumb"] + ".jpg" for f in fotos_real]
-                p["foto_card"] = fotos_real[0]["card"] + ".jpg"
-                p["foto_card_webp"] = fotos_real[0]["card"] + ".webp"
+                p["fotos"] = [_ruta_sin_ext(f["hero"]) + ".jpg" for f in fotos_real]
+                p["fotos_webp"] = [_ruta_sin_ext(f["hero"]) + ".webp" for f in fotos_real]
+                p["fotos_thumb"] = [_ruta_sin_ext(f["thumb"]) + ".jpg" for f in fotos_real]
+                p["foto_card"] = _ruta_sin_ext(fotos_real[0]["card"]) + ".jpg"
+                p["foto_card_webp"] = _ruta_sin_ext(fotos_real[0]["card"]) + ".webp"
         else:
             es_casa = p["tipo"] in ("casa", "casa-en-condominio")
             es_terreno = p["tipo"] == "terreno"
