@@ -551,8 +551,7 @@
       list = sortList(list, RES.orden);
       RES.lista = list;
 
-      countEl.innerHTML = '<b>' + list.length + '</b> ' + (list.length === 1 ? 'propiedad encontrada' : 'propiedades encontradas') +
-        ' <span class="muted small">en Ciudad de México</span>';
+      countEl.innerHTML = '<b>' + list.length + '</b> ' + (list.length === 1 ? 'propiedad encontrada' : 'propiedades encontradas');
 
       if (!list.length) {
         listEl.innerHTML = '<div class="empty">' + ICON.search +

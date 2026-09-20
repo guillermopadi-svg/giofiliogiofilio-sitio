@@ -69,13 +69,16 @@ def blog_card_img(b, R):
 
 print("→ Normalizando dataset…")
 PROPS_ALL = prep.normalize(IMAGES)
-# El buscador, el mapa y las páginas de zona/colonia siguen siendo solo CDMX;
-# las propiedades fuera de la ciudad reciben su propia ficha (más abajo) pero
-# no entran al inventario que arma el buscador ni al dataset del mapa.
+# Las páginas de zona/colonia (organizadas por alcaldía de CDMX) siguen
+# siendo solo CDMX -- no hay una alcaldía de Cuernavaca o Tulum que armar.
+# Pero el buscador y el dataset del mapa (emit_data_js) SI incluyen todo el
+# inventario, fuera de CDMX tambien -- decision 2026-09-19: esas propiedades
+# tambien generan negocio y no deben quedar solo con una ficha huerfana
+# (alcanzable por link directo pero invisible en el buscador propio).
 PROPS = [p for p in PROPS_ALL if p.get("estado_nombre", "Ciudad de México") == "Ciudad de México"]
-prep.emit_data_js(PROPS, COLONIAS, ALCALDIAS)
+prep.emit_data_js(PROPS_ALL, COLONIAS, ALCALDIAS)
 prep.emit_config_js()
-print(f"   {len(PROPS)} propiedades CDMX · {len(PROPS_ALL) - len(PROPS)} fuera de CDMX con ficha propia · {len(COLONIAS)} colonias · {len(ALCALDIAS)} alcaldías")
+print(f"   {len(PROPS)} propiedades CDMX · {len(PROPS_ALL) - len(PROPS)} fuera de CDMX (ahora tambien en el buscador) · {len(COLONIAS)} colonias · {len(ALCALDIAS)} alcaldías")
 
 BY_ID = {p["id"]: p for p in PROPS_ALL}
 def by(**kw):

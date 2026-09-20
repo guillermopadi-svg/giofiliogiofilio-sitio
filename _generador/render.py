@@ -363,7 +363,7 @@ if(b)b.addEventListener('click',function(){{document.getElementById('fiestasBar'
 <div class="drawer-backdrop" id="drawerBackdrop"></div>
 <script src="{R("assets/js/config.js")}?v=2"></script>
 <script src="{R("assets/data/gio-data.js")}?v=2"></script>
-<script src="{R("assets/js/gio.js")}?v=2"></script>
+<script src="{R("assets/js/gio.js")}?v=3"></script>
 {extra_js}
 </body>
 </html>'''
