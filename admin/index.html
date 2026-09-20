@@ -44,6 +44,17 @@
         </div>
       </div>
       <div class="topbar-user">
+        <div class="notif-bell" id="notifBell">
+          <button type="button" class="notif-bell-btn" id="notifBellBtn" title="Notificaciones" aria-haspopup="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <span class="notif-bell-count" id="notifBellCount" hidden>0</span>
+          </button>
+          <div class="notif-bell-dropdown" id="notifBellDropdown" hidden>
+            <div class="notif-bell-head">Notificaciones</div>
+            <div class="notif-bell-list" id="notifBellList"></div>
+            <div class="notif-bell-empty" id="notifBellEmpty" hidden>Sin notificaciones nuevas.</div>
+          </div>
+        </div>
         <div class="avatar" id="userAvatar">G</div>
         <span id="userName">Asesor</span>
         <button class="btn btn--ghost btn--sm" id="logoutBtn">Cerrar sesión</button>

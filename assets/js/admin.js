@@ -157,7 +157,8 @@
     cargarTareas();
     cargarSolicitudes();
     cargarEstudios();
-    cargarMencionesSinLeer();
+    cargarNotificaciones();
+    iniciarRealtime();
     if (esAdmin) cargarEquipo();
     else cargarEquipoBasico();
   }
@@ -475,6 +476,7 @@
       STATE.propiedades = res.data || [];
       llenarFiltroTipoPropiedades();
       renderGrid();
+      renderNotifBell(); // por si una notificacion de propiedad cargo antes que esta lista
     });
   }
 
@@ -1171,20 +1173,119 @@
     });
   }
 
-  function cargarMencionesSinLeer() {
+  // Campana global: junta @menciones y avisos de sistema (asignaciones) sin
+  // leer de AMBOS hilos (tareas y propiedades) -- misma columna
+  // menciones/leido_por en las dos tablas, asi que es la misma consulta dos
+  // veces. STATE.tareasConMencionSinLeer sigue siendo solo de tareas (para
+  // el badge de la bandeja "Menciones" en Tareas); STATE.notificaciones es
+  // la lista completa que ve la campana.
+  function tituloEntidad(entidad, id) {
+    var lista = entidad === 'tarea' ? STATE.tareas : STATE.propiedades;
+    var item = (lista || []).filter(function (x) { return x.id === id; })[0];
+    if (!item) return entidad === 'tarea' ? 'Tarea' : 'Propiedad';
+    return entidad === 'tarea' ? item.titulo : (item.titulo || 'Propiedad');
+  }
+
+  function cargarNotificaciones() {
     var miId = STATE.session && STATE.session.user.id;
     if (!miId) return;
-    sb.from('tarea_comentarios').select('tarea_id,menciones,leido_por').contains('menciones', [miId]).then(function (res) {
-      if (res.error) { console.warn('[Panel] no se pudieron revisar las menciones:', res.error.message); return; }
+    Promise.all([
+      sb.from('tarea_comentarios').select('id,tarea_id,autor_id,texto,tipo,menciones,leido_por,creado_en').contains('menciones', [miId]),
+      sb.from('propiedad_comentarios').select('id,propiedad_id,autor_id,texto,tipo,menciones,leido_por,creado_en').contains('menciones', [miId]),
+    ]).then(function (res) {
+      var tareaRes = res[0], propRes = res[1];
+      if (tareaRes.error) console.warn('[Panel] no se pudieron revisar menciones de tareas:', tareaRes.error.message);
+      if (propRes.error) console.warn('[Panel] no se pudieron revisar menciones de propiedades:', propRes.error.message);
       STATE.tareasConMencionSinLeer = {};
-      (res.data || []).forEach(function (c) {
-        if ((c.leido_por || []).indexOf(miId) === -1) STATE.tareasConMencionSinLeer[c.tarea_id] = true;
+      var notifs = [];
+      (tareaRes.data || []).forEach(function (c) {
+        if ((c.leido_por || []).indexOf(miId) === -1) {
+          STATE.tareasConMencionSinLeer[c.tarea_id] = true;
+          notifs.push({ entidad: 'tarea', id: c.tarea_id, comentario: c });
+        }
       });
-      var totalMenciones = Object.keys(STATE.tareasConMencionSinLeer).length;
+      (propRes.data || []).forEach(function (c) {
+        if ((c.leido_por || []).indexOf(miId) === -1) notifs.push({ entidad: 'propiedad', id: c.propiedad_id, comentario: c });
+      });
+      notifs.sort(function (a, b) { return new Date(b.comentario.creado_en) - new Date(a.comentario.creado_en); });
+      STATE.notificaciones = notifs;
       var badge = $('#statMencionesSinLeer');
-      if (badge) badge.textContent = totalMenciones;
+      if (badge) badge.textContent = Object.keys(STATE.tareasConMencionSinLeer).length;
       renderTareas();
+      renderNotifBell();
     });
+  }
+
+  function notifPreview(c) {
+    var quien = nombrePerfil(c.autor_id);
+    var texto = c.tipo === 'sistema' ? (quien + ' ' + c.texto) : (quien + ': ' + (c.texto || '(archivo adjunto)'));
+    return texto.length > 90 ? texto.slice(0, 87) + '…' : texto;
+  }
+
+  function renderNotifBell() {
+    var contBtn = $('#notifBellCount');
+    if (!contBtn) return; // aun no se pinto el topbar (login en curso)
+    var lista = STATE.notificaciones || [];
+    contBtn.textContent = lista.length;
+    contBtn.hidden = !lista.length;
+    var listCont = $('#notifBellList');
+    var emptyCont = $('#notifBellEmpty');
+    if (!lista.length) { listCont.innerHTML = ''; emptyCont.hidden = false; return; }
+    emptyCont.hidden = true;
+    listCont.innerHTML = lista.map(function (n) {
+      return (
+        '<button type="button" class="notif-bell-item" data-notif-entidad="' + n.entidad + '" data-notif-id="' + n.id + '">' +
+          '<span class="notif-bell-item-icono">' + (n.entidad === 'tarea' ? '✓' : '🏠') + '</span>' +
+          '<span class="notif-bell-item-body">' +
+            '<span class="notif-bell-item-titulo">' + esc(tituloEntidad(n.entidad, n.id)) + '</span>' +
+            '<span class="notif-bell-item-texto">' + esc(notifPreview(n.comentario)) + '</span>' +
+          '</span>' +
+          '<span class="notif-bell-item-hora">' + formatFechaHora(n.comentario.creado_en) + '</span>' +
+        '</button>'
+      );
+    }).join('');
+  }
+
+  function abrirNotificacion(entidad, id) {
+    $('#notifBellDropdown').hidden = true;
+    if (entidad === 'tarea') {
+      setView('tareas');
+      seleccionarTarea(id);
+    } else {
+      var p = STATE.propiedades.filter(function (x) { return x.id === id; })[0];
+      if (!p) { toast('Esa propiedad ya no está disponible', 'err'); return; }
+      setView('propiedades');
+      openModal(p);
+    }
+  }
+
+  // ------------------------------------------------------------- REALTIME
+  // Suscripcion en vivo a los dos hilos y a `tareas` -- sin esto habia que
+  // recargar la pagina para ver un comentario/reasignacion de un compañero.
+  // Requiere que las 3 tablas esten agregadas a la publicacion
+  // `supabase_realtime` en Supabase (ver notas del schema.sql).
+  function manejarNuevoComentario(entidad, row) {
+    var cfg = HILO_CONFIG[entidad];
+    var id = row[cfg.columna];
+    if (comentariosDe(entidad, id)) cargarHilo(entidad, id);
+    if (entidad === 'tarea') renderTareas();
+    var miId = STATE.session && STATE.session.user.id;
+    if (miId && (row.menciones || []).indexOf(miId) !== -1) cargarNotificaciones();
+  }
+
+  function iniciarRealtime() {
+    if (!SUPABASE_READY) return;
+    sb.channel('panel-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tarea_comentarios' }, function (payload) {
+        manejarNuevoComentario('tarea', payload.new);
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'propiedad_comentarios' }, function (payload) {
+        manejarNuevoComentario('propiedad', payload.new);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tareas' }, function () {
+        cargarTareas();
+      })
+      .subscribe();
   }
 
   function extraerMenciones(texto) {
@@ -1221,16 +1322,21 @@
   // schema.sql. El autor del evento es quien lo disparo, no un usuario
   // "sistema" generico -- asi la policy de insert que ya existe
   // (autor_id = auth.uid()) sirve tal cual. Solo aplica a tareas por ahora.
-  function registrarEventoSistema(tareaId, texto, metadata) {
+  // `menciones` es opcional -- se usa para que una reasignacion notifique al
+  // nuevo responsable via el mismo mecanismo de @menciones (sin esto, "Gio
+  // asigno esta tarea a Carlos" no le aparecia como notificacion a Carlos).
+  function registrarEventoSistema(tareaId, texto, metadata, menciones) {
     sb.from('tarea_comentarios').insert({
       tarea_id: tareaId,
       autor_id: STATE.session.user.id,
       texto: texto,
       tipo: 'sistema',
       metadata: metadata || {},
+      menciones: menciones || [],
     }).then(function (res) {
       if (res.error) { console.warn('[Panel] no se pudo registrar el evento:', res.error.message); return; }
       cargarHilo('tarea', tareaId);
+      if ((menciones || []).length) cargarNotificaciones();
     });
   }
 
@@ -1417,7 +1523,7 @@
     if (!t || t.asesor_id === nuevoAsesorId) return;
     sb.from('tareas').update({ asesor_id: nuevoAsesorId }).eq('id', id).then(function (res) {
       if (res.error) { toast('No se pudo reasignar: ' + res.error.message, 'err'); return; }
-      registrarEventoSistema(id, 'asignó esta tarea a ' + nombrePerfil(nuevoAsesorId) + '.', { campo: 'asesor_id', de: t.asesor_id, a: nuevoAsesorId });
+      registrarEventoSistema(id, 'asignó esta tarea a ' + nombrePerfil(nuevoAsesorId) + '.', { campo: 'asesor_id', de: t.asesor_id, a: nuevoAsesorId }, [nuevoAsesorId]);
       cargarTareas();
     });
   }
@@ -2998,6 +3104,18 @@
 
     $('#googleLoginBtn').addEventListener('click', handleGoogleLogin);
     $('#logoutBtn').addEventListener('click', handleLogout);
+    $('#notifBellBtn').addEventListener('click', function (e) {
+      e.stopPropagation();
+      $('#notifBellDropdown').hidden = !$('#notifBellDropdown').hidden;
+    });
+    document.addEventListener('click', function (e) {
+      var bell = $('#notifBell');
+      if (bell && !bell.contains(e.target)) $('#notifBellDropdown').hidden = true;
+    });
+    $('#notifBellList').addEventListener('click', function (e) {
+      var item = e.target.closest && e.target.closest('[data-notif-entidad]');
+      if (item) abrirNotificacion(item.dataset.notifEntidad, item.dataset.notifId);
+    });
     $('#addPropBtn').addEventListener('click', function () { openModal(null); });
     $('#emptyAddBtn').addEventListener('click', function () { openModal(null); });
     $('#addPropBtnFab').addEventListener('click', function () { openModal(null); });

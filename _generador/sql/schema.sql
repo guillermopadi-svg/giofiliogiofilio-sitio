@@ -670,6 +670,26 @@ set allowed_mime_types = array[
     file_size_limit = 20971520
 where id = 'panel-adjuntos';
 
+-- ------------------------------------------------------------------ REALTIME
+-- Sin esto, un comentario/reasignacion de un compañero solo se veia al
+-- recargar la pagina -- el panel se suscribe a estas 3 tablas via
+-- supabase-js (`sb.channel(...).on('postgres_changes', ...)`, ver admin.js
+-- funcion iniciarRealtime). "add table" truena si la tabla ya esta en la
+-- publicacion, asi que se checa antes -- mismo espiritu "seguro de volver a
+-- correr" que el resto del archivo.
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'tarea_comentarios') then
+    alter publication supabase_realtime add table tarea_comentarios;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'propiedad_comentarios') then
+    alter publication supabase_realtime add table propiedad_comentarios;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'tareas') then
+    alter publication supabase_realtime add table tareas;
+  end if;
+end $$;
+
 -- ------------------------------------------------------------ solicitudes_alta
 -- Formulario público de alta de propiedad (/alta-propiedad/) -- lo llena
 -- directo el dueño de la propiedad, sin necesidad de cuenta ni login. Vive
