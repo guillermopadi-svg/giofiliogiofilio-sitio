@@ -160,7 +160,11 @@ hr{ border:0; border-top:1px solid var(--line); margin:var(--sp-6) 0; }
   --btn-bg:var(--navy); --btn-fg:#fff; --btn-bd:var(--navy);
   display:inline-flex; align-items:center; justify-content:center; gap:.55rem;
   background:var(--btn-bg); color:var(--btn-fg); border:1px solid var(--btn-bd);
-  font-family:var(--font-display); font-size:var(--step-0); font-weight:500; letter-spacing:.02em;
+  /* Antes usaba --font-display (Playfair Display, un serif decorativo) --
+     legible para titulares grandes, no para el texto corto y accionable de
+     un boton. .btn--wa ya usaba Inter aqui abajo por la misma razon; se
+     generaliza a todos los botones. */
+  font-family:var(--font-body); font-size:var(--step-0); font-weight:600; letter-spacing:.01em;
   padding:.82rem 1.5rem; border-radius:var(--r-full); cursor:pointer;
   transition:background var(--t-fast), color var(--t-fast), border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
   text-align:center; line-height:1.2; white-space:nowrap;
@@ -179,10 +183,10 @@ hr{ border:0; border-top:1px solid var(--line); margin:var(--sp-6) 0; }
 .btn--light:hover{ --btn-bg:var(--ivory); --btn-fg:var(--navy); --btn-bd:var(--ivory); color:var(--navy); }
 .btn--outline-light{ --btn-bg:transparent; --btn-fg:#fff; --btn-bd:rgba(255,255,255,.45); }
 .btn--outline-light:hover{ --btn-bg:rgba(255,255,255,.12); --btn-fg:#fff; --btn-bd:#fff; color:#fff; }
-.btn--wa{ --btn-bg:#1FA855; --btn-fg:#fff; --btn-bd:#1FA855; font-family:var(--font-body); font-weight:600; letter-spacing:0; }
+.btn--wa{ --btn-bg:#1FA855; --btn-fg:#fff; --btn-bd:#1FA855; }
 .btn--wa:hover{ --btn-bg:#17904a; --btn-bd:#17904a; }
 .wa-fab .wa-text{ font-family:var(--font-body); font-weight:600; letter-spacing:0; }
-.mobile-nav-foot .btn:not(.btn--wa){ font-family:var(--font-body); font-weight:700; letter-spacing:0; }
+.mobile-nav-foot .btn:not(.btn--wa){ font-weight:700; }
 .btn--sm{ padding:.55rem 1.05rem; font-size:var(--step--1); }
 .btn--icon{ padding:.55rem; aspect-ratio:1; gap:0; }
 .btn--icon svg{ width:1.15em; height:1.15em; }
@@ -492,7 +496,9 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .pcard-price{ font-family:var(--font-display); font-size:var(--step-2); font-weight:500; color:var(--navy); line-height:1.1; }
 .pcard-price .cur{ font-size:var(--step--1); color:var(--ink-50); font-weight:400; letter-spacing:.06em; }
 .pcard-price .per{ font-size:var(--step--1); color:var(--ink-50); font-weight:400; }
-.pcard-title{ font-family:var(--font-display); font-size:var(--step-0); font-weight:500; color:var(--navy); margin:0; line-height:1.35; }
+/* Sans en vez del serif de titulares -- un titulo de tarjeta se escanea
+   rapido en una cuadricula de resultados, no se lee como un encabezado. */
+.pcard-title{ font-family:var(--font-body); font-size:var(--step-0); font-weight:600; color:var(--navy); margin:0; line-height:1.35; }
 .pcard-loc{ font-size:var(--step--1); color:var(--ink-50); display:flex; align-items:center; gap:.35rem; }
 .pcard-loc svg{ width:14px; height:14px; flex:0 0 auto; }
 .pcard-specs{
@@ -567,7 +573,7 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .filter-group select[data-f-select],
 .filter-group input[data-f-input]{ font-size:var(--step--1); font-family:var(--font-body); color:var(--ink-70); }
 .seg{ display:flex; border:1px solid var(--line); border-radius:var(--r-full); padding:3px; gap:2px; }
-.seg button{ flex:1; padding:.5rem .5rem; border-radius:var(--r-full); font-size:var(--step--1); color:var(--ink-50); font-family:var(--font-display); }
+.seg button{ flex:1; padding:.5rem .5rem; border-radius:var(--r-full); font-size:var(--step--1); font-weight:600; color:var(--ink-50); font-family:var(--font-body); }
 .seg button[aria-pressed="true"]{ background:var(--navy); color:#fff; }
 .pill-row{ display:flex; flex-wrap:wrap; gap:.35rem; }
 .pill{

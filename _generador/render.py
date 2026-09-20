@@ -323,7 +323,7 @@ def page(path, title, description, body, *, colonias, alcaldias, active="",
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"></noscript>
-<link rel="stylesheet" href="{R("assets/css/gio.css")}?v=3">
+<link rel="stylesheet" href="{R("assets/css/gio.css")}?v=4">
 {schema_html}{extra_head}
 <script>window.GF_BASE = "{B}";</script>
 <script>window.dataLayer = window.dataLayer || [];</script>
