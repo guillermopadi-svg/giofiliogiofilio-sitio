@@ -27,7 +27,24 @@
   });
 
   // ------------------------------------------------------- CP -> colonia
-  var cpMap = window.GF_CP_COLONIAS || {};
+  // cp-colonias.js pesa ~12 MB (catalogo de TODO el pais, no solo CDMX) --
+  // se carga bajo demanda hasta que el propietario realmente empieza a
+  // escribir su CP, no en cada visita a este formulario publico.
+  var cpMap = null;
+  var cpMapPromesa = null;
+  function cargarCpMap() {
+    if (!cpMapPromesa) {
+      cpMapPromesa = new Promise(function (resolve) {
+        var s = document.createElement('script');
+        s.src = '../assets/data/cp-colonias.js';
+        s.onload = function () { cpMap = window.GF_CP_COLONIAS || {}; resolve(cpMap); };
+        s.onerror = function () { cpMap = {}; resolve(cpMap); };
+        document.head.appendChild(s);
+      });
+    }
+    return cpMapPromesa;
+  }
+
   var cpInput = $('#al-cp'), colSel = $('#al-colonia'), alcInput = $('#al-alcaldia'), cpHint = $('#al-cp-hint');
 
   function limpiarColonia() {
@@ -35,10 +52,18 @@
     alcInput.value = '';
   }
 
+  cpInput.addEventListener('focus', cargarCpMap, { once: true });
+
   cpInput.addEventListener('input', function () {
     var cp = cpInput.value.replace(/\D/g, '').slice(0, 5);
     cpInput.value = cp;
     if (cp.length < 5) { cpHint.textContent = ''; cpHint.className = 'alta-cp-hint'; limpiarColonia(); return; }
+    if (!cpMap) {
+      cpHint.textContent = 'Buscando tu colonia…';
+      cpHint.className = 'alta-cp-hint';
+      cargarCpMap().then(function () { cpInput.dispatchEvent(new Event('input')); });
+      return;
+    }
     var opciones = cpMap[cp];
     if (!opciones || !opciones.length) {
       cpHint.textContent = 'No encontramos ese CP — escribe tu colonia y alcaldía abajo.';
