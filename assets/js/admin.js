@@ -2434,6 +2434,40 @@
     });
   }
 
+  // CP -> colonia de TODO México para el campo "CP" del Estimador -- mismo
+  // catalogo nacional que ya usa /alta-propiedad/ (ver assets/js/alta.js),
+  // cargado tambien bajo demanda: pesa ~12 MB (159 mil renglones de
+  // SEPOMEX) y la mayoria de los estudios son de CDMX, donde ya basta con
+  // escribir la colonia a mano o elegirla del datalist de tu inventario.
+  var CP_NACIONAL = null;
+  var cpNacionalPromesa = null;
+  function cargarCpNacional() {
+    if (!cpNacionalPromesa) {
+      cpNacionalPromesa = new Promise(function (resolve) {
+        var s = document.createElement('script');
+        s.src = '../assets/data/cp-colonias.js';
+        s.onload = function () { CP_NACIONAL = window.GF_CP_COLONIAS || {}; resolve(CP_NACIONAL); };
+        s.onerror = function () { CP_NACIONAL = {}; resolve(CP_NACIONAL); };
+        document.head.appendChild(s);
+      });
+    }
+    return cpNacionalPromesa;
+  }
+
+  function buscarColoniaPorCpEstudio() {
+    var cp = $('#est_cp').value.replace(/\D/g, '').slice(0, 5);
+    $('#est_cp').value = cp;
+    if (cp.length < 5) return;
+    if (!CP_NACIONAL) { cargarCpNacional().then(buscarColoniaPorCpEstudio); return; }
+    var opciones = CP_NACIONAL[cp];
+    if (!opciones || !opciones.length) return;
+    var listaCp = opciones.map(function (o) {
+      return '<option value="' + esc(o.colonia) + '">' + esc(o.colonia) + ' — ' + esc(o.alcaldia) + ', ' + esc(o.estado) + '</option>';
+    }).join('');
+    $('#est_colonia_list').innerHTML = listaCp + $('#est_colonia_list').innerHTML;
+    if (!$('#est_colonia').value.trim()) $('#est_colonia').value = opciones[0].colonia;
+  }
+
   function setOperacionEstudio(op) {
     $$('#estOpToggle button').forEach(function (b) { b.classList.toggle('is-active', b.dataset.op === op); });
     $('#est_operacion').value = op;
@@ -2447,6 +2481,7 @@
     $('#estudioError').classList.remove('show');
     $('#est_nombre').value = e ? (e.nombre || '') : '';
     $('#est_tipo').value = e ? e.tipo : 'departamento';
+    $('#est_cp').value = '';
     $('#est_colonia').value = e ? (e.colonia || '') : '';
     $('#est_m2c').value = e && e.m2c ? e.m2c : '';
     $('#est_m2t').value = e && e.m2t ? e.m2t : '';
@@ -3223,6 +3258,8 @@
     $('#est_m2c').addEventListener('input', actualizarResumenEstudio);
     $('#est_m2t').addEventListener('input', actualizarResumenEstudio);
     $('#est_homologar').addEventListener('change', function () { recalcularInventarioEstudio(); actualizarPromedioComparablesDOM(); });
+    $('#est_cp').addEventListener('focus', cargarCpNacional, { once: true });
+    $('#est_cp').addEventListener('input', buscarColoniaPorCpEstudio);
     $('#est_propiedades_mercado').addEventListener('input', actualizarResumenEstudio);
     $('#est_factor_negociacion').addEventListener('input', actualizarResumenEstudio);
     $('#est_factor_publicar').addEventListener('input', actualizarResumenEstudio);
