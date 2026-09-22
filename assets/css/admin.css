@@ -287,7 +287,7 @@ button{ font-family:inherit; cursor:pointer; }
 .prop-vista-toggle svg{ width:18px; height:18px; }
 
 /* -------------------------------------------------------------- PROPERTY GRID */
-.grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:1.2rem; }
+.grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(228px,1fr)); gap:1.1rem; }
 /* Vista de lista: fila compacta tipo tabla (pcardListHtml), no la misma
    tarjeta acostada -- para ganar densidad real frente a la cuadrícula. */
 .grid.is-lista{ grid-template-columns:1fr; gap:.4rem; }
