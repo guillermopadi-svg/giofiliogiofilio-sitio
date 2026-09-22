@@ -142,14 +142,14 @@ button{ font-family:inherit; cursor:pointer; }
 .sidebar-spacer{ flex:1; }
 .sidebar-nav--bottom{ margin-top:.6rem; padding-top:.7rem; border-top:1px solid rgba(255,255,255,.1); }
 .sidebar-quote{
-  margin-top:1.3rem; padding:1.1rem 1rem; border-radius:var(--r-md); min-height:150px;
+  margin-top:1.3rem; padding:1.2rem 1rem 1.1rem; border-radius:var(--r-md); min-height:230px;
   display:flex; flex-direction:column; justify-content:flex-end;
-  background:linear-gradient(180deg, rgba(7,31,74,.35), rgba(7,31,74,.88)),
-    url("../img/brand/sidebar-angel.webp") center/cover no-repeat;
+  background:linear-gradient(190deg, rgba(7,31,74,.15) 30%, rgba(7,31,74,.92) 62%, var(--navy) 78%),
+    url("../img/brand/sidebar-angel.webp") center top/cover no-repeat;
   border:1px solid rgba(255,255,255,.08);
 }
-.sidebar-quote p{ font-family:var(--font-display); font-style:italic; font-size:.85rem; color:#fff; margin:0 0 .5rem; line-height:1.4; }
-.sidebar-quote span{ font-size:.66rem; color:rgba(255,255,255,.55); letter-spacing:.04em; text-transform:uppercase; }
+.sidebar-quote p{ font-family:var(--font-display); font-style:italic; font-size:.85rem; color:#fff; margin:0 0 .6rem; line-height:1.4; }
+.sidebar-quote-firma{ height:26px; width:auto; opacity:.9; }
 .sidebar-overlay{ display:none; }
 
 .app-main{ flex:1; min-width:0; display:flex; flex-direction:column; }
