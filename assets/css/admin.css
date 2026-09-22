@@ -129,7 +129,6 @@ button{ font-family:inherit; cursor:pointer; }
 .sidebar-brand-badge img{ height:22px; width:auto; flex-shrink:0; }
 .sidebar-brand-text{ display:flex; flex-direction:column; line-height:1.3; min-width:0; }
 .sidebar-brand-name{ font-family:var(--font-display); font-size:1.05rem; color:#fff; }
-.sidebar-brand-tag{ font-size:.7rem; color:rgba(255,255,255,.55); letter-spacing:.02em; }
 
 .sidebar-nav{ display:flex; flex-direction:column; gap:.15rem; }
 .sidebar-nav .tabbar-btn{
@@ -143,8 +142,10 @@ button{ font-family:inherit; cursor:pointer; }
 .sidebar-spacer{ flex:1; }
 .sidebar-nav--bottom{ margin-top:.6rem; padding-top:.7rem; border-top:1px solid rgba(255,255,255,.1); }
 .sidebar-quote{
-  margin-top:1.3rem; padding:1.1rem 1rem; border-radius:var(--r-md);
-  background:linear-gradient(160deg, rgba(184,142,62,.28), rgba(7,31,74,.5)), var(--navy-deep);
+  margin-top:1.3rem; padding:1.1rem 1rem; border-radius:var(--r-md); min-height:150px;
+  display:flex; flex-direction:column; justify-content:flex-end;
+  background:linear-gradient(180deg, rgba(7,31,74,.35), rgba(7,31,74,.88)),
+    url("../img/brand/sidebar-angel.webp") center/cover no-repeat;
   border:1px solid rgba(255,255,255,.08);
 }
 .sidebar-quote p{ font-family:var(--font-display); font-style:italic; font-size:.85rem; color:#fff; margin:0 0 .5rem; line-height:1.4; }
