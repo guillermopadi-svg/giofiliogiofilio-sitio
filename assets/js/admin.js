@@ -135,11 +135,17 @@
     'Ese lead no se va a contactar solo.',
     'Hoy es tan buen día como cualquiera para cerrar algo.',
   ];
+  // La franja de saludo (Fase 1 del rediseño la quito del layout -- el
+  // sidebar/topbar nuevo no tiene un lugar equivalente todavia) se retoma
+  // en "Inicio" -- se deja el guard para no tronar showApp() si esos
+  // elementos ya no existen en el DOM.
   function actualizarSaludo() {
+    var elSaludo = $('#greetingSaludo'), elMsg = $('#greetingMsg');
+    if (!elSaludo || !elMsg) return;
     var nombre = (STATE.perfil && STATE.perfil.nombre) || (STATE.session && STATE.session.user.email) || 'Asesor';
     var primerNombre = nombre.trim().split(' ')[0];
-    $('#greetingSaludo').textContent = saludoPorHora() + ', ' + primerNombre + '.';
-    $('#greetingMsg').textContent = MENSAJES_BIENVENIDA[Math.floor(Math.random() * MENSAJES_BIENVENIDA.length)];
+    elSaludo.textContent = saludoPorHora() + ', ' + primerNombre + '.';
+    elMsg.textContent = MENSAJES_BIENVENIDA[Math.floor(Math.random() * MENSAJES_BIENVENIDA.length)];
   }
 
   // --------------------------------------------------------------- AUTH
@@ -149,8 +155,9 @@
     $('#app').classList.add('is-visible');
     $('#userName').textContent = nombre;
     $('#userAvatar').textContent = nombre.trim().charAt(0).toUpperCase();
-    actualizarSaludo();
     var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
+    $('#userRole').textContent = esAdmin ? 'Admin' : (STATE.perfil && STATE.perfil.rol === 'administrativo' ? 'Administrativo' : 'Asesor');
+    actualizarSaludo();
     $('#tabEquipo').hidden = !esAdmin;
     cargarPropiedades();
     cargarLeads();
@@ -775,22 +782,33 @@
   }
 
   // --------------------------------------------------------------- TABS
+  var VISTAS = ['inicio', 'propiedades', 'contactos', 'tareas', 'solicitudes', 'estimador', 'documentos', 'equipo', 'configuracion'];
+
   function setView(view) {
-    $('#viewPropiedades').hidden = view !== 'propiedades';
-    $('#viewContactos').hidden = view !== 'contactos';
-    $('#viewTareas').hidden = view !== 'tareas';
-    $('#viewSolicitudes').hidden = view !== 'solicitudes';
-    $('#viewEstimador').hidden = view !== 'estimador';
-    $('#viewDocumentos').hidden = view !== 'documentos';
-    $('#viewEquipo').hidden = view !== 'equipo';
-    ['propiedades', 'contactos', 'tareas', 'solicitudes', 'estimador', 'documentos', 'equipo'].forEach(function (v) {
+    VISTAS.forEach(function (v) {
+      var main = $('#view' + v.charAt(0).toUpperCase() + v.slice(1));
+      if (main) main.hidden = view !== v;
       var tab = $('#tab' + v.charAt(0).toUpperCase() + v.slice(1));
+      if (!tab) return;
       var activo = view === v;
       tab.classList.toggle('is-active', activo);
       tab.setAttribute('aria-selected', String(activo));
     });
     $('#addPropBtnFab').style.display = view === 'propiedades' && STATE.propiedades.length ? 'inline-flex' : 'none';
     if (view === 'documentos') mostrarDocLanding();
+    cerrarSidebarMovil();
+  }
+
+  // El sidebar es fijo en escritorio; en pantallas angostas se vuelve un
+  // cajon deslizable (misma idea que un drawer movil estandar) -- se abre
+  // con el boton hamburguesa del topbar y se cierra solo o con el overlay.
+  function abrirSidebarMovil() {
+    $('#sidebar').classList.add('is-open');
+    $('#sidebarOverlay').classList.add('is-visible');
+  }
+  function cerrarSidebarMovil() {
+    $('#sidebar').classList.remove('is-open');
+    $('#sidebarOverlay').classList.remove('is-visible');
   }
 
   // --------------------------------------------------------------- DOCUMENTOS
@@ -3151,6 +3169,16 @@
       var item = e.target.closest && e.target.closest('[data-notif-entidad]');
       if (item) abrirNotificacion(item.dataset.notifEntidad, item.dataset.notifId);
     });
+    $('#userMenuBtn').addEventListener('click', function (e) {
+      e.stopPropagation();
+      $('#userMenuDropdown').hidden = !$('#userMenuDropdown').hidden;
+    });
+    document.addEventListener('click', function (e) {
+      var menu = $('#userMenu');
+      if (menu && !menu.contains(e.target)) $('#userMenuDropdown').hidden = true;
+    });
+    $('#sidebarToggle').addEventListener('click', abrirSidebarMovil);
+    $('#sidebarOverlay').addEventListener('click', cerrarSidebarMovil);
     $('#addPropBtn').addEventListener('click', function () { openModal(null); });
     $('#emptyAddBtn').addEventListener('click', function () { openModal(null); });
     $('#addPropBtnFab').addEventListener('click', function () { openModal(null); });
@@ -3202,6 +3230,7 @@
       renderEquipo();
     });
 
+    $('#tabInicio').addEventListener('click', function () { setView('inicio'); });
     $('#tabPropiedades').addEventListener('click', function () { setView('propiedades'); });
     $('#tabContactos').addEventListener('click', function () { setView('contactos'); });
     $('#tabTareas').addEventListener('click', function () { setView('tareas'); });
@@ -3210,6 +3239,7 @@
     $('#tabDocumentos').addEventListener('click', function () { setView('documentos'); });
     wireDocumentos();
     $('#tabEquipo').addEventListener('click', function () { setView('equipo'); });
+    $('#tabConfiguracion').addEventListener('click', function () { setView('configuracion'); });
 
     $('#solicitudesLista').addEventListener('click', function (e) {
       var row = e.target.closest && e.target.closest('[data-open-sol]');

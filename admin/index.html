@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="../assets/css/admin.css?v=7">
+<link rel="stylesheet" href="../assets/css/admin.css?v=8">
 </head>
 <body>
 
@@ -34,14 +34,74 @@
 
 <!-- ---------------------------------------------------------- APP ---------------------------------------------------------- -->
 <div class="app" id="app">
-  <header class="topbar">
-    <div class="topbar-top">
-      <div class="topbar-brand">
-        <img src="../assets/img/brand/isotipo-gf.png" alt="Gio Filio">
-        <div class="topbar-brand-text">
-          <span class="topbar-brand-name">Panel de asesores</span>
-          <span class="topbar-greeting"><span id="greetingSaludo">Hola</span> <span id="greetingMsg"></span></span>
-        </div>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="../assets/img/brand/isotipo-gf.png" alt="Gio Filio">
+      <div class="sidebar-brand-text">
+        <span class="sidebar-brand-name">Gio Filio</span>
+        <span class="sidebar-brand-tag">Tu espacio ideal</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav" role="tablist" aria-label="Secciones del panel">
+      <button type="button" class="tabbar-btn" id="tabInicio" data-view="inicio" role="tab" aria-selected="false">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 5l8 6.5"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-5h4v5h3a1 1 0 0 0 1-1v-9"/></svg>
+        Inicio
+      </button>
+      <button type="button" class="tabbar-btn is-active" id="tabPropiedades" data-view="propiedades" role="tab" aria-selected="true">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/><path d="M9 21V12h6v9"/></svg>
+        Propiedades
+      </button>
+      <button type="button" class="tabbar-btn" id="tabContactos" data-view="contactos" role="tab" aria-selected="false">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.8 20c0-3.4 2.8-6.1 6.2-6.1s6.2 2.7 6.2 6.1"/><circle cx="17.5" cy="8.8" r="2.4"/><path d="M15.7 14.3c2.7.4 4.7 2.7 4.7 5.6"/></svg>
+        Contactos<span class="tabbar-badge" id="tabContactosBadge" hidden>0</span>
+      </button>
+      <button type="button" class="tabbar-btn" id="tabTareas" data-view="tareas" role="tab" aria-selected="false">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Tareas<span class="tabbar-badge" id="tabTareasBadge" hidden>0</span>
+      </button>
+      <button type="button" class="tabbar-btn" id="tabSolicitudes" data-view="solicitudes" role="tab" aria-selected="false">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Solicitudes<span class="tabbar-badge" id="tabSolicitudesBadge" hidden>0</span>
+      </button>
+      <button type="button" class="tabbar-btn" id="tabEstimador" data-view="estimador" role="tab" aria-selected="false">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-8"/></svg>
+        Estimador
+      </button>
+      <button type="button" class="tabbar-btn" id="tabDocumentos" data-view="documentos" role="tab" aria-selected="false">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2.5H7a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 2.5V8h5.5"/></svg>
+        Documentos
+      </button>
+      <button type="button" class="tabbar-btn" id="tabEquipo" data-view="equipo" role="tab" aria-selected="false" hidden>
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"/><circle cx="16" cy="8.5" r="2.4"/><path d="M2.5 20c0-3.4 2.7-6.1 6-6.1s6 2.7 6 6.1"/><path d="M13.2 14.2c2.5.5 4.3 2.8 4.3 5.8"/></svg>
+        Equipo
+      </button>
+    </nav>
+
+    <div class="sidebar-spacer"></div>
+
+    <nav class="sidebar-nav sidebar-nav--bottom" aria-label="Configuración">
+      <button type="button" class="tabbar-btn" id="tabConfiguracion" data-view="configuracion" role="tab" aria-selected="false">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.65 1.65 0 0 0-1.8-.3 1.65 1.65 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.65 1.65 0 0 0 4.7 15a1.65 1.65 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.65 1.65 0 0 0 1 1.5 1.65 1.65 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.65 1.65 0 0 0-.3 1.8V9c.2.6.7 1 1.5 1H21a2 2 0 0 1 0 4h-.1a1.65 1.65 0 0 0-1.5 1z"/></svg>
+        Configuración
+      </button>
+    </nav>
+
+    <div class="sidebar-quote">
+      <p>“Cada propiedad que subes es un paso más cerca de tu próxima venta.”</p>
+      <span>Gio Filio — Tu espacio ideal</span>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="topbar">
+      <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Abrir menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div class="topbar-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input type="search" id="globalSearch" placeholder="Buscar propiedades, contactos, tareas…">
       </div>
       <div class="topbar-user">
         <div class="notif-bell" id="notifBell">
@@ -55,22 +115,34 @@
             <div class="notif-bell-empty" id="notifBellEmpty" hidden>Sin notificaciones nuevas.</div>
           </div>
         </div>
-        <div class="avatar" id="userAvatar">G</div>
-        <span id="userName">Asesor</span>
-        <button class="btn btn--ghost btn--sm" id="logoutBtn">Cerrar sesión</button>
+        <div class="user-menu" id="userMenu">
+          <button type="button" class="user-menu-btn" id="userMenuBtn" aria-haspopup="true">
+            <div class="avatar" id="userAvatar">G</div>
+            <span class="user-menu-info">
+              <span class="user-menu-name" id="userName">Asesor</span>
+              <span class="user-menu-role" id="userRole">Asesor</span>
+            </span>
+            <svg class="user-menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="user-menu-dropdown" id="userMenuDropdown" hidden>
+            <button type="button" class="user-menu-item" id="logoutBtn">Cerrar sesión</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+  <main class="shell" id="viewInicio" hidden>
+    <div class="shell-head">
+      <div>
+        <h1>Inicio</h1>
+        <p>Tu resumen del día — en construcción.</p>
       </div>
     </div>
-
-    <nav class="tabbar" role="tablist" aria-label="Secciones del panel">
-      <button type="button" class="tabbar-btn is-active" id="tabPropiedades" data-view="propiedades" role="tab" aria-selected="true">Propiedades</button>
-      <button type="button" class="tabbar-btn" id="tabContactos" data-view="contactos" role="tab" aria-selected="false">Contactos<span class="tabbar-badge" id="tabContactosBadge" hidden>0</span></button>
-      <button type="button" class="tabbar-btn" id="tabTareas" data-view="tareas" role="tab" aria-selected="false">Tareas<span class="tabbar-badge" id="tabTareasBadge" hidden>0</span></button>
-      <button type="button" class="tabbar-btn" id="tabSolicitudes" data-view="solicitudes" role="tab" aria-selected="false">Solicitudes<span class="tabbar-badge" id="tabSolicitudesBadge" hidden>0</span></button>
-      <button type="button" class="tabbar-btn" id="tabEstimador" data-view="estimador" role="tab" aria-selected="false">Estimador</button>
-      <button type="button" class="tabbar-btn" id="tabDocumentos" data-view="documentos" role="tab" aria-selected="false">Documentos</button>
-      <button type="button" class="tabbar-btn" id="tabEquipo" data-view="equipo" role="tab" aria-selected="false" hidden>Equipo</button>
-    </nav>
-  </header>
+    <div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 11.5 12 5l8 6.5"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-5h4v5h3a1 1 0 0 0 1-1v-9"/></svg>
+      <p>Muy pronto: un resumen de tu día con lo más importante de Propiedades, Contactos y Tareas en un solo lugar.</p>
+    </div>
+  </main>
 
   <main class="shell" id="viewPropiedades">
     <div class="shell-head">
@@ -431,7 +503,21 @@
     </div>
   </main>
 
+  <main class="shell" id="viewConfiguracion" hidden>
+    <div class="shell-head">
+      <div>
+        <h1>Configuración</h1>
+        <p>Preferencias del panel — en construcción.</p>
+      </div>
+    </div>
+    <div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.65 1.65 0 0 0-1.8-.3 1.65 1.65 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.65 1.65 0 0 0 4.7 15a1.65 1.65 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.65 1.65 0 0 0 1 1.5 1.65 1.65 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.65 1.65 0 0 0-.3 1.8V9c.2.6.7 1 1.5 1H21a2 2 0 0 1 0 4h-.1a1.65 1.65 0 0 0-1.5 1z"/></svg>
+      <p>Muy pronto: notificaciones, tu perfil y preferencias del panel.</p>
+    </div>
+  </main>
+
   <button class="btn btn--gold fab" id="addPropBtnFab" style="display:none">+ Nueva propiedad</button>
+  </div>
 </div>
 
 <!-- ---------------------------------------------------------- MODAL: TAREA ---------------------------------------------------------- -->
@@ -773,7 +859,7 @@
 <script src="../assets/js/vendor/supabase.js"></script>
 <script src="../assets/js/vendor/heic2any.min.js"></script>
 <script src="../assets/js/vendor/exceljs.min.js"></script>
-<script src="../assets/js/admin-config.js?v=8"></script>
-<script src="../assets/js/admin.js?v=8"></script>
+<script src="../assets/js/admin-config.js?v=9"></script>
+<script src="../assets/js/admin.js?v=9"></script>
 </body>
 </html>
