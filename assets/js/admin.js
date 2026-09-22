@@ -539,14 +539,14 @@
       '<button type="button" class="user-menu-item" data-del="' + p.id + '" style="color:var(--danger)">Eliminar</button>';
     var menu = (
       '<div class="pcard-menu">' +
-        '<button type="button" class="btn btn--ghost" data-menu-toggle="' + p.id + '" aria-haspopup="true" title="Más acciones" onclick="event.stopPropagation()">•••</button>' +
+        '<button type="button" class="btn btn--ghost" data-menu-toggle="' + p.id + '" aria-haspopup="true" title="Más acciones">•••</button>' +
         '<div class="user-menu-dropdown" data-menu="' + p.id + '" hidden>' + menuItems + '</div>' +
       '</div>'
     );
     return {
       origenBadge: origenBadge,
       menuItems: menuItems,
-      botones: '<button type="button" class="btn btn--gold" data-edit="' + p.id + '" onclick="event.stopPropagation()">Editar</button>' + verLink + menu
+      botones: '<button type="button" class="btn btn--gold" data-edit="' + p.id + '">Editar</button>' + verLink + menu
     };
   }
 
