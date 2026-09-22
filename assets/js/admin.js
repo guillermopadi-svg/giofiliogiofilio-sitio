@@ -733,20 +733,6 @@
     return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   }
 
-  // Mismo patron que llenarFiltroTipoPropiedades: las opciones se arman con
-  // lo que de verdad hay en las propiedades cargadas, nunca una lista fija.
-  function llenarFiltroZonaPropiedades() {
-    var sel = $('#propFiltroZona');
-    var actual = sel.value;
-    var slugs = [];
-    STATE.propiedades.forEach(function (p) { if (p.colonia_slug && slugs.indexOf(p.colonia_slug) === -1) slugs.push(p.colonia_slug); });
-    slugs.sort(function (a, b) { return coloniaLabel(a).localeCompare(coloniaLabel(b)); });
-    sel.innerHTML = '<option value="">Todas las zonas</option>' + slugs.map(function (s) {
-      return '<option value="' + esc(s) + '">' + esc(coloniaLabel(s)) + '</option>';
-    }).join('');
-    sel.value = slugs.indexOf(actual) !== -1 ? actual : '';
-  }
-
   // Solo admin ve todo el inventario -- para cualquier otro rol este filtro
   // no aporta nada (ya solo ve lo suyo + EasyBroker) y se mantiene oculto.
   function llenarFiltroAsesorPropiedades() {
@@ -766,7 +752,6 @@
     var operacion = $('#propFiltroOperacion').value;
     var tipo = $('#propFiltroTipo').value;
     var estado = $('#propFiltroEstado').value;
-    var zona = $('#propFiltroZona').value;
     var asesor = $('#propFiltroAsesor').value;
     var precioMin = Number($('#propFiltroPrecioMin').value) || 0;
     var precioMax = Number($('#propFiltroPrecioMax').value) || Infinity;
@@ -774,7 +759,6 @@
       if (operacion && p.operacion !== operacion) return false;
       if (tipo && p.tipo !== tipo) return false;
       if (estado && p.estado !== estado) return false;
-      if (zona && p.colonia_slug !== zona) return false;
       if (asesor && p.asesor_id !== asesor) return false;
       if ((p.precio || 0) < precioMin || (p.precio || 0) > precioMax) return false;
       if (texto) {
@@ -791,7 +775,7 @@
 
   function hayFiltrosPropiedadesActivos() {
     return !!($('#propBuscar').value.trim() || $('#propFiltroOperacion').value || $('#propFiltroTipo').value ||
-      $('#propFiltroEstado').value || $('#propFiltroZona').value || $('#propFiltroAsesor').value ||
+      $('#propFiltroEstado').value || $('#propFiltroAsesor').value ||
       $('#propFiltroPrecioMin').value || $('#propFiltroPrecioMax').value);
   }
 
@@ -800,7 +784,6 @@
     $('#propFiltroOperacion').value = '';
     $('#propFiltroTipo').value = '';
     $('#propFiltroEstado').value = '';
-    $('#propFiltroZona').value = '';
     $('#propFiltroAsesor').value = '';
     $('#propFiltroPrecioMin').value = '';
     $('#propFiltroPrecioMax').value = '';
@@ -862,7 +845,6 @@
       }
       STATE.propiedades = res.data || [];
       llenarFiltroTipoPropiedades();
-      llenarFiltroZonaPropiedades();
       llenarFiltroAsesorPropiedades();
       renderGrid();
       renderNotifBell(); // por si una notificacion de propiedad cargo antes que esta lista
@@ -3909,7 +3891,6 @@
       if (menu && !menu.parentElement.contains(e.target)) $('#drawerMasDropdown').hidden = true;
     });
 
-    $('#propFiltroZona').addEventListener('change', renderGrid);
     $('#propFiltroAsesor').addEventListener('change', renderGrid);
     $('#propFiltroPrecioMin').addEventListener('input', renderGrid);
     $('#propFiltroPrecioMax').addEventListener('input', renderGrid);
