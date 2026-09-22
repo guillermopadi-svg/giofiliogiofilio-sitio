@@ -287,7 +287,17 @@ button{ font-family:inherit; cursor:pointer; }
 .prop-vista-toggle svg{ width:18px; height:18px; }
 
 /* -------------------------------------------------------------- PROPERTY GRID */
-.grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(228px,1fr)); gap:1.1rem; }
+/* 4 columnas fijas en escritorio (no auto-fill con minmax -- ese calculo
+   depende del ancho exacto disponible y no siempre da 4 aunque el
+   contenedor "deberia" alcanzar). Se reduce a 3/2/1 en pantallas angostas
+   o cuando el panel de detalle esta abierto y le quita espacio al grid. */
+.grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:1.1rem; }
+/* Con el panel de detalle abierto el grid tiene menos ancho real -- 4
+   columnas fijas se verian muy angostas, se baja a 2. */
+.prop-workspace:has(.prop-drawer:not([hidden])) .grid{ grid-template-columns:repeat(2, 1fr); }
+@media (max-width:1100px){ .grid{ grid-template-columns:repeat(3, 1fr); } }
+@media (max-width:820px){ .grid{ grid-template-columns:repeat(2, 1fr); } }
+@media (max-width:560px){ .grid{ grid-template-columns:1fr; } }
 /* Vista de lista: fila compacta tipo tabla (pcardListHtml), no la misma
    tarjeta acostada -- para ganar densidad real frente a la cuadrícula. */
 .grid.is-lista{ grid-template-columns:1fr; gap:.4rem; }
