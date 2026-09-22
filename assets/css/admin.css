@@ -142,10 +142,9 @@ button{ font-family:inherit; cursor:pointer; }
 .sidebar-spacer{ flex:1; }
 .sidebar-nav--bottom{ margin-top:.6rem; padding-top:.7rem; border-top:1px solid rgba(255,255,255,.1); }
 .sidebar-quote{
-  margin-top:1.3rem; padding:1.2rem 1rem 1.1rem; border-radius:var(--r-md); min-height:230px;
+  margin-top:1.3rem; padding:1.2rem 1rem 1.1rem; border-radius:var(--r-md);
   display:flex; flex-direction:column; justify-content:flex-end;
-  background:linear-gradient(190deg, rgba(7,31,74,.15) 30%, rgba(7,31,74,.92) 62%, var(--navy) 78%),
-    url("../img/brand/sidebar-angel.webp") center top/cover no-repeat;
+  background:radial-gradient(circle at 15% 0%, rgba(184,142,62,.18), transparent 55%), var(--navy-deep);
   border:1px solid rgba(255,255,255,.08);
 }
 .sidebar-quote p{ font-family:var(--font-display); font-style:italic; font-size:.85rem; color:#fff; margin:0 0 .6rem; line-height:1.4; }
@@ -359,6 +358,43 @@ button{ font-family:inherit; cursor:pointer; }
 .stat-group-item:last-child{ border-right:none; padding-right:0; }
 .stat-group-item .num{ font-family:var(--font-display); font-size:1.7rem; color:var(--navy); }
 .stat-group-item .lbl{ font-size:.78rem; color:var(--ink-50); margin-top:.2rem; white-space:nowrap; }
+
+/* -------------------------------------------------------------- INICIO (dashboard operativo) */
+.stat-card--link{ background:none; border:none; font-family:inherit; text-align:left; cursor:pointer; }
+.stat-card--link:hover .num{ color:var(--gold-ink); }
+.inicio-grid{ display:grid; grid-template-columns:1fr 1fr; gap:1.1rem; margin-bottom:1.1rem; align-items:start; }
+@media (max-width:900px){ .inicio-grid{ grid-template-columns:1fr; } }
+.inicio-card{ background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg); padding:1.1rem 1.2rem 1.3rem; }
+.inicio-inventario{ margin-bottom:1.8rem; }
+.inicio-card-head{ display:flex; align-items:baseline; justify-content:space-between; gap:.6rem; }
+.inicio-card-head h2{ font-size:1.02rem; font-family:var(--font-body); font-weight:700; color:var(--navy); margin:0; }
+.inicio-card-sub{ font-size:.8rem; color:var(--ink-50); margin:.15rem 0 .8rem; }
+.link-mas{ background:none; border:none; padding:0; color:var(--navy-700); font-size:.8rem; font-weight:600; cursor:pointer; font-family:inherit; flex-shrink:0; }
+.link-mas:hover{ text-decoration:underline; }
+.inicio-row{ display:flex; align-items:center; gap:.7rem; padding:.55rem 0; border-bottom:1px solid var(--line-soft); }
+.inicio-row:last-child{ border-bottom:none; padding-bottom:0; }
+.inicio-row[data-goto]{ cursor:pointer; }
+.inicio-row .avatar{ width:30px; height:30px; font-size:.78rem; }
+.inicio-row-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.inicio-row-dot--danger{ background:var(--danger); }
+.inicio-row-dot--gold{ background:var(--gold); }
+.inicio-row-dot--info{ background:var(--navy-300); }
+.inicio-row-body{ flex:1; min-width:0; }
+.inicio-row-title{ font-size:.85rem; color:var(--ink); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.inicio-row-sub{ font-size:.78rem; color:var(--ink-50); margin-top:.1rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.inicio-row-tag{ font-size:.68rem; font-weight:700; padding:.22rem .55rem; border-radius:var(--r-xs); flex-shrink:0; white-space:nowrap; }
+.inicio-row-tag--danger{ background:#FBEDEA; color:var(--danger); }
+.inicio-row-tag--gold{ background:var(--gold-050); color:var(--gold-ink); }
+.inicio-row-tag--info{ background:var(--navy-050); color:var(--navy-700); }
+.inicio-row-time{ font-size:.74rem; color:var(--ink-50); flex-shrink:0; white-space:nowrap; }
+.inicio-row-actions{ display:flex; gap:.35rem; flex-shrink:0; }
+.inicio-row-actions a{ display:flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:var(--r-xs); background:var(--navy-050); color:var(--navy); }
+.inicio-row-actions a:hover{ background:var(--navy-100); }
+.inicio-row-actions svg{ width:14px; height:14px; }
+.inicio-row .task-check{ margin:0; }
+.inicio-empty{ padding:.4rem 0 .2rem; color:var(--ink-50); font-size:.83rem; }
+.inicio-empty strong{ display:block; color:var(--ink); font-size:.85rem; margin-bottom:.15rem; }
+.inicio-inventario .stat-group-item{ cursor:pointer; }
 
 /* -------------------------------------------------------------- TAREAS */
 /* .task-list/.task-row/.task-check/.task-body/.task-titulo/.task-desc/
@@ -710,6 +746,10 @@ button{ font-family:inherit; cursor:pointer; }
   position:fixed; right:2rem; bottom:2rem; z-index:30;
   box-shadow:var(--sh-4);
 }
+/* En escritorio el boton del encabezado siempre esta a un scroll de
+   distancia -- el flotante solo hace falta en pantallas angostas, donde
+   el encabezado ocupa mas espacio y se pierde de vista mas rapido. */
+@media (min-width:901px){ .fab{ display:none !important; } }
 
 /* -------------------------------------------------------------- MODAL */
 .modal-backdrop{

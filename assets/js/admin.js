@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null, propVista: 'grid', hilos: {}, adjuntosPendientes: {}, tareasConMencionSinLeer: {}, tareaSeleccionada: null, tareaBandeja: 'todo' };
+  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null, propVista: 'grid', hilos: {}, adjuntosPendientes: {}, tareasConMencionSinLeer: {}, tareaSeleccionada: null, tareaBandeja: 'todo', actividadSistema: [] };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -101,51 +101,17 @@
     if (h < 19) return 'Buenas tardes';
     return 'Buenas noches';
   }
-  var MENSAJES_BIENVENIDA = [
-    // Ánimo / motivación
-    'Sigamos haciendo que este sea tu mejor mes.',
-    'Cada propiedad que subes es un paso más cerca de tu próxima venta.',
-    'Un contacto bien atendido hoy es una firma mañana.',
-    'Gracias por ser una pieza clave de este equipo.',
-    'Vamos por más — tú puedes con esto.',
-    'Hoy es un buen día para cerrar algo grande.',
-    // Tips de plusvalía y zona
-    'La plusvalía sube más rápido cerca de estaciones de metro, parques y nueva infraestructura — vale la pena mencionarlo en tus fichas.',
-    'Una colonia con poco inventario disponible casi siempre negocia mejor precio para el vendedor.',
-    'Antes de fijar precio, revisa qué se vendió de verdad en la zona, no solo qué está publicado.',
-    // Tips de precio por m²
-    'Compara siempre el precio por m² homologado (construcción + terreno), no solo el precio total — así comparas manzanas con manzanas.',
-    'Dos propiedades "del mismo precio" pueden valer muy distinto por m² — el Estimador te lo resuelve en segundos.',
-    // Tips de oficio
-    'Un inmueble bien fotografiado se renta o vende más rápido — la primera imagen es la que decide el clic.',
-    'Contestar en los primeros minutos triplica tus probabilidades de agendar una cita.',
-    'Una descripción honesta (con lo bueno y lo que hay que saber) genera más confianza que una perfecta.',
-    // Recordatorios
-    'Recuerda dar seguimiento a tus leads en las primeras 24 horas — es cuando más responden.',
-    'Si una propiedad lleva semanas sin movimiento, puede ser momento de revisar precio o fotos, no de esperar más.',
-    'Actualiza el estado de tus solicitudes — así el equipo sabe qué ya revisaste y qué no.',
-    // Algo ligero
-    '"Inmueble" viene del latín immobilis: literal, "que no se mueve". A diferencia de tus ventas este mes.',
-    'Dato curioso: en CDMX hay colonias con el mismo nombre en alcaldías distintas — siempre confirma cuál es cuál.',
-    'Café en mano, panel abierto — así se ven los buenos días productivos.',
-    // Directo al grano
-    'Tienes correos sin leer.',
-    'Nadie lo va a hacer por ti.',
-    'Las casas no se venden solas.',
-    'Ese lead no se va a contactar solo.',
-    'Hoy es tan buen día como cualquiera para cerrar algo.',
-  ];
-  // La franja de saludo (Fase 1 del rediseño la quito del layout -- el
-  // sidebar/topbar nuevo no tiene un lugar equivalente todavia) se retoma
-  // en "Inicio" -- se deja el guard para no tronar showApp() si esos
-  // elementos ya no existen en el DOM.
+  // Saludo + fecha del dashboard operativo de "Inicio" (ver renderInicio).
+  // Sin frases motivacionales -- son parte del centro operativo del asesor,
+  // no de una pantalla de bienvenida.
   function actualizarSaludo() {
-    var elSaludo = $('#greetingSaludo'), elMsg = $('#greetingMsg');
-    if (!elSaludo || !elMsg) return;
+    var elSaludo = $('#inicioSaludo'), elFecha = $('#inicioFecha');
+    if (!elSaludo || !elFecha) return;
     var nombre = (STATE.perfil && STATE.perfil.nombre) || (STATE.session && STATE.session.user.email) || 'Asesor';
     var primerNombre = nombre.trim().split(' ')[0];
-    elSaludo.textContent = saludoPorHora() + ', ' + primerNombre + '.';
-    elMsg.textContent = MENSAJES_BIENVENIDA[Math.floor(Math.random() * MENSAJES_BIENVENIDA.length)];
+    elSaludo.textContent = saludoPorHora() + ', ' + primerNombre;
+    var fecha = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    elFecha.textContent = fecha.charAt(0).toUpperCase() + fecha.slice(1);
   }
 
   // --------------------------------------------------------------- AUTH
@@ -165,6 +131,7 @@
     cargarSolicitudes();
     cargarEstudios();
     cargarNotificaciones();
+    cargarActividadReciente();
     iniciarRealtime();
     if (esAdmin) cargarEquipo();
     else cargarEquipoBasico();
@@ -247,6 +214,190 @@
     $('#statRenta').textContent = disponibles.filter(function (p) { return p.operacion === 'renta'; }).length;
     $('#statBorradores').textContent = STATE.propiedades.filter(function (p) { return p.estado === 'borrador'; }).length;
     $('#statPausadas').textContent = STATE.propiedades.filter(function (p) { return p.estado === 'pausada'; }).length;
+    renderInicio();
+  }
+
+  // --------------------------------------------------------------- INICIO
+  // Centro operativo del asesor: agrega datos ya cargados de Propiedades,
+  // Contactos, Tareas y Solicitudes -- no consulta nada nuevo salvo
+  // cargarActividadReciente() (eventos de sistema de tarea_comentarios, que
+  // ya existían para las notificaciones de @menciones). No hay bitácora de
+  // "propiedad actualizada" (precio/fotos) en el esquema actual -- por eso
+  // "Actividad reciente" no la incluye; agregar eso requeriría una columna
+  // actualizado_en + trigger, ver resumen entregado al usuario.
+  function hoyISO() { return new Date().toISOString().slice(0, 10); }
+
+  function cargarActividadReciente() {
+    sb.from('tarea_comentarios').select('tarea_id,autor_id,texto,tipo,creado_en')
+      .eq('tipo', 'sistema').order('creado_en', { ascending: false }).limit(8)
+      .then(function (res) {
+        if (res.error) { console.warn('[Panel] no se pudo cargar actividad reciente:', res.error.message); return; }
+        STATE.actividadSistema = res.data || [];
+        renderInicio();
+      });
+  }
+
+  function inicioMiDiaLista() {
+    var miId = STATE.session && STATE.session.user.id;
+    var hoy = hoyISO();
+    return STATE.tareas.filter(function (t) {
+      return t.asesor_id === miId && t.estado === 'pendiente' && t.vence && t.vence <= hoy;
+    });
+  }
+
+  function inicioAccionesContacto(lead) {
+    if (!lead || !lead.telefono) return '';
+    var tel = soloDigitos(lead.telefono);
+    return (
+      '<div class="inicio-row-actions">' +
+        '<a href="tel:' + esc(tel) + '" title="Llamar" onclick="event.stopPropagation()">' + ICON_TEL + '</a>' +
+        '<a href="https://wa.me/' + esc(tel.replace(/^\+/, '')) + '" target="_blank" rel="noopener" title="WhatsApp" onclick="event.stopPropagation()">' + ICON_WA + '</a>' +
+      '</div>'
+    );
+  }
+
+  function inicioMiDiaRowHtml(t) {
+    var lead = t.lead_id ? STATE.leads.filter(function (l) { return l.id === t.lead_id; })[0] : null;
+    var relacion = t.propiedad_id ? nombrePropiedad(t.propiedad_id) : (lead ? lead.nombre : '');
+    return (
+      '<div class="inicio-row">' +
+        '<button type="button" class="task-check" data-toggle-tarea="' + t.id + '" title="Marcar como hecha"></button>' +
+        '<div class="inicio-row-body">' +
+          '<div class="inicio-row-title">' + esc(t.titulo) + '</div>' +
+          '<div class="inicio-row-sub">' + esc(relacion || 'Sin relación') + '</div>' +
+        '</div>' +
+        inicioAccionesContacto(lead) +
+      '</div>'
+    );
+  }
+
+  // Reglas simples y 100% derivables de datos ya cargados (nada de scoring):
+  // tarea vencida mía, lead sin contactar, solicitud pendiente, propiedad
+  // pausada. "Propiedad sin actualizar" del diseño de referencia no se
+  // incluye -- no existe columna de última actualización en propiedades.
+  function inicioAtencionItems() {
+    var miId = STATE.session && STATE.session.user.id;
+    var items = [];
+    STATE.tareas.filter(function (t) { return t.asesor_id === miId && tareaVencidaP(t); }).forEach(function (t) {
+      items.push({ color: 'danger', etiqueta: 'Tarea vencida', titulo: t.titulo, sub: 'Venció ' + formatFechaCorta(t.vence), ts: t.vence, goto: 'tareas' });
+    });
+    STATE.leads.filter(function (l) { return l.estado === 'nuevo'; }).forEach(function (l) {
+      items.push({ color: 'danger', etiqueta: 'Lead nuevo', titulo: l.nombre, sub: 'Sin respuesta · ' + tiempoRelativo(l.creado_en), ts: l.creado_en, goto: 'contactos' });
+    });
+    STATE.solicitudes.filter(function (s) { return s.estado === 'nueva'; }).forEach(function (s) {
+      items.push({ color: 'gold', etiqueta: 'Solicitud', titulo: 'Nueva solicitud de valuación', sub: s.colonia || 'Sin colonia', ts: s.creado_en, goto: 'solicitudes', abrirSol: s.id });
+    });
+    STATE.propiedades.filter(function (p) { return p.estado === 'pausada'; }).forEach(function (p) {
+      items.push({ color: 'info', etiqueta: 'Pausada', titulo: p.titulo, sub: 'Publicación pausada', ts: p.creado_en, goto: 'propiedades' });
+    });
+    items.sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); });
+    return items.slice(0, 6);
+  }
+
+  function inicioAtencionRowHtml(it) {
+    return (
+      '<div class="inicio-row" data-goto="' + it.goto + '"' + (it.abrirSol ? ' data-abrir-sol="' + it.abrirSol + '"' : '') + '>' +
+        '<span class="inicio-row-dot inicio-row-dot--' + it.color + '"></span>' +
+        '<div class="inicio-row-body">' +
+          '<div class="inicio-row-title">' + esc(it.titulo || 'Sin título') + '</div>' +
+          '<div class="inicio-row-sub">' + esc(it.sub || '') + '</div>' +
+        '</div>' +
+        '<span class="inicio-row-tag inicio-row-tag--' + it.color + '">' + esc(it.etiqueta) + '</span>' +
+      '</div>'
+    );
+  }
+
+  function inicioContactoRowHtml(l) {
+    return (
+      '<div class="inicio-row" data-goto="contactos">' +
+        '<div class="avatar">' + esc(iniciales(l.nombre)) + '</div>' +
+        '<div class="inicio-row-body">' +
+          '<div class="inicio-row-title">' + esc(l.nombre || 'Sin nombre') + '</div>' +
+          '<div class="inicio-row-sub">' + esc(l.propiedad_titulo || l.mensaje || 'Contacto del sitio') + '</div>' +
+        '</div>' +
+        '<span class="inicio-row-tag inicio-row-tag--info">' + esc(ESTADO_LEAD_LABEL[l.estado] || l.estado) + '</span>' +
+        '<span class="inicio-row-time">' + tiempoRelativo(l.creado_en) + '</span>' +
+        inicioAccionesContacto(l) +
+      '</div>'
+    );
+  }
+
+  // Fuentes reales combinadas: eventos de sistema de tareas (completar,
+  // reasignar, prioridad), leads nuevos y solicitudes nuevas. No inventa un
+  // registro de auditoría que hoy no existe.
+  function inicioActividadItems() {
+    var items = [];
+    (STATE.actividadSistema || []).forEach(function (c) {
+      var t = STATE.tareas.filter(function (x) { return x.id === c.tarea_id; })[0];
+      items.push({ texto: esc(nombrePerfil(c.autor_id)) + ' ' + esc(c.texto), sub: t ? esc(t.titulo) : '', ts: c.creado_en });
+    });
+    STATE.leads.slice(0, 5).forEach(function (l) {
+      items.push({ texto: 'Nuevo contacto: ' + esc(l.nombre || 'Sin nombre'), sub: esc(l.propiedad_titulo || 'Sitio web'), ts: l.creado_en });
+    });
+    STATE.solicitudes.slice(0, 5).forEach(function (s) {
+      items.push({ texto: 'Nueva solicitud de ' + esc(TIPO_LABEL_SOL[s.tipo] || s.tipo || 'valuación'), sub: esc([s.nombre, s.apellido].filter(Boolean).join(' ')), ts: s.creado_en });
+    });
+    items.sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); });
+    return items.slice(0, 6);
+  }
+
+  function inicioActividadRowHtml(it) {
+    return (
+      '<div class="inicio-row">' +
+        '<span class="inicio-row-dot inicio-row-dot--info"></span>' +
+        '<div class="inicio-row-body">' +
+          '<div class="inicio-row-title">' + it.texto + '</div>' +
+          (it.sub ? '<div class="inicio-row-sub">' + it.sub + '</div>' : '') +
+        '</div>' +
+        '<span class="inicio-row-time">' + tiempoRelativo(it.ts) + '</span>' +
+      '</div>'
+    );
+  }
+
+  function inicioInventarioHtml() {
+    var disponibles = STATE.propiedades.filter(function (p) { return p.estado === 'disponible'; });
+    var venta = disponibles.filter(function (p) { return p.operacion === 'venta'; }).length;
+    var renta = disponibles.filter(function (p) { return p.operacion === 'renta'; }).length;
+    var borradores = STATE.propiedades.filter(function (p) { return p.estado === 'borrador'; }).length;
+    var pausadas = STATE.propiedades.filter(function (p) { return p.estado === 'pausada'; }).length;
+    return (
+      '<div class="stat-group-item" data-inv="venta"><div class="num">' + venta + '</div><div class="lbl">En venta</div></div>' +
+      '<div class="stat-group-item" data-inv="renta"><div class="num">' + renta + '</div><div class="lbl">En renta</div></div>' +
+      '<div class="stat-group-item" data-inv="borrador"><div class="num">' + borradores + '</div><div class="lbl">Borradores</div></div>' +
+      '<div class="stat-group-item" data-inv="pausada"><div class="num">' + pausadas + '</div><div class="lbl">Pausadas</div></div>'
+    );
+  }
+
+  function renderInicio() {
+    if (!$('#viewInicio')) return;
+    actualizarSaludo();
+
+    var misTareasHoy = inicioMiDiaLista();
+    $('#kpiTareasHoy').textContent = misTareasHoy.length;
+    $('#kpiContactosNuevos').textContent = STATE.leads.filter(function (l) { return l.estado === 'nuevo'; }).length;
+    $('#kpiSolicitudesPendientes').textContent = STATE.solicitudes.filter(function (s) { return s.estado === 'nueva'; }).length;
+    $('#kpiPropiedadesActivas').textContent = STATE.propiedades.filter(function (p) { return p.estado === 'disponible'; }).length;
+
+    $('#inicioMiDia').innerHTML = misTareasHoy.length
+      ? misTareasHoy.map(inicioMiDiaRowHtml).join('')
+      : '<div class="inicio-empty"><strong>Todo al día</strong>No tienes tareas pendientes para hoy.</div>';
+
+    var atencion = inicioAtencionItems();
+    $('#inicioAtencion').innerHTML = atencion.length
+      ? atencion.map(inicioAtencionRowHtml).join('')
+      : '<div class="inicio-empty"><strong>Sin pendientes urgentes</strong>No hay leads, solicitudes ni tareas que necesiten atención ahora.</div>';
+
+    var contactosRecientes = STATE.leads.slice(0, 4);
+    $('#inicioContactos').innerHTML = contactosRecientes.length
+      ? contactosRecientes.map(inicioContactoRowHtml).join('')
+      : '<div class="inicio-empty"><strong>Sin contactos nuevos</strong>Aún no llegan contactos desde el sitio.</div>';
+
+    var actividad = inicioActividadItems();
+    $('#inicioActividad').innerHTML = actividad.length
+      ? actividad.map(inicioActividadRowHtml).join('')
+      : '<div class="inicio-empty"><strong>Sin actividad reciente</strong>Todavía no hay movimientos que mostrar.</div>';
+
+    $('#inicioInventario').innerHTML = inicioInventarioHtml();
   }
 
   function coloniaLabel(slug) {
@@ -1451,6 +1602,7 @@
     var badge = $('#tabTareasBadge');
     badge.textContent = pendientes.length;
     badge.hidden = !pendientes.length;
+    renderInicio();
   }
 
   function cargarTareas() {
@@ -1622,6 +1774,7 @@
     var badge = $('#tabSolicitudesBadge');
     badge.textContent = nuevas.length;
     badge.hidden = !nuevas.length;
+    renderInicio();
   }
 
   function cargarSolicitudes() {
@@ -3078,6 +3231,7 @@
     var badge = $('#tabContactosBadge');
     badge.textContent = porEstado.nuevo.length;
     badge.hidden = !porEstado.nuevo.length;
+    renderInicio();
   }
 
   function cargarLeads() {
@@ -3231,6 +3385,27 @@
     });
 
     $('#tabInicio').addEventListener('click', function () { setView('inicio'); });
+    $('#inicioAddPropBtn').addEventListener('click', function () { openModal(null); });
+    $('#viewInicio').addEventListener('click', function (e) {
+      var toggleId = e.target.closest && e.target.closest('[data-toggle-tarea]');
+      if (toggleId) { toggleTarea(toggleId.dataset.toggleTarea); return; }
+      var invItem = e.target.closest && e.target.closest('[data-inv]');
+      if (invItem) {
+        var MAPA_INV = { venta: ['venta', 'disponible'], renta: ['renta', 'disponible'], borrador: ['', 'borrador'], pausada: ['', 'pausada'] };
+        var par = MAPA_INV[invItem.dataset.inv] || ['', ''];
+        $('#propFiltroOperacion').value = par[0];
+        $('#propFiltroEstado').value = par[1];
+        setView('propiedades');
+        renderGrid();
+        return;
+      }
+      var goto = e.target.closest && e.target.closest('[data-goto]');
+      if (goto) {
+        if (goto.dataset.bandeja) { STATE.tareaBandeja = goto.dataset.bandeja; renderTareas(); }
+        setView(goto.dataset.goto);
+        if (goto.dataset.abrirSol) openSolModal(goto.dataset.abrirSol);
+      }
+    });
     $('#tabPropiedades').addEventListener('click', function () { setView('propiedades'); });
     $('#tabContactos').addEventListener('click', function () { setView('contactos'); });
     $('#tabTareas').addEventListener('click', function () { setView('tareas'); });
