@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null, propVista: 'grid', hilos: {}, adjuntosPendientes: {}, tareasConMencionSinLeer: {}, tareaSeleccionada: null, tareaBandeja: 'todo', actividadSistema: [] };
+  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null, propVista: 'grid', hilos: {}, adjuntosPendientes: {}, tareasConMencionSinLeer: {}, tareaSeleccionada: null, tareaBandeja: 'todo', actividadSistema: [], propDrawerId: null, propDrawerTab: 'info', propDrawerFotoIdx: 0 };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -209,12 +209,28 @@
   // --------------------------------------------------------------- GRID
   function renderStats() {
     var disponibles = STATE.propiedades.filter(function (p) { return p.estado === 'disponible'; });
-    $('#statDisponibles').textContent = disponibles.length;
-    $('#statVenta').textContent = disponibles.filter(function (p) { return p.operacion === 'venta'; }).length;
-    $('#statRenta').textContent = disponibles.filter(function (p) { return p.operacion === 'renta'; }).length;
-    $('#statBorradores').textContent = STATE.propiedades.filter(function (p) { return p.estado === 'borrador'; }).length;
-    $('#statPausadas').textContent = STATE.propiedades.filter(function (p) { return p.estado === 'pausada'; }).length;
+    var venta = disponibles.filter(function (p) { return p.operacion === 'venta'; }).length;
+    var renta = disponibles.filter(function (p) { return p.operacion === 'renta'; }).length;
+    var borradores = STATE.propiedades.filter(function (p) { return p.estado === 'borrador'; }).length;
+    var pausadas = STATE.propiedades.filter(function (p) { return p.estado === 'pausada'; }).length;
+    $('#statTotal').textContent = STATE.propiedades.length;
+    $('#statVenta').textContent = venta;
+    $('#statRenta').textContent = renta;
+    $('#statBorradores').textContent = borradores;
+    $('#statPausadas').textContent = pausadas;
+    // Barras de proporcion: cada una sobre el total del inventario.
+    var baseBarra = STATE.propiedades.length || 1;
+    $('#statVentaBar').style.width = Math.round(venta / baseBarra * 100) + '%';
+    $('#statRentaBar').style.width = Math.round(renta / baseBarra * 100) + '%';
+    $('#statBorradoresBar').style.width = Math.round(borradores / baseBarra * 100) + '%';
+    $('#statPausadasBar').style.width = Math.round(pausadas / baseBarra * 100) + '%';
+    $('#tabCountTodas').textContent = STATE.propiedades.length;
+    $('#tabCountVenta').textContent = venta;
+    $('#tabCountRenta').textContent = renta;
+    $('#tabCountBorrador').textContent = borradores;
+    $('#tabCountPausada').textContent = pausadas;
     renderInicio();
+    renderDetalleProp();
   }
 
   // --------------------------------------------------------------- INICIO
@@ -405,6 +421,11 @@
     return c ? c.nombre : slug;
   }
 
+  function alcaldiaLabel(slug) {
+    var c = COLONIAS.filter(function (x) { return x.slug === slug; })[0];
+    return c ? c.alcaldia : '';
+  }
+
   // Reproduce el mismo slug que arma _generador/prep.py (normalize()) para
   // poder enlazar directo a la ficha en giofilio.com sin ir y venir con el
   // sitio en cada publicación. Si esa lógica cambia allá, hay que
@@ -454,60 +475,101 @@
     return '../' + url;
   }
 
+  var ICON_PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10.5c0 5.5-8 12-8 12s-8-6.5-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10.5" r="2.5"/></svg>';
+  var ICON_M2 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><path d="M8 3.5v4M16 3.5v4M3.5 8h4M3.5 16h4M16 20.5v-4M20.5 16h-4"/></svg>';
+  var ICON_REC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18v-6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v6"/><path d="M2 18h20M4 10V7a2 2 0 0 1 2-2h5"/></svg>';
+  var ICON_BAN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16a1 1 0 0 1 1 1v2a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-2a1 1 0 0 1 1-1z"/><path d="M6 12V6.2A2.2 2.2 0 0 1 9.8 4.6"/></svg>';
+  var ICON_EST = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l1.5-5A2 2 0 0 1 6.4 6.5h11.2A2 2 0 0 1 19.5 8L21 13"/><path d="M3 13h18v4a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><circle cx="7" cy="16.5" r=".6" fill="currentColor" stroke="none"/><circle cx="17" cy="16.5" r=".6" fill="currentColor" stroke="none"/></svg>';
+  var ICON_CHECK_CIRCLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.3"/><path d="M8.3 12.3l2.5 2.5L16 9.3"/></svg>';
+  var ICON_PAUSE_CIRCLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9.3"/><path d="M10 9v6M14 9v6"/></svg>';
+  var ICON_DRAFT_CIRCLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.3"/><path d="M12 8v5"/><circle cx="12" cy="16" r=".4" fill="currentColor" stroke="none"/></svg>';
+
+  // Hasta 3 metricas con icono, en orden de prioridad -- se listan las
+  // primeras que de verdad existan (no todas las propiedades tienen las 4).
+  function pcardMetaIconos(p) {
+    var candidatos = [];
+    if (p.m2c) candidatos.push({ icon: ICON_M2, text: p.m2c + ' m²' });
+    if (p.rec) candidatos.push({ icon: ICON_REC, text: p.rec + ' rec' });
+    if (p.ban) candidatos.push({ icon: ICON_BAN, text: p.ban + (p.ban === 1 ? ' baño' : ' baños') });
+    if (p.est) candidatos.push({ icon: ICON_EST, text: p.est + ' est.' });
+    return candidatos.slice(0, 3);
+  }
+
+  function pcardStatusInfo(p) {
+    if (p.estado === 'disponible') return { clase: 'ok', icon: ICON_CHECK_CIRCLE, label: 'Publicada' };
+    if (p.estado === 'pausada') return { clase: 'atencion', icon: ICON_PAUSE_CIRCLE, label: 'Pausada' };
+    return { clase: 'inactivo', icon: ICON_DRAFT_CIRCLE, label: 'Borrador' };
+  }
+
+  function pcardCreadaTexto(p) {
+    var rel = tiempoRelativo(p.creado_en);
+    return rel === 'ahora' ? 'Creada ahora' : 'Creada hace ' + rel;
+  }
+
   // Botones y etiqueta de origen son identicos en la tarjeta (pcardHtml) y
   // en la fila de lista (pcardListHtml) -- se arman una sola vez aqui para
-  // que ambas vistas nunca queden desincronizadas.
+  // que ambas vistas nunca queden desincronizadas. Editar/Ver quedan
+  // visibles; el resto (Pausar, Reactivar sync, Eliminar) vive en el menu
+  // "•••" para no llenar la tarjeta de botones.
   function pcardAcciones(p) {
-    var togglePausa = p.estado !== 'borrador'
-      ? '<button class="btn btn--ghost" data-toggle-pausa="' + p.id + '">' + (p.estado === 'pausada' ? 'Activar' : 'Pausar') + '</button>'
+    var togglePausaItem = p.estado !== 'borrador'
+      ? '<button type="button" class="user-menu-item" data-toggle-pausa="' + p.id + '">' + (p.estado === 'pausada' ? 'Activar' : 'Pausar') + '</button>'
       : '';
     var verLink = p.estado === 'disponible'
-      ? '<a class="btn btn--ghost" href="' + esc(urlPublicacion(p)) + '" target="_blank" rel="noopener">Ver</a>'
+      ? '<a class="btn btn--ghost" href="' + esc(urlPublicacion(p)) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">Ver en sitio</a>'
       : '';
     // Etiqueta de origen: una ficha con easybroker_id viene de la
     // sincronizacion diaria con EasyBroker (RE/MAX Blue) -- se avisa si
     // sigue recibiendo esos cambios automaticos o si ya se edito a mano
     // (y por lo tanto dejo de recibirlos, ver saveProperty()).
     var origenBadge = '';
-    var reactivarBtn = '';
+    var reactivarItem = '';
     if (p.easybroker_id) {
       if (p.bloqueado_por_panel) {
         origenBadge = '<span class="pcard-tag pcard-tag--bloqueada" title="Ya no recibe cambios automaticos de EasyBroker">Editado a mano</span>';
         var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
         if (esAdmin) {
-          reactivarBtn = '<button class="btn btn--ghost" data-reactivar-sync="' + p.id + '" title="La siguiente sincronizacion diaria volvera a traer los datos de EasyBroker">Reactivar sincronización</button>';
+          reactivarItem = '<button type="button" class="user-menu-item" data-reactivar-sync="' + p.id + '" title="La siguiente sincronizacion diaria volvera a traer los datos de EasyBroker">Reactivar sincronización</button>';
         }
       } else {
         origenBadge = '<span class="pcard-tag" title="Se actualiza solo todos los dias desde EasyBroker">Sincronizado con EasyBroker</span>';
       }
     }
+    var menuItems = togglePausaItem + reactivarItem +
+      '<button type="button" class="user-menu-item" data-del="' + p.id + '" style="color:var(--danger)">Eliminar</button>';
+    var menu = (
+      '<div class="pcard-menu">' +
+        '<button type="button" class="btn btn--ghost" data-menu-toggle="' + p.id + '" aria-haspopup="true" title="Más acciones" onclick="event.stopPropagation()">•••</button>' +
+        '<div class="user-menu-dropdown" data-menu="' + p.id + '" hidden>' + menuItems + '</div>' +
+      '</div>'
+    );
     return {
-      togglePausa: togglePausa, verLink: verLink, origenBadge: origenBadge, reactivarBtn: reactivarBtn,
-      botones: verLink + togglePausa + '<button class="btn btn--ghost" data-edit="' + p.id + '">Editar</button>' + reactivarBtn + '<button class="btn btn--danger" data-del="' + p.id + '">Eliminar</button>'
+      origenBadge: origenBadge,
+      menuItems: menuItems,
+      botones: '<button type="button" class="btn btn--gold" data-edit="' + p.id + '" onclick="event.stopPropagation()">Editar</button>' + verLink + menu
     };
   }
 
   function pcardHtml(p) {
-    var meta = [];
-    if (p.rec) meta.push(p.rec + ' rec');
-    if (p.ban) meta.push(p.ban + ' baños');
-    if (p.m2c) meta.push(p.m2c + ' m²');
-    if (p.m2t) meta.push(p.m2t + ' m² terreno');
-    var badge = p.estado === 'disponible'
-      ? '<span class="pcard-badge">' + (p.operacion === 'renta' ? 'Renta' : 'Venta') + '</span>'
-      : '<span class="pcard-badge borrador">' + (p.estado === 'pausada' ? 'Pausada' : 'Borrador') + '</span>';
     var foto = fotoSrc((p.fotos && p.fotos[0]) || '');
     var acc = pcardAcciones(p);
+    var estadoInfo = pcardStatusInfo(p);
+    var metas = pcardMetaIconos(p);
     return (
-      '<div class="pcard" data-id="' + p.id + '">' +
-        '<div class="pcard-media">' + badge +
+      '<div class="pcard" data-id="' + p.id + '" data-abrir-detalle="' + p.id + '">' +
+        '<div class="pcard-media"><span class="pcard-badge">' + (p.operacion === 'renta' ? 'Renta' : 'Venta') + '</span>' +
           (foto ? '<img src="' + esc(foto) + '" alt="" loading="lazy">' : '') +
         '</div>' +
         '<div class="pcard-body">' +
-          '<div class="pcard-price">' + nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') + '</div>' +
           '<div class="pcard-title">' + esc(p.titulo || 'Sin título') + '</div>' +
-          '<div class="pcard-meta"><span>' + esc(coloniaLabel(p.colonia_slug)) + '</span><span>' + meta.join(' · ') + '</span></div>' +
+          '<div class="pcard-meta-loc">' + ICON_PIN + '<span>' + esc(coloniaLabel(p.colonia_slug)) + '</span></div>' +
+          '<div class="pcard-meta">' + metas.map(function (m) { return '<span class="pcard-meta-item">' + m.icon + m.text + '</span>'; }).join('') + '</div>' +
+          '<div class="pcard-price">' + nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') + '</div>' +
           (acc.origenBadge ? '<div class="pcard-origen">' + acc.origenBadge + '</div>' : '') +
+          '<div class="pcard-foot">' +
+            '<span class="pcard-status pcard-status--' + estadoInfo.clase + '">' + estadoInfo.icon + estadoInfo.label + '</span>' +
+            '<span>' + pcardCreadaTexto(p) + '</span>' +
+          '</div>' +
           '<div class="pcard-actions">' + acc.botones + '</div>' +
         '</div>' +
       '</div>'
@@ -518,32 +580,129 @@
   // datos), no la misma tarjeta acostada -- para de verdad ganar densidad
   // frente a la vista de cuadricula en vez de solo rotarla.
   function pcardListHtml(p) {
-    var meta = [];
-    if (p.rec) meta.push(p.rec + ' rec');
-    if (p.ban) meta.push(p.ban + ' baños');
-    if (p.m2c) meta.push(p.m2c + ' m²');
-    if (p.m2t) meta.push(p.m2t + ' m² terreno');
-    var badgeTxt = p.estado === 'disponible'
-      ? (p.operacion === 'renta' ? 'Renta' : 'Venta')
-      : (p.estado === 'pausada' ? 'Pausada' : 'Borrador');
-    var badgeClase = p.estado === 'disponible' ? 'prow-badge' : 'prow-badge borrador';
-    var foto = fotoSrc((p.fotos && p.fotos[0]) || '');
     var acc = pcardAcciones(p);
+    var estadoInfo = pcardStatusInfo(p);
+    var metas = pcardMetaIconos(p);
+    var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
+    var asesorTxt = esAdmin && p.asesor_id ? '<span class="prow-asesor">' + esc(nombrePerfil(p.asesor_id)) + '</span>' : '';
+    var foto = fotoSrc((p.fotos && p.fotos[0]) || '');
     return (
-      '<div class="prow" data-id="' + p.id + '">' +
+      '<div class="prow" data-id="' + p.id + '" data-abrir-detalle="' + p.id + '">' +
         '<div class="prow-media">' + (foto ? '<img src="' + esc(foto) + '" alt="" loading="lazy">' : '') + '</div>' +
         '<div class="prow-body">' +
           '<div class="prow-main">' +
             '<span class="prow-price">' + nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') + '</span>' +
             '<span class="prow-title">' + esc(p.titulo || 'Sin título') + '</span>' +
-            '<span class="' + badgeClase + '">' + badgeTxt + '</span>' +
+            '<span class="prow-badge">' + (p.operacion === 'renta' ? 'Renta' : 'Venta') + '</span>' +
+            '<span class="pcard-status pcard-status--' + estadoInfo.clase + '">' + estadoInfo.icon + estadoInfo.label + '</span>' +
             (acc.origenBadge ? acc.origenBadge : '') +
           '</div>' +
-          '<div class="prow-meta"><span>' + esc(coloniaLabel(p.colonia_slug)) + '</span>' + meta.map(function (m) { return '<span>' + m + '</span>'; }).join('') + '</div>' +
+          '<div class="prow-meta"><span>' + esc(coloniaLabel(p.colonia_slug)) + '</span>' +
+            metas.map(function (m) { return '<span class="pcard-meta-item">' + m.icon + m.text + '</span>'; }).join('') +
+            '<span>' + pcardCreadaTexto(p) + '</span>' + asesorTxt +
+          '</div>' +
         '</div>' +
         '<div class="prow-actions">' + acc.botones + '</div>' +
       '</div>'
     );
+  }
+
+  // ------------------------------------------------------ PANEL DE DETALLE
+  // Vista previa de solo lectura al hacer clic en una tarjeta/fila -- no
+  // reemplaza el modal de edicion (openModal), que sigue siendo la unica
+  // forma de guardar cambios. "Editar" en el pie abre ese mismo modal.
+  function infoDrawerCampos(p) {
+    var campos = [
+      { lbl: 'Precio', val: nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') },
+      { lbl: 'Tipo de propiedad', val: TIPO_LABEL_PROP[p.tipo] || p.tipo },
+      { lbl: 'Operación', val: p.operacion === 'renta' ? 'Renta' : 'Venta' },
+      { lbl: 'Estado', val: pcardStatusInfo(p).label },
+    ];
+    if (p.rec) campos.push({ lbl: 'Recámaras', val: p.rec });
+    if (p.ban) campos.push({ lbl: 'Baños', val: p.ban });
+    if (p.est) campos.push({ lbl: 'Estacionamientos', val: p.est });
+    if (p.m2c) campos.push({ lbl: 'Construcción', val: p.m2c + ' m²' });
+    if (p.m2t) campos.push({ lbl: 'Terreno', val: p.m2t + ' m²' });
+    campos.push({ lbl: 'Colonia', val: coloniaLabel(p.colonia_slug) });
+    var alc = alcaldiaLabel(p.colonia_slug);
+    if (alc) campos.push({ lbl: 'Alcaldía', val: alc });
+    return campos;
+  }
+
+  function renderDetalleTabBody(p, fotos) {
+    if (STATE.propDrawerTab === 'galeria') {
+      return fotos.length
+        ? '<div class="prop-drawer-gallery">' + fotos.map(function (f) { return '<img src="' + esc(f) + '" alt="">'; }).join('') + '</div>'
+        : '<div class="inicio-empty"><strong>Sin fotos</strong>Esta ficha todavía no tiene fotos cargadas.</div>';
+    }
+    if (STATE.propDrawerTab === 'ubicacion') {
+      if (!(p.lat && p.lng)) return '<div class="inicio-empty"><strong>Sin ubicación exacta</strong>Esta ficha no trae coordenadas.</div>';
+      return '<iframe src="https://maps.google.com/maps?q=' + p.lat + ',' + p.lng + '&z=15&output=embed" width="100%" height="220" style="border:0;border-radius:var(--r-md)" loading="lazy"></iframe>';
+    }
+    if (STATE.propDrawerTab === 'actividad') {
+      return '<div id="hiloCont-propiedad-' + p.id + '">' + hiloHtml('propiedad', p.id) + '</div>';
+    }
+    return '<div class="prop-drawer-info">' + infoDrawerCampos(p).map(function (c) {
+      return '<div class="prop-drawer-info-item"><div class="lbl">' + esc(c.lbl) + '</div><div class="val">' + esc(String(c.val)) + '</div></div>';
+    }).join('') + '</div>';
+  }
+
+  function abrirDetalleProp(id) {
+    var p = STATE.propiedades.filter(function (x) { return x.id === id; })[0];
+    if (!p) return;
+    STATE.propDrawerId = id;
+    STATE.propDrawerTab = 'info';
+    STATE.propDrawerFotoIdx = 0;
+    $('#propDrawer').hidden = false;
+    renderDetalleProp();
+  }
+
+  function cerrarDetalleProp() {
+    STATE.propDrawerId = null;
+    $('#propDrawer').hidden = true;
+  }
+
+  var PROP_DRAWER_TABS = [
+    { key: 'info', label: 'Información' },
+    { key: 'galeria', label: 'Galería' },
+    { key: 'ubicacion', label: 'Ubicación' },
+    { key: 'actividad', label: 'Actividad' },
+  ];
+
+  function renderDetalleProp() {
+    if (!STATE.propDrawerId) return;
+    var p = STATE.propiedades.filter(function (x) { return x.id === STATE.propDrawerId; })[0];
+    if (!p) { cerrarDetalleProp(); return; }
+    var estadoInfo = pcardStatusInfo(p);
+    $('#drawerTitulo').textContent = p.titulo || 'Sin título';
+    $('#drawerEstadoBadge').className = 'pcard-status pcard-status--' + estadoInfo.clase;
+    $('#drawerEstadoBadge').innerHTML = estadoInfo.icon + estadoInfo.label;
+    var idPublico = p.easybroker_id || ('GF-' + p.id.slice(0, 8).toUpperCase());
+    $('#drawerSub').textContent = 'ID: ' + idPublico + ' · ' + pcardCreadaTexto(p);
+
+    var fotos = (p.fotos || []).map(fotoSrc).filter(Boolean);
+    var idxActivo = Math.min(STATE.propDrawerFotoIdx, Math.max(fotos.length - 1, 0));
+    $('#drawerMedia').innerHTML = fotos.length
+      ? '<img src="' + esc(fotos[idxActivo]) + '" alt="">'
+      : '<div class="inicio-empty" style="padding:2rem 0"><strong>Sin fotos</strong></div>';
+    $('#drawerThumbs').innerHTML = fotos.slice(0, 5).map(function (f, i) {
+      return '<img src="' + esc(f) + '" class="' + (i === idxActivo ? 'is-active' : '') + '" data-foto-idx="' + i + '">';
+    }).join('') + (fotos.length > 5 ? '<div class="prop-drawer-thumbs-more">+' + (fotos.length - 5) + '</div>' : '');
+
+    var tabsDisponibles = PROP_DRAWER_TABS.filter(function (t) { return t.key !== 'ubicacion' || !!(p.lat && p.lng); });
+    if (!tabsDisponibles.some(function (t) { return t.key === STATE.propDrawerTab; })) STATE.propDrawerTab = 'info';
+    $('#drawerTabs').innerHTML = tabsDisponibles.map(function (t) {
+      return '<button type="button" class="prop-drawer-tab' + (STATE.propDrawerTab === t.key ? ' is-active' : '') + '" data-drawer-tab="' + t.key + '">' + t.label + '</button>';
+    }).join('');
+
+    $('#drawerBody').innerHTML = renderDetalleTabBody(p, fotos);
+    if (STATE.propDrawerTab === 'actividad' && !comentariosDe('propiedad', p.id)) cargarHilo('propiedad', p.id);
+
+    $('#drawerVerBtn').hidden = p.estado !== 'disponible';
+    if (p.estado === 'disponible') $('#drawerVerBtn').href = urlPublicacion(p);
+    var acc = pcardAcciones(p);
+    $('#drawerMasDropdown').innerHTML = acc.menuItems;
+    $('#drawerEditarBtn').dataset.edit = p.id;
   }
 
   function reactivarSyncPropiedad(id) {
@@ -574,30 +733,100 @@
     return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   }
 
+  // Mismo patron que llenarFiltroTipoPropiedades: las opciones se arman con
+  // lo que de verdad hay en las propiedades cargadas, nunca una lista fija.
+  function llenarFiltroZonaPropiedades() {
+    var sel = $('#propFiltroZona');
+    var actual = sel.value;
+    var slugs = [];
+    STATE.propiedades.forEach(function (p) { if (p.colonia_slug && slugs.indexOf(p.colonia_slug) === -1) slugs.push(p.colonia_slug); });
+    slugs.sort(function (a, b) { return coloniaLabel(a).localeCompare(coloniaLabel(b)); });
+    sel.innerHTML = '<option value="">Todas las zonas</option>' + slugs.map(function (s) {
+      return '<option value="' + esc(s) + '">' + esc(coloniaLabel(s)) + '</option>';
+    }).join('');
+    sel.value = slugs.indexOf(actual) !== -1 ? actual : '';
+  }
+
+  // Solo admin ve todo el inventario -- para cualquier otro rol este filtro
+  // no aporta nada (ya solo ve lo suyo + EasyBroker) y se mantiene oculto.
+  function llenarFiltroAsesorPropiedades() {
+    var sel = $('#propFiltroAsesor');
+    var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
+    sel.hidden = !esAdmin;
+    if (!esAdmin) return;
+    var actual = sel.value;
+    sel.innerHTML = '<option value="">Todo asesor</option>' + (STATE.equipo || []).map(function (a) {
+      return '<option value="' + a.id + '">' + esc(a.nombre || a.email) + '</option>';
+    }).join('');
+    sel.value = actual;
+  }
+
   function filtrarPropiedades() {
     var texto = normalizaBusqueda($('#propBuscar').value.trim());
     var operacion = $('#propFiltroOperacion').value;
     var tipo = $('#propFiltroTipo').value;
     var estado = $('#propFiltroEstado').value;
-    return STATE.propiedades.filter(function (p) {
+    var zona = $('#propFiltroZona').value;
+    var asesor = $('#propFiltroAsesor').value;
+    var precioMin = Number($('#propFiltroPrecioMin').value) || 0;
+    var precioMax = Number($('#propFiltroPrecioMax').value) || Infinity;
+    var lista = STATE.propiedades.filter(function (p) {
       if (operacion && p.operacion !== operacion) return false;
       if (tipo && p.tipo !== tipo) return false;
       if (estado && p.estado !== estado) return false;
+      if (zona && p.colonia_slug !== zona) return false;
+      if (asesor && p.asesor_id !== asesor) return false;
+      if ((p.precio || 0) < precioMin || (p.precio || 0) > precioMax) return false;
       if (texto) {
         var haystack = normalizaBusqueda([p.titulo, coloniaLabel(p.colonia_slug), p.id, p.easybroker_id].filter(Boolean).join(' '));
         if (haystack.indexOf(texto) === -1) return false;
       }
       return true;
     });
+    var orden = $('#propOrden').value;
+    if (orden === 'precio-desc') lista.sort(function (a, b) { return (b.precio || 0) - (a.precio || 0); });
+    else if (orden === 'precio-asc') lista.sort(function (a, b) { return (a.precio || 0) - (b.precio || 0); });
+    return lista;
   }
 
   function hayFiltrosPropiedadesActivos() {
-    return !!($('#propBuscar').value.trim() || $('#propFiltroOperacion').value || $('#propFiltroTipo').value || $('#propFiltroEstado').value);
+    return !!($('#propBuscar').value.trim() || $('#propFiltroOperacion').value || $('#propFiltroTipo').value ||
+      $('#propFiltroEstado').value || $('#propFiltroZona').value || $('#propFiltroAsesor').value ||
+      $('#propFiltroPrecioMin').value || $('#propFiltroPrecioMax').value);
+  }
+
+  function limpiarFiltrosPropiedades() {
+    $('#propBuscar').value = '';
+    $('#propFiltroOperacion').value = '';
+    $('#propFiltroTipo').value = '';
+    $('#propFiltroEstado').value = '';
+    $('#propFiltroZona').value = '';
+    $('#propFiltroAsesor').value = '';
+    $('#propFiltroPrecioMin').value = '';
+    $('#propFiltroPrecioMax').value = '';
+    activarTabProp('todas');
+  }
+
+  var TAB_PROP_FILTRO = {
+    todas: { operacion: '', estado: '' },
+    venta: { operacion: 'venta', estado: 'disponible' },
+    renta: { operacion: 'renta', estado: 'disponible' },
+    borrador: { operacion: '', estado: 'borrador' },
+    pausada: { operacion: '', estado: 'pausada' },
+  };
+
+  function activarTabProp(tab) {
+    var cfg = TAB_PROP_FILTRO[tab] || TAB_PROP_FILTRO.todas;
+    $('#propFiltroOperacion').value = cfg.operacion;
+    $('#propFiltroEstado').value = cfg.estado;
+    $$('#propTabs .prop-tab').forEach(function (b) { b.classList.toggle('is-active', b.dataset.tab === tab); });
+    renderGrid();
   }
 
   function renderGrid() {
     var grid = $('#grid');
     grid.classList.toggle('is-lista', STATE.propVista === 'lista');
+    $('#propFiltroLimpiarBtnTop').hidden = !hayFiltrosPropiedadesActivos();
     if (!STATE.propiedades.length) {
       grid.innerHTML = '';
       $('#emptyState').style.display = 'block';
@@ -633,6 +862,8 @@
       }
       STATE.propiedades = res.data || [];
       llenarFiltroTipoPropiedades();
+      llenarFiltroZonaPropiedades();
+      llenarFiltroAsesorPropiedades();
       renderGrid();
       renderNotifBell(); // por si una notificacion de propiedad cargo antes que esta lista
     });
@@ -3088,6 +3319,7 @@
       STATE.equipo = perfilesRes.data || [];
       STATE.invitaciones = invRes.data || [];
       renderEquipo();
+      llenarFiltroAsesorPropiedades();
     });
   }
 
@@ -3341,13 +3573,7 @@
     $('#propFiltroOperacion').addEventListener('change', renderGrid);
     $('#propFiltroTipo').addEventListener('change', renderGrid);
     $('#propFiltroEstado').addEventListener('change', renderGrid);
-    $('#propFiltroLimpiarBtn').addEventListener('click', function () {
-      $('#propBuscar').value = '';
-      $('#propFiltroOperacion').value = '';
-      $('#propFiltroTipo').value = '';
-      $('#propFiltroEstado').value = '';
-      renderGrid();
-    });
+    $('#propFiltroLimpiarBtn').addEventListener('click', function () { limpiarFiltrosPropiedades(); renderGrid(); });
     $('#propVistaGrid').addEventListener('click', function () {
       STATE.propVista = 'grid';
       $('#propVistaGrid').classList.add('is-active');
@@ -3526,6 +3752,12 @@
     $('#propActividadCont').addEventListener('change', wireHiloChange);
     $('#propActividadCont').addEventListener('input', wireHiloInput);
     $('#propActividadCont').addEventListener('keydown', wireHiloKeydown);
+    // Pestaña "Actividad" del panel de detalle (#drawerBody) -- mismos
+    // botones/inputs del hilo de comentarios, misma logica que el modal.
+    $('#drawerBody').addEventListener('click', wireHiloClick);
+    $('#drawerBody').addEventListener('change', wireHiloChange);
+    $('#drawerBody').addEventListener('input', wireHiloInput);
+    $('#drawerBody').addEventListener('keydown', wireHiloKeydown);
 
     $('#addAsesorBtn').addEventListener('click', openInviteModal);
     $('#inviteModalClose').addEventListener('click', closeInviteModal);
@@ -3608,7 +3840,7 @@
       b.addEventListener('click', function () { setOperacion(b.dataset.op); });
     });
 
-    $('#grid').addEventListener('click', function (e) {
+    function manejarAccionPropiedad(e) {
       var editId = e.target.dataset.edit;
       var delId = e.target.dataset.del;
       var pausaId = e.target.dataset.togglePausa;
@@ -3616,13 +3848,79 @@
       if (editId) {
         var p = STATE.propiedades.filter(function (x) { return x.id === editId; })[0];
         openModal(p);
+        return true;
       } else if (delId) {
         deleteProperty(delId);
+        return true;
       } else if (pausaId) {
         togglePausa(pausaId);
+        return true;
       } else if (reactivarId) {
         reactivarSyncPropiedad(reactivarId);
+        return true;
       }
+      return false;
+    }
+
+    $('#grid').addEventListener('click', function (e) {
+      var menuToggle = e.target.closest && e.target.closest('[data-menu-toggle]');
+      if (menuToggle) {
+        e.stopPropagation();
+        var dd = $('.user-menu-dropdown[data-menu="' + menuToggle.dataset.menuToggle + '"]');
+        var abrir = dd.hidden;
+        $$('#grid .user-menu-dropdown').forEach(function (d) { d.hidden = true; });
+        dd.hidden = !abrir;
+        return;
+      }
+      if (manejarAccionPropiedad(e)) return;
+      var abrirId = e.target.closest && e.target.closest('[data-abrir-detalle]');
+      if (abrirId) abrirDetalleProp(abrirId.dataset.abrirDetalle);
+    });
+    document.addEventListener('click', function (e) {
+      if (!(e.target.closest && e.target.closest('.pcard-menu'))) {
+        $$('#grid .user-menu-dropdown').forEach(function (d) { d.hidden = true; });
+      }
+    });
+
+    $('#propDrawerCloseBtn').addEventListener('click', cerrarDetalleProp);
+    $('#drawerTabs').addEventListener('click', function (e) {
+      var tab = e.target.closest && e.target.closest('[data-drawer-tab]');
+      if (!tab) return;
+      STATE.propDrawerTab = tab.dataset.drawerTab;
+      renderDetalleProp();
+    });
+    $('#drawerThumbs').addEventListener('click', function (e) {
+      var thumb = e.target.closest && e.target.closest('[data-foto-idx]');
+      if (!thumb) return;
+      STATE.propDrawerFotoIdx = Number(thumb.dataset.fotoIdx);
+      renderDetalleProp();
+    });
+    $('#drawerEditarBtn').addEventListener('click', function () {
+      var p = STATE.propiedades.filter(function (x) { return x.id === STATE.propDrawerId; })[0];
+      if (p) openModal(p);
+    });
+    $('#drawerMasBtn').addEventListener('click', function (e) {
+      e.stopPropagation();
+      $('#drawerMasDropdown').hidden = !$('#drawerMasDropdown').hidden;
+    });
+    $('#drawerMasDropdown').addEventListener('click', function (e) { manejarAccionPropiedad(e); });
+    document.addEventListener('click', function (e) {
+      var menu = $('#drawerMasBtn');
+      if (menu && !menu.parentElement.contains(e.target)) $('#drawerMasDropdown').hidden = true;
+    });
+
+    $('#propFiltroZona').addEventListener('change', renderGrid);
+    $('#propFiltroAsesor').addEventListener('change', renderGrid);
+    $('#propFiltroPrecioMin').addEventListener('input', renderGrid);
+    $('#propFiltroPrecioMax').addEventListener('input', renderGrid);
+    $('#propOrden').addEventListener('change', renderGrid);
+    $('#propMasFiltrosBtn').addEventListener('click', function () {
+      $('#propMasFiltros').hidden = !$('#propMasFiltros').hidden;
+    });
+    $('#propFiltroLimpiarBtnTop').addEventListener('click', function () { limpiarFiltrosPropiedades(); renderGrid(); });
+    $('#propTabs').addEventListener('click', function (e) {
+      var tab = e.target.closest && e.target.closest('[data-tab]');
+      if (tab) activarTabProp(tab.dataset.tab);
     });
 
     var dz = $('#dropzone');

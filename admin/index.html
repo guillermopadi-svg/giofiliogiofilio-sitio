@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="../assets/css/admin.css?v=9">
+<link rel="stylesheet" href="../assets/css/admin.css?v=10">
 </head>
 <body>
 
@@ -190,22 +190,49 @@
   <main class="shell" id="viewPropiedades">
     <div class="shell-head">
       <div>
-        <h1>Mis propiedades</h1>
-        <p>Agrega, edita y publica tus fichas — se reflejan en giofilio.com en cuanto las publicas.</p>
+        <h1>Propiedades</h1>
+        <p>Administra tu inventario de propiedades.</p>
       </div>
       <button class="btn btn--gold" id="addPropBtn">+ Nueva propiedad</button>
     </div>
 
-    <div class="stats">
-      <div class="stat-card"><div class="num" id="statDisponibles">0</div><div class="lbl">Publicadas</div></div>
-      <div class="stat-card"><div class="num" id="statVenta">0</div><div class="lbl">En venta</div></div>
-      <div class="stat-card"><div class="num" id="statRenta">0</div><div class="lbl">En renta</div></div>
-      <div class="stat-card"><div class="num" id="statBorradores">0</div><div class="lbl">Borradores</div></div>
-      <div class="stat-card"><div class="num" id="statPausadas">0</div><div class="lbl">Pausadas</div></div>
+    <div class="stats stats--kpi">
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/><path d="M9 21V12h6v9"/></svg>
+        <div><div class="num" id="statTotal">0</div><div class="lbl">Total</div></div>
+      </div>
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2.83 12.83a2 2 0 0 1 0-2.83l7.17-7.17A2 2 0 0 1 11.41 2H18a2 2 0 0 1 2 2v6.59a2 2 0 0 1-.41 1.82z"/><circle cx="7.5" cy="7.5" r="1.1" fill="currentColor" stroke="none"/></svg>
+        <div>
+          <div class="num" id="statVenta">0</div><div class="lbl">En venta</div>
+          <div class="stat-bar"><span id="statVentaBar"></span></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        <div>
+          <div class="num" id="statRenta">0</div><div class="lbl">En renta</div>
+          <div class="stat-bar"><span id="statRentaBar"></span></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2.5H7a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 2.5V8h5.5"/></svg>
+        <div>
+          <div class="num" id="statBorradores">0</div><div class="lbl">Borradores</div>
+          <div class="stat-bar stat-bar--sutil"><span id="statBorradoresBar"></span></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.3"/><path d="M10 9v6M14 9v6"/></svg>
+        <div>
+          <div class="num" id="statPausadas">0</div><div class="lbl">Pausadas</div>
+          <div class="stat-bar stat-bar--sutil"><span id="statPausadasBar"></span></div>
+        </div>
+      </div>
     </div>
 
     <div class="prop-toolbar">
-      <input type="search" id="propBuscar" class="prop-buscar" placeholder="Buscar por título, colonia, ID...">
+      <input type="search" id="propBuscar" class="prop-buscar" placeholder="Buscar por título, colonia, ID o palabra clave...">
       <select id="propFiltroOperacion">
         <option value="">Toda operación</option>
         <option value="venta">Venta</option>
@@ -220,6 +247,11 @@
         <option value="pausada">Pausada</option>
         <option value="borrador">Borrador</option>
       </select>
+      <select id="propFiltroZona">
+        <option value="">Todas las zonas</option>
+      </select>
+      <button type="button" class="btn btn--ghost btn--sm" id="propMasFiltrosBtn">Más filtros</button>
+      <button type="button" class="btn btn--ghost btn--sm" id="propFiltroLimpiarBtnTop" hidden>Limpiar filtros</button>
       <div class="prop-vista-toggle" role="group" aria-label="Vista">
         <button type="button" id="propVistaGrid" class="is-active" aria-label="Vista de cuadrícula" title="Cuadrícula">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -230,17 +262,74 @@
       </div>
     </div>
 
-    <div class="grid" id="grid"></div>
-
-    <div class="empty" id="propFiltroEmptyState" style="display:none">
-      <p>Ninguna propiedad coincide con la búsqueda/filtros.</p>
-      <button class="btn btn--ghost" id="propFiltroLimpiarBtn">Quitar filtros</button>
+    <div class="prop-toolbar-mas" id="propMasFiltros" hidden>
+      <label>Precio mínimo <input type="number" id="propFiltroPrecioMin" min="0" placeholder="$0"></label>
+      <label>Precio máximo <input type="number" id="propFiltroPrecioMax" min="0" placeholder="Sin límite"></label>
+      <select id="propFiltroAsesor" hidden>
+        <option value="">Todo asesor</option>
+      </select>
     </div>
 
-    <div class="empty" id="emptyState" style="display:none">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 9l9-6 9 6v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/><path d="M9 21V12h6v9"/></svg>
-      <p>Todavía no tienes propiedades cargadas.</p>
-      <button class="btn btn--gold" id="emptyAddBtn">Agregar la primera</button>
+    <div class="prop-tabs-row">
+      <div class="prop-tabs" id="propTabs" role="tablist" aria-label="Filtrar por estado">
+        <button type="button" class="prop-tab is-active" data-tab="todas">Todas <span class="prop-tab-count" id="tabCountTodas">0</span></button>
+        <button type="button" class="prop-tab" data-tab="venta">En venta <span class="prop-tab-count" id="tabCountVenta">0</span></button>
+        <button type="button" class="prop-tab" data-tab="renta">En renta <span class="prop-tab-count" id="tabCountRenta">0</span></button>
+        <button type="button" class="prop-tab" data-tab="borrador">Borradores <span class="prop-tab-count" id="tabCountBorrador">0</span></button>
+        <button type="button" class="prop-tab" data-tab="pausada">Pausadas <span class="prop-tab-count" id="tabCountPausada">0</span></button>
+      </div>
+      <label class="prop-orden">Ordenar por
+        <select id="propOrden">
+          <option value="recientes">Más recientes</option>
+          <option value="precio-desc">Precio: mayor a menor</option>
+          <option value="precio-asc">Precio: menor a mayor</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="prop-workspace">
+      <div class="prop-main">
+        <div class="grid" id="grid"></div>
+
+        <div class="empty" id="propFiltroEmptyState" style="display:none">
+          <p>Ninguna propiedad coincide con la búsqueda/filtros.</p>
+          <button class="btn btn--ghost" id="propFiltroLimpiarBtn">Quitar filtros</button>
+        </div>
+
+        <div class="empty" id="emptyState" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 9l9-6 9 6v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/><path d="M9 21V12h6v9"/></svg>
+          <p>Todavía no tienes propiedades cargadas.</p>
+          <button class="btn btn--gold" id="emptyAddBtn">Agregar la primera</button>
+        </div>
+      </div>
+
+      <aside class="prop-drawer" id="propDrawer" hidden>
+        <div class="prop-drawer-head">
+          <div>
+            <h3 id="drawerTitulo">Propiedad</h3>
+            <span class="pcard-badge" id="drawerEstadoBadge"></span>
+          </div>
+          <button type="button" class="prop-drawer-close" id="propDrawerCloseBtn" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <p class="prop-drawer-sub" id="drawerSub"></p>
+
+        <div class="prop-drawer-media" id="drawerMedia"></div>
+        <div class="prop-drawer-thumbs" id="drawerThumbs"></div>
+
+        <div class="prop-drawer-tabs" id="drawerTabs" role="tablist"></div>
+        <div class="prop-drawer-body" id="drawerBody"></div>
+
+        <div class="prop-drawer-foot">
+          <button type="button" class="btn btn--gold" id="drawerEditarBtn">Editar</button>
+          <a class="btn btn--ghost" id="drawerVerBtn" href="#" target="_blank" rel="noopener" hidden>Ver en sitio</a>
+          <div class="prop-drawer-menu">
+            <button type="button" class="btn btn--ghost" id="drawerMasBtn" aria-haspopup="true">•••</button>
+            <div class="prop-drawer-menu-dropdown" id="drawerMasDropdown" hidden></div>
+          </div>
+        </div>
+      </aside>
     </div>
   </main>
 
@@ -903,6 +992,6 @@
 <script src="../assets/js/vendor/heic2any.min.js"></script>
 <script src="../assets/js/vendor/exceljs.min.js"></script>
 <script src="../assets/js/admin-config.js?v=9"></script>
-<script src="../assets/js/admin.js?v=10"></script>
+<script src="../assets/js/admin.js?v=11"></script>
 </body>
 </html>
