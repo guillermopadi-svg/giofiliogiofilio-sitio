@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="../assets/css/admin.css?v=7">
+<link rel="stylesheet" href="../assets/css/admin.css?v=12">
 </head>
 <body>
 
@@ -34,14 +34,73 @@
 
 <!-- ---------------------------------------------------------- APP ---------------------------------------------------------- -->
 <div class="app" id="app">
-  <header class="topbar">
-    <div class="topbar-top">
-      <div class="topbar-brand">
-        <img src="../assets/img/brand/isotipo-gf.png" alt="Gio Filio">
-        <div class="topbar-brand-text">
-          <span class="topbar-brand-name">Panel de asesores</span>
-          <span class="topbar-greeting"><span id="greetingSaludo">Hola</span> <span id="greetingMsg"></span></span>
-        </div>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-badge"><img src="../assets/img/brand/isotipo-gf.png" alt="Gio Filio"></div>
+      <div class="sidebar-brand-text">
+        <span class="sidebar-brand-name">Gio Filio</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav" role="tablist" aria-label="Secciones del panel">
+      <button type="button" class="tabbar-btn" id="tabInicio" data-view="inicio" role="tab" aria-selected="false">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 5l8 6.5"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-5h4v5h3a1 1 0 0 0 1-1v-9"/></svg>
+        Inicio
+      </button>
+      <button type="button" class="tabbar-btn is-active" id="tabPropiedades" data-view="propiedades" role="tab" aria-selected="true">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/><path d="M9 21V12h6v9"/></svg>
+        Propiedades
+      </button>
+      <button type="button" class="tabbar-btn" id="tabContactos" data-view="contactos" role="tab" aria-selected="false">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.8 20c0-3.4 2.8-6.1 6.2-6.1s6.2 2.7 6.2 6.1"/><circle cx="17.5" cy="8.8" r="2.4"/><path d="M15.7 14.3c2.7.4 4.7 2.7 4.7 5.6"/></svg>
+        Contactos<span class="tabbar-badge" id="tabContactosBadge" hidden>0</span>
+      </button>
+      <button type="button" class="tabbar-btn" id="tabTareas" data-view="tareas" role="tab" aria-selected="false">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Tareas<span class="tabbar-badge" id="tabTareasBadge" hidden>0</span>
+      </button>
+      <button type="button" class="tabbar-btn" id="tabSolicitudes" data-view="solicitudes" role="tab" aria-selected="false">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Solicitudes<span class="tabbar-badge" id="tabSolicitudesBadge" hidden>0</span>
+      </button>
+      <button type="button" class="tabbar-btn" id="tabEstimador" data-view="estimador" role="tab" aria-selected="false">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-8"/></svg>
+        Estimador
+      </button>
+      <button type="button" class="tabbar-btn" id="tabDocumentos" data-view="documentos" role="tab" aria-selected="false">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2.5H7a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 2.5V8h5.5"/></svg>
+        Documentos
+      </button>
+      <button type="button" class="tabbar-btn" id="tabEquipo" data-view="equipo" role="tab" aria-selected="false" hidden>
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"/><circle cx="16" cy="8.5" r="2.4"/><path d="M2.5 20c0-3.4 2.7-6.1 6-6.1s6 2.7 6 6.1"/><path d="M13.2 14.2c2.5.5 4.3 2.8 4.3 5.8"/></svg>
+        Equipo
+      </button>
+    </nav>
+
+    <div class="sidebar-spacer"></div>
+
+    <nav class="sidebar-nav sidebar-nav--bottom" aria-label="Configuración">
+      <button type="button" class="tabbar-btn" id="tabConfiguracion" data-view="configuracion" role="tab" aria-selected="false">
+        <svg class="tabbar-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.65 1.65 0 0 0-1.8-.3 1.65 1.65 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.65 1.65 0 0 0 4.7 15a1.65 1.65 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.65 1.65 0 0 0 1 1.5 1.65 1.65 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.65 1.65 0 0 0-.3 1.8V9c.2.6.7 1 1.5 1H21a2 2 0 0 1 0 4h-.1a1.65 1.65 0 0 0-1.5 1z"/></svg>
+        Configuración
+      </button>
+    </nav>
+
+    <div class="sidebar-quote">
+      <p>“Cada propiedad que subes es un paso más cerca de tu próxima venta.”</p>
+      <img class="sidebar-quote-firma" src="../assets/img/brand/firma-blanca.png" alt="Gio Filio">
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="topbar">
+      <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Abrir menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div class="topbar-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input type="search" id="globalSearch" placeholder="Buscar propiedades, contactos, tareas…">
       </div>
       <div class="topbar-user">
         <div class="notif-bell" id="notifBell">
@@ -55,42 +114,125 @@
             <div class="notif-bell-empty" id="notifBellEmpty" hidden>Sin notificaciones nuevas.</div>
           </div>
         </div>
-        <div class="avatar" id="userAvatar">G</div>
-        <span id="userName">Asesor</span>
-        <button class="btn btn--ghost btn--sm" id="logoutBtn">Cerrar sesión</button>
+        <div class="user-menu" id="userMenu">
+          <button type="button" class="user-menu-btn" id="userMenuBtn" aria-haspopup="true">
+            <div class="avatar" id="userAvatar">G</div>
+            <span class="user-menu-info">
+              <span class="user-menu-name" id="userName">Asesor</span>
+              <span class="user-menu-role" id="userRole">Asesor</span>
+            </span>
+            <svg class="user-menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="user-menu-dropdown" id="userMenuDropdown" hidden>
+            <button type="button" class="user-menu-item" id="logoutBtn">Cerrar sesión</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+  <main class="shell" id="viewInicio" hidden>
+    <div class="shell-head">
+      <div>
+        <h1 id="inicioSaludo">Buenas tardes</h1>
+        <p id="inicioFecha"></p>
+      </div>
+      <button type="button" class="btn btn--gold" id="inicioAddPropBtn">+ Nueva propiedad</button>
+    </div>
+
+    <div class="stats" id="inicioKpis">
+      <button type="button" class="stat-card stat-card--link" data-goto="tareas" data-bandeja="mias">
+        <div class="num" id="kpiTareasHoy">0</div><div class="lbl">Tareas para hoy</div>
+      </button>
+      <button type="button" class="stat-card stat-card--link" data-goto="contactos">
+        <div class="num" id="kpiContactosNuevos">0</div><div class="lbl">Contactos nuevos</div>
+      </button>
+      <button type="button" class="stat-card stat-card--link" data-goto="solicitudes">
+        <div class="num" id="kpiSolicitudesPendientes">0</div><div class="lbl">Solicitudes pendientes</div>
+      </button>
+      <button type="button" class="stat-card stat-card--link" data-goto="propiedades">
+        <div class="num" id="kpiPropiedadesActivas">0</div><div class="lbl">Propiedades activas</div>
+      </button>
+    </div>
+
+    <div class="inicio-grid">
+      <div class="inicio-card">
+        <div class="inicio-card-head"><h2>Mi día</h2><button type="button" class="link-mas" data-goto="tareas">Ver todas</button></div>
+        <p class="inicio-card-sub">Tus tareas y actividades programadas para hoy.</p>
+        <div id="inicioMiDia"></div>
+      </div>
+
+      <div class="inicio-card">
+        <div class="inicio-card-head"><h2>Requieren atención</h2></div>
+        <p class="inicio-card-sub">Leads, solicitudes y propiedades que necesitan seguimiento.</p>
+        <div id="inicioAtencion"></div>
+      </div>
+
+      <div class="inicio-card">
+        <div class="inicio-card-head"><h2>Contactos recientes</h2><button type="button" class="link-mas" data-goto="contactos">Ver todas</button></div>
+        <p class="inicio-card-sub">Últimos contactos con actividad en tu cuenta.</p>
+        <div id="inicioContactos"></div>
+      </div>
+
+      <div class="inicio-card">
+        <div class="inicio-card-head"><h2>Actividad reciente</h2></div>
+        <p class="inicio-card-sub">Últimos cambios en tu cuenta.</p>
+        <div id="inicioActividad"></div>
       </div>
     </div>
 
-    <nav class="tabbar" role="tablist" aria-label="Secciones del panel">
-      <button type="button" class="tabbar-btn is-active" id="tabPropiedades" data-view="propiedades" role="tab" aria-selected="true">Propiedades</button>
-      <button type="button" class="tabbar-btn" id="tabContactos" data-view="contactos" role="tab" aria-selected="false">Contactos<span class="tabbar-badge" id="tabContactosBadge" hidden>0</span></button>
-      <button type="button" class="tabbar-btn" id="tabTareas" data-view="tareas" role="tab" aria-selected="false">Tareas<span class="tabbar-badge" id="tabTareasBadge" hidden>0</span></button>
-      <button type="button" class="tabbar-btn" id="tabSolicitudes" data-view="solicitudes" role="tab" aria-selected="false">Solicitudes<span class="tabbar-badge" id="tabSolicitudesBadge" hidden>0</span></button>
-      <button type="button" class="tabbar-btn" id="tabEstimador" data-view="estimador" role="tab" aria-selected="false">Estimador</button>
-      <button type="button" class="tabbar-btn" id="tabDocumentos" data-view="documentos" role="tab" aria-selected="false">Documentos</button>
-      <button type="button" class="tabbar-btn" id="tabEquipo" data-view="equipo" role="tab" aria-selected="false" hidden>Equipo</button>
-    </nav>
-  </header>
+    <div class="inicio-card inicio-inventario">
+      <div class="inicio-card-head"><h2>Tu inventario</h2><button type="button" class="link-mas" data-goto="propiedades">Ver propiedades</button></div>
+      <p class="inicio-card-sub">Resumen de tus propiedades publicadas.</p>
+      <div class="stats-grouped" id="inicioInventario"></div>
+    </div>
+  </main>
 
   <main class="shell" id="viewPropiedades">
     <div class="shell-head">
       <div>
-        <h1>Mis propiedades</h1>
-        <p>Agrega, edita y publica tus fichas — se reflejan en giofilio.com en cuanto las publicas.</p>
+        <h1>Propiedades</h1>
+        <p>Administra tu inventario de propiedades.</p>
       </div>
       <button class="btn btn--gold" id="addPropBtn">+ Nueva propiedad</button>
     </div>
 
-    <div class="stats">
-      <div class="stat-card"><div class="num" id="statDisponibles">0</div><div class="lbl">Publicadas</div></div>
-      <div class="stat-card"><div class="num" id="statVenta">0</div><div class="lbl">En venta</div></div>
-      <div class="stat-card"><div class="num" id="statRenta">0</div><div class="lbl">En renta</div></div>
-      <div class="stat-card"><div class="num" id="statBorradores">0</div><div class="lbl">Borradores</div></div>
-      <div class="stat-card"><div class="num" id="statPausadas">0</div><div class="lbl">Pausadas</div></div>
+    <div class="stats stats--kpi">
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/><path d="M9 21V12h6v9"/></svg>
+        <div><div class="num" id="statTotal">0</div><div class="lbl">Total</div></div>
+      </div>
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2.83 12.83a2 2 0 0 1 0-2.83l7.17-7.17A2 2 0 0 1 11.41 2H18a2 2 0 0 1 2 2v6.59a2 2 0 0 1-.41 1.82z"/><circle cx="7.5" cy="7.5" r="1.1" fill="currentColor" stroke="none"/></svg>
+        <div>
+          <div class="num" id="statVenta">0</div><div class="lbl">En venta</div>
+          <div class="stat-bar"><span id="statVentaBar"></span></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        <div>
+          <div class="num" id="statRenta">0</div><div class="lbl">En renta</div>
+          <div class="stat-bar"><span id="statRentaBar"></span></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2.5H7a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 2.5V8h5.5"/></svg>
+        <div>
+          <div class="num" id="statBorradores">0</div><div class="lbl">Borradores</div>
+          <div class="stat-bar stat-bar--sutil"><span id="statBorradoresBar"></span></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.3"/><path d="M10 9v6M14 9v6"/></svg>
+        <div>
+          <div class="num" id="statPausadas">0</div><div class="lbl">Pausadas</div>
+          <div class="stat-bar stat-bar--sutil"><span id="statPausadasBar"></span></div>
+        </div>
+      </div>
     </div>
 
     <div class="prop-toolbar">
-      <input type="search" id="propBuscar" class="prop-buscar" placeholder="Buscar por título, colonia, ID...">
+      <input type="search" id="propBuscar" class="prop-buscar" placeholder="Buscar por título, colonia, ID o palabra clave...">
       <select id="propFiltroOperacion">
         <option value="">Toda operación</option>
         <option value="venta">Venta</option>
@@ -105,6 +247,8 @@
         <option value="pausada">Pausada</option>
         <option value="borrador">Borrador</option>
       </select>
+      <button type="button" class="btn btn--ghost btn--sm" id="propMasFiltrosBtn">Más filtros</button>
+      <button type="button" class="btn btn--ghost btn--sm" id="propFiltroLimpiarBtnTop" hidden>Limpiar filtros</button>
       <div class="prop-vista-toggle" role="group" aria-label="Vista">
         <button type="button" id="propVistaGrid" class="is-active" aria-label="Vista de cuadrícula" title="Cuadrícula">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -115,17 +259,74 @@
       </div>
     </div>
 
-    <div class="grid" id="grid"></div>
-
-    <div class="empty" id="propFiltroEmptyState" style="display:none">
-      <p>Ninguna propiedad coincide con la búsqueda/filtros.</p>
-      <button class="btn btn--ghost" id="propFiltroLimpiarBtn">Quitar filtros</button>
+    <div class="prop-toolbar-mas" id="propMasFiltros" hidden>
+      <label>Precio mínimo <input type="number" id="propFiltroPrecioMin" min="0" placeholder="$0"></label>
+      <label>Precio máximo <input type="number" id="propFiltroPrecioMax" min="0" placeholder="Sin límite"></label>
+      <select id="propFiltroAsesor" hidden>
+        <option value="">Todo asesor</option>
+      </select>
     </div>
 
-    <div class="empty" id="emptyState" style="display:none">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 9l9-6 9 6v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/><path d="M9 21V12h6v9"/></svg>
-      <p>Todavía no tienes propiedades cargadas.</p>
-      <button class="btn btn--gold" id="emptyAddBtn">Agregar la primera</button>
+    <div class="prop-tabs-row">
+      <div class="prop-tabs" id="propTabs" role="tablist" aria-label="Filtrar por estado">
+        <button type="button" class="prop-tab is-active" data-tab="todas">Todas <span class="prop-tab-count" id="tabCountTodas">0</span></button>
+        <button type="button" class="prop-tab" data-tab="venta">En venta <span class="prop-tab-count" id="tabCountVenta">0</span></button>
+        <button type="button" class="prop-tab" data-tab="renta">En renta <span class="prop-tab-count" id="tabCountRenta">0</span></button>
+        <button type="button" class="prop-tab" data-tab="borrador">Borradores <span class="prop-tab-count" id="tabCountBorrador">0</span></button>
+        <button type="button" class="prop-tab" data-tab="pausada">Pausadas <span class="prop-tab-count" id="tabCountPausada">0</span></button>
+      </div>
+      <label class="prop-orden">Ordenar por
+        <select id="propOrden">
+          <option value="recientes">Más recientes</option>
+          <option value="precio-desc">Precio: mayor a menor</option>
+          <option value="precio-asc">Precio: menor a mayor</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="prop-workspace">
+      <div class="prop-main">
+        <div class="grid" id="grid"></div>
+
+        <div class="empty" id="propFiltroEmptyState" style="display:none">
+          <p>Ninguna propiedad coincide con la búsqueda/filtros.</p>
+          <button class="btn btn--ghost" id="propFiltroLimpiarBtn">Quitar filtros</button>
+        </div>
+
+        <div class="empty" id="emptyState" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 9l9-6 9 6v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/><path d="M9 21V12h6v9"/></svg>
+          <p>Todavía no tienes propiedades cargadas.</p>
+          <button class="btn btn--gold" id="emptyAddBtn">Agregar la primera</button>
+        </div>
+      </div>
+
+      <aside class="prop-drawer" id="propDrawer" hidden>
+        <div class="prop-drawer-head">
+          <div>
+            <h3 id="drawerTitulo">Propiedad</h3>
+            <span class="pcard-badge" id="drawerEstadoBadge"></span>
+          </div>
+          <button type="button" class="prop-drawer-close" id="propDrawerCloseBtn" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <p class="prop-drawer-sub" id="drawerSub"></p>
+
+        <div class="prop-drawer-media" id="drawerMedia"></div>
+        <div class="prop-drawer-thumbs" id="drawerThumbs"></div>
+
+        <div class="prop-drawer-tabs" id="drawerTabs" role="tablist"></div>
+        <div class="prop-drawer-body" id="drawerBody"></div>
+
+        <div class="prop-drawer-foot">
+          <button type="button" class="btn btn--gold" id="drawerEditarBtn">Editar</button>
+          <a class="btn btn--ghost" id="drawerVerBtn" href="#" target="_blank" rel="noopener" hidden>Ver en sitio</a>
+          <div class="prop-drawer-menu">
+            <button type="button" class="btn btn--ghost" id="drawerMasBtn" aria-haspopup="true">•••</button>
+            <div class="prop-drawer-menu-dropdown" id="drawerMasDropdown" hidden></div>
+          </div>
+        </div>
+      </aside>
     </div>
   </main>
 
@@ -431,7 +632,21 @@
     </div>
   </main>
 
+  <main class="shell" id="viewConfiguracion" hidden>
+    <div class="shell-head">
+      <div>
+        <h1>Configuración</h1>
+        <p>Preferencias del panel — en construcción.</p>
+      </div>
+    </div>
+    <div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.65 1.65 0 0 0-1.8-.3 1.65 1.65 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.65 1.65 0 0 0 4.7 15a1.65 1.65 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.65 1.65 0 0 0 1 1.5 1.65 1.65 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.65 1.65 0 0 0-.3 1.8V9c.2.6.7 1 1.5 1H21a2 2 0 0 1 0 4h-.1a1.65 1.65 0 0 0-1.5 1z"/></svg>
+      <p>Muy pronto: notificaciones, tu perfil y preferencias del panel.</p>
+    </div>
+  </main>
+
   <button class="btn btn--gold fab" id="addPropBtnFab" style="display:none">+ Nueva propiedad</button>
+  </div>
 </div>
 
 <!-- ---------------------------------------------------------- MODAL: TAREA ---------------------------------------------------------- -->
@@ -773,7 +988,7 @@
 <script src="../assets/js/vendor/supabase.js"></script>
 <script src="../assets/js/vendor/heic2any.min.js"></script>
 <script src="../assets/js/vendor/exceljs.min.js"></script>
-<script src="../assets/js/admin-config.js?v=8"></script>
-<script src="../assets/js/admin.js?v=8"></script>
+<script src="../assets/js/admin-config.js?v=9"></script>
+<script src="../assets/js/admin.js?v=11"></script>
 </body>
 </html>

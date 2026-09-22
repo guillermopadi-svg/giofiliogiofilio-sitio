@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null, propVista: 'grid', hilos: {}, adjuntosPendientes: {}, tareasConMencionSinLeer: {}, tareaSeleccionada: null, tareaBandeja: 'todo' };
+  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null, propVista: 'grid', hilos: {}, adjuntosPendientes: {}, tareasConMencionSinLeer: {}, tareaSeleccionada: null, tareaBandeja: 'todo', actividadSistema: [], propDrawerId: null, propDrawerTab: 'info', propDrawerFotoIdx: 0 };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -101,45 +101,17 @@
     if (h < 19) return 'Buenas tardes';
     return 'Buenas noches';
   }
-  var MENSAJES_BIENVENIDA = [
-    // Ánimo / motivación
-    'Sigamos haciendo que este sea tu mejor mes.',
-    'Cada propiedad que subes es un paso más cerca de tu próxima venta.',
-    'Un contacto bien atendido hoy es una firma mañana.',
-    'Gracias por ser una pieza clave de este equipo.',
-    'Vamos por más — tú puedes con esto.',
-    'Hoy es un buen día para cerrar algo grande.',
-    // Tips de plusvalía y zona
-    'La plusvalía sube más rápido cerca de estaciones de metro, parques y nueva infraestructura — vale la pena mencionarlo en tus fichas.',
-    'Una colonia con poco inventario disponible casi siempre negocia mejor precio para el vendedor.',
-    'Antes de fijar precio, revisa qué se vendió de verdad en la zona, no solo qué está publicado.',
-    // Tips de precio por m²
-    'Compara siempre el precio por m² homologado (construcción + terreno), no solo el precio total — así comparas manzanas con manzanas.',
-    'Dos propiedades "del mismo precio" pueden valer muy distinto por m² — el Estimador te lo resuelve en segundos.',
-    // Tips de oficio
-    'Un inmueble bien fotografiado se renta o vende más rápido — la primera imagen es la que decide el clic.',
-    'Contestar en los primeros minutos triplica tus probabilidades de agendar una cita.',
-    'Una descripción honesta (con lo bueno y lo que hay que saber) genera más confianza que una perfecta.',
-    // Recordatorios
-    'Recuerda dar seguimiento a tus leads en las primeras 24 horas — es cuando más responden.',
-    'Si una propiedad lleva semanas sin movimiento, puede ser momento de revisar precio o fotos, no de esperar más.',
-    'Actualiza el estado de tus solicitudes — así el equipo sabe qué ya revisaste y qué no.',
-    // Algo ligero
-    '"Inmueble" viene del latín immobilis: literal, "que no se mueve". A diferencia de tus ventas este mes.',
-    'Dato curioso: en CDMX hay colonias con el mismo nombre en alcaldías distintas — siempre confirma cuál es cuál.',
-    'Café en mano, panel abierto — así se ven los buenos días productivos.',
-    // Directo al grano
-    'Tienes correos sin leer.',
-    'Nadie lo va a hacer por ti.',
-    'Las casas no se venden solas.',
-    'Ese lead no se va a contactar solo.',
-    'Hoy es tan buen día como cualquiera para cerrar algo.',
-  ];
+  // Saludo + fecha del dashboard operativo de "Inicio" (ver renderInicio).
+  // Sin frases motivacionales -- son parte del centro operativo del asesor,
+  // no de una pantalla de bienvenida.
   function actualizarSaludo() {
+    var elSaludo = $('#inicioSaludo'), elFecha = $('#inicioFecha');
+    if (!elSaludo || !elFecha) return;
     var nombre = (STATE.perfil && STATE.perfil.nombre) || (STATE.session && STATE.session.user.email) || 'Asesor';
     var primerNombre = nombre.trim().split(' ')[0];
-    $('#greetingSaludo').textContent = saludoPorHora() + ', ' + primerNombre + '.';
-    $('#greetingMsg').textContent = MENSAJES_BIENVENIDA[Math.floor(Math.random() * MENSAJES_BIENVENIDA.length)];
+    elSaludo.textContent = saludoPorHora() + ', ' + primerNombre;
+    var fecha = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    elFecha.textContent = fecha.charAt(0).toUpperCase() + fecha.slice(1);
   }
 
   // --------------------------------------------------------------- AUTH
@@ -149,8 +121,9 @@
     $('#app').classList.add('is-visible');
     $('#userName').textContent = nombre;
     $('#userAvatar').textContent = nombre.trim().charAt(0).toUpperCase();
-    actualizarSaludo();
     var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
+    $('#userRole').textContent = esAdmin ? 'Admin' : (STATE.perfil && STATE.perfil.rol === 'administrativo' ? 'Administrativo' : 'Asesor');
+    actualizarSaludo();
     $('#tabEquipo').hidden = !esAdmin;
     cargarPropiedades();
     cargarLeads();
@@ -158,6 +131,7 @@
     cargarSolicitudes();
     cargarEstudios();
     cargarNotificaciones();
+    cargarActividadReciente();
     iniciarRealtime();
     if (esAdmin) cargarEquipo();
     else cargarEquipoBasico();
@@ -235,16 +209,221 @@
   // --------------------------------------------------------------- GRID
   function renderStats() {
     var disponibles = STATE.propiedades.filter(function (p) { return p.estado === 'disponible'; });
-    $('#statDisponibles').textContent = disponibles.length;
-    $('#statVenta').textContent = disponibles.filter(function (p) { return p.operacion === 'venta'; }).length;
-    $('#statRenta').textContent = disponibles.filter(function (p) { return p.operacion === 'renta'; }).length;
-    $('#statBorradores').textContent = STATE.propiedades.filter(function (p) { return p.estado === 'borrador'; }).length;
-    $('#statPausadas').textContent = STATE.propiedades.filter(function (p) { return p.estado === 'pausada'; }).length;
+    var venta = disponibles.filter(function (p) { return p.operacion === 'venta'; }).length;
+    var renta = disponibles.filter(function (p) { return p.operacion === 'renta'; }).length;
+    var borradores = STATE.propiedades.filter(function (p) { return p.estado === 'borrador'; }).length;
+    var pausadas = STATE.propiedades.filter(function (p) { return p.estado === 'pausada'; }).length;
+    $('#statTotal').textContent = STATE.propiedades.length;
+    $('#statVenta').textContent = venta;
+    $('#statRenta').textContent = renta;
+    $('#statBorradores').textContent = borradores;
+    $('#statPausadas').textContent = pausadas;
+    // Barras de proporcion: cada una sobre el total del inventario.
+    var baseBarra = STATE.propiedades.length || 1;
+    $('#statVentaBar').style.width = Math.round(venta / baseBarra * 100) + '%';
+    $('#statRentaBar').style.width = Math.round(renta / baseBarra * 100) + '%';
+    $('#statBorradoresBar').style.width = Math.round(borradores / baseBarra * 100) + '%';
+    $('#statPausadasBar').style.width = Math.round(pausadas / baseBarra * 100) + '%';
+    $('#tabCountTodas').textContent = STATE.propiedades.length;
+    $('#tabCountVenta').textContent = venta;
+    $('#tabCountRenta').textContent = renta;
+    $('#tabCountBorrador').textContent = borradores;
+    $('#tabCountPausada').textContent = pausadas;
+    renderInicio();
+    renderDetalleProp();
+  }
+
+  // --------------------------------------------------------------- INICIO
+  // Centro operativo del asesor: agrega datos ya cargados de Propiedades,
+  // Contactos, Tareas y Solicitudes -- no consulta nada nuevo salvo
+  // cargarActividadReciente() (eventos de sistema de tarea_comentarios, que
+  // ya existían para las notificaciones de @menciones). No hay bitácora de
+  // "propiedad actualizada" (precio/fotos) en el esquema actual -- por eso
+  // "Actividad reciente" no la incluye; agregar eso requeriría una columna
+  // actualizado_en + trigger, ver resumen entregado al usuario.
+  function hoyISO() { return new Date().toISOString().slice(0, 10); }
+
+  function cargarActividadReciente() {
+    sb.from('tarea_comentarios').select('tarea_id,autor_id,texto,tipo,creado_en')
+      .eq('tipo', 'sistema').order('creado_en', { ascending: false }).limit(8)
+      .then(function (res) {
+        if (res.error) { console.warn('[Panel] no se pudo cargar actividad reciente:', res.error.message); return; }
+        STATE.actividadSistema = res.data || [];
+        renderInicio();
+      });
+  }
+
+  function inicioMiDiaLista() {
+    var miId = STATE.session && STATE.session.user.id;
+    var hoy = hoyISO();
+    return STATE.tareas.filter(function (t) {
+      return t.asesor_id === miId && t.estado === 'pendiente' && t.vence && t.vence <= hoy;
+    });
+  }
+
+  function inicioAccionesContacto(lead) {
+    if (!lead || !lead.telefono) return '';
+    var tel = soloDigitos(lead.telefono);
+    return (
+      '<div class="inicio-row-actions">' +
+        '<a href="tel:' + esc(tel) + '" title="Llamar" onclick="event.stopPropagation()">' + ICON_TEL + '</a>' +
+        '<a href="https://wa.me/' + esc(tel.replace(/^\+/, '')) + '" target="_blank" rel="noopener" title="WhatsApp" onclick="event.stopPropagation()">' + ICON_WA + '</a>' +
+      '</div>'
+    );
+  }
+
+  function inicioMiDiaRowHtml(t) {
+    var lead = t.lead_id ? STATE.leads.filter(function (l) { return l.id === t.lead_id; })[0] : null;
+    var relacion = t.propiedad_id ? nombrePropiedad(t.propiedad_id) : (lead ? lead.nombre : '');
+    return (
+      '<div class="inicio-row">' +
+        '<button type="button" class="task-check" data-toggle-tarea="' + t.id + '" title="Marcar como hecha"></button>' +
+        '<div class="inicio-row-body">' +
+          '<div class="inicio-row-title">' + esc(t.titulo) + '</div>' +
+          '<div class="inicio-row-sub">' + esc(relacion || 'Sin relación') + '</div>' +
+        '</div>' +
+        inicioAccionesContacto(lead) +
+      '</div>'
+    );
+  }
+
+  // Reglas simples y 100% derivables de datos ya cargados (nada de scoring):
+  // tarea vencida mía, lead sin contactar, solicitud pendiente, propiedad
+  // pausada. "Propiedad sin actualizar" del diseño de referencia no se
+  // incluye -- no existe columna de última actualización en propiedades.
+  function inicioAtencionItems() {
+    var miId = STATE.session && STATE.session.user.id;
+    var items = [];
+    STATE.tareas.filter(function (t) { return t.asesor_id === miId && tareaVencidaP(t); }).forEach(function (t) {
+      items.push({ color: 'danger', etiqueta: 'Tarea vencida', titulo: t.titulo, sub: 'Venció ' + formatFechaCorta(t.vence), ts: t.vence, goto: 'tareas' });
+    });
+    STATE.leads.filter(function (l) { return l.estado === 'nuevo'; }).forEach(function (l) {
+      items.push({ color: 'danger', etiqueta: 'Lead nuevo', titulo: l.nombre, sub: 'Sin respuesta · ' + tiempoRelativo(l.creado_en), ts: l.creado_en, goto: 'contactos' });
+    });
+    STATE.solicitudes.filter(function (s) { return s.estado === 'nueva'; }).forEach(function (s) {
+      items.push({ color: 'gold', etiqueta: 'Solicitud', titulo: 'Nueva solicitud de valuación', sub: s.colonia || 'Sin colonia', ts: s.creado_en, goto: 'solicitudes', abrirSol: s.id });
+    });
+    STATE.propiedades.filter(function (p) { return p.estado === 'pausada'; }).forEach(function (p) {
+      items.push({ color: 'info', etiqueta: 'Pausada', titulo: p.titulo, sub: 'Publicación pausada', ts: p.creado_en, goto: 'propiedades' });
+    });
+    items.sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); });
+    return items.slice(0, 6);
+  }
+
+  function inicioAtencionRowHtml(it) {
+    return (
+      '<div class="inicio-row" data-goto="' + it.goto + '"' + (it.abrirSol ? ' data-abrir-sol="' + it.abrirSol + '"' : '') + '>' +
+        '<span class="inicio-row-dot inicio-row-dot--' + it.color + '"></span>' +
+        '<div class="inicio-row-body">' +
+          '<div class="inicio-row-title">' + esc(it.titulo || 'Sin título') + '</div>' +
+          '<div class="inicio-row-sub">' + esc(it.sub || '') + '</div>' +
+        '</div>' +
+        '<span class="inicio-row-tag inicio-row-tag--' + it.color + '">' + esc(it.etiqueta) + '</span>' +
+      '</div>'
+    );
+  }
+
+  function inicioContactoRowHtml(l) {
+    return (
+      '<div class="inicio-row" data-goto="contactos">' +
+        '<div class="avatar">' + esc(iniciales(l.nombre)) + '</div>' +
+        '<div class="inicio-row-body">' +
+          '<div class="inicio-row-title">' + esc(l.nombre || 'Sin nombre') + '</div>' +
+          '<div class="inicio-row-sub">' + esc(l.propiedad_titulo || l.mensaje || 'Contacto del sitio') + '</div>' +
+        '</div>' +
+        '<span class="inicio-row-tag inicio-row-tag--info">' + esc(ESTADO_LEAD_LABEL[l.estado] || l.estado) + '</span>' +
+        '<span class="inicio-row-time">' + tiempoRelativo(l.creado_en) + '</span>' +
+        inicioAccionesContacto(l) +
+      '</div>'
+    );
+  }
+
+  // Fuentes reales combinadas: eventos de sistema de tareas (completar,
+  // reasignar, prioridad), leads nuevos y solicitudes nuevas. No inventa un
+  // registro de auditoría que hoy no existe.
+  function inicioActividadItems() {
+    var items = [];
+    (STATE.actividadSistema || []).forEach(function (c) {
+      var t = STATE.tareas.filter(function (x) { return x.id === c.tarea_id; })[0];
+      items.push({ texto: esc(nombrePerfil(c.autor_id)) + ' ' + esc(c.texto), sub: t ? esc(t.titulo) : '', ts: c.creado_en });
+    });
+    STATE.leads.slice(0, 5).forEach(function (l) {
+      items.push({ texto: 'Nuevo contacto: ' + esc(l.nombre || 'Sin nombre'), sub: esc(l.propiedad_titulo || 'Sitio web'), ts: l.creado_en });
+    });
+    STATE.solicitudes.slice(0, 5).forEach(function (s) {
+      items.push({ texto: 'Nueva solicitud de ' + esc(TIPO_LABEL_SOL[s.tipo] || s.tipo || 'valuación'), sub: esc([s.nombre, s.apellido].filter(Boolean).join(' ')), ts: s.creado_en });
+    });
+    items.sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); });
+    return items.slice(0, 6);
+  }
+
+  function inicioActividadRowHtml(it) {
+    return (
+      '<div class="inicio-row">' +
+        '<span class="inicio-row-dot inicio-row-dot--info"></span>' +
+        '<div class="inicio-row-body">' +
+          '<div class="inicio-row-title">' + it.texto + '</div>' +
+          (it.sub ? '<div class="inicio-row-sub">' + it.sub + '</div>' : '') +
+        '</div>' +
+        '<span class="inicio-row-time">' + tiempoRelativo(it.ts) + '</span>' +
+      '</div>'
+    );
+  }
+
+  function inicioInventarioHtml() {
+    var disponibles = STATE.propiedades.filter(function (p) { return p.estado === 'disponible'; });
+    var venta = disponibles.filter(function (p) { return p.operacion === 'venta'; }).length;
+    var renta = disponibles.filter(function (p) { return p.operacion === 'renta'; }).length;
+    var borradores = STATE.propiedades.filter(function (p) { return p.estado === 'borrador'; }).length;
+    var pausadas = STATE.propiedades.filter(function (p) { return p.estado === 'pausada'; }).length;
+    return (
+      '<div class="stat-group-item" data-inv="venta"><div class="num">' + venta + '</div><div class="lbl">En venta</div></div>' +
+      '<div class="stat-group-item" data-inv="renta"><div class="num">' + renta + '</div><div class="lbl">En renta</div></div>' +
+      '<div class="stat-group-item" data-inv="borrador"><div class="num">' + borradores + '</div><div class="lbl">Borradores</div></div>' +
+      '<div class="stat-group-item" data-inv="pausada"><div class="num">' + pausadas + '</div><div class="lbl">Pausadas</div></div>'
+    );
+  }
+
+  function renderInicio() {
+    if (!$('#viewInicio')) return;
+    actualizarSaludo();
+
+    var misTareasHoy = inicioMiDiaLista();
+    $('#kpiTareasHoy').textContent = misTareasHoy.length;
+    $('#kpiContactosNuevos').textContent = STATE.leads.filter(function (l) { return l.estado === 'nuevo'; }).length;
+    $('#kpiSolicitudesPendientes').textContent = STATE.solicitudes.filter(function (s) { return s.estado === 'nueva'; }).length;
+    $('#kpiPropiedadesActivas').textContent = STATE.propiedades.filter(function (p) { return p.estado === 'disponible'; }).length;
+
+    $('#inicioMiDia').innerHTML = misTareasHoy.length
+      ? misTareasHoy.map(inicioMiDiaRowHtml).join('')
+      : '<div class="inicio-empty"><strong>Todo al día</strong>No tienes tareas pendientes para hoy.</div>';
+
+    var atencion = inicioAtencionItems();
+    $('#inicioAtencion').innerHTML = atencion.length
+      ? atencion.map(inicioAtencionRowHtml).join('')
+      : '<div class="inicio-empty"><strong>Sin pendientes urgentes</strong>No hay leads, solicitudes ni tareas que necesiten atención ahora.</div>';
+
+    var contactosRecientes = STATE.leads.slice(0, 4);
+    $('#inicioContactos').innerHTML = contactosRecientes.length
+      ? contactosRecientes.map(inicioContactoRowHtml).join('')
+      : '<div class="inicio-empty"><strong>Sin contactos nuevos</strong>Aún no llegan contactos desde el sitio.</div>';
+
+    var actividad = inicioActividadItems();
+    $('#inicioActividad').innerHTML = actividad.length
+      ? actividad.map(inicioActividadRowHtml).join('')
+      : '<div class="inicio-empty"><strong>Sin actividad reciente</strong>Todavía no hay movimientos que mostrar.</div>';
+
+    $('#inicioInventario').innerHTML = inicioInventarioHtml();
   }
 
   function coloniaLabel(slug) {
     var c = COLONIAS.filter(function (x) { return x.slug === slug; })[0];
     return c ? c.nombre : slug;
+  }
+
+  function alcaldiaLabel(slug) {
+    var c = COLONIAS.filter(function (x) { return x.slug === slug; })[0];
+    return c ? c.alcaldia : '';
   }
 
   // Reproduce el mismo slug que arma _generador/prep.py (normalize()) para
@@ -296,60 +475,101 @@
     return '../' + url;
   }
 
+  var ICON_PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10.5c0 5.5-8 12-8 12s-8-6.5-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10.5" r="2.5"/></svg>';
+  var ICON_M2 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><path d="M8 3.5v4M16 3.5v4M3.5 8h4M3.5 16h4M16 20.5v-4M20.5 16h-4"/></svg>';
+  var ICON_REC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18v-6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v6"/><path d="M2 18h20M4 10V7a2 2 0 0 1 2-2h5"/></svg>';
+  var ICON_BAN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16a1 1 0 0 1 1 1v2a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-2a1 1 0 0 1 1-1z"/><path d="M6 12V6.2A2.2 2.2 0 0 1 9.8 4.6"/></svg>';
+  var ICON_EST = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l1.5-5A2 2 0 0 1 6.4 6.5h11.2A2 2 0 0 1 19.5 8L21 13"/><path d="M3 13h18v4a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><circle cx="7" cy="16.5" r=".6" fill="currentColor" stroke="none"/><circle cx="17" cy="16.5" r=".6" fill="currentColor" stroke="none"/></svg>';
+  var ICON_CHECK_CIRCLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.3"/><path d="M8.3 12.3l2.5 2.5L16 9.3"/></svg>';
+  var ICON_PAUSE_CIRCLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9.3"/><path d="M10 9v6M14 9v6"/></svg>';
+  var ICON_DRAFT_CIRCLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.3"/><path d="M12 8v5"/><circle cx="12" cy="16" r=".4" fill="currentColor" stroke="none"/></svg>';
+
+  // Hasta 3 metricas con icono, en orden de prioridad -- se listan las
+  // primeras que de verdad existan (no todas las propiedades tienen las 4).
+  function pcardMetaIconos(p) {
+    var candidatos = [];
+    if (p.m2c) candidatos.push({ icon: ICON_M2, text: p.m2c + ' m²' });
+    if (p.rec) candidatos.push({ icon: ICON_REC, text: p.rec + ' rec' });
+    if (p.ban) candidatos.push({ icon: ICON_BAN, text: p.ban + (p.ban === 1 ? ' baño' : ' baños') });
+    if (p.est) candidatos.push({ icon: ICON_EST, text: p.est + ' est.' });
+    return candidatos.slice(0, 3);
+  }
+
+  function pcardStatusInfo(p) {
+    if (p.estado === 'disponible') return { clase: 'ok', icon: ICON_CHECK_CIRCLE, label: 'Publicada' };
+    if (p.estado === 'pausada') return { clase: 'atencion', icon: ICON_PAUSE_CIRCLE, label: 'Pausada' };
+    return { clase: 'inactivo', icon: ICON_DRAFT_CIRCLE, label: 'Borrador' };
+  }
+
+  function pcardCreadaTexto(p) {
+    var rel = tiempoRelativo(p.creado_en);
+    return rel === 'ahora' ? 'Creada ahora' : 'Creada hace ' + rel;
+  }
+
   // Botones y etiqueta de origen son identicos en la tarjeta (pcardHtml) y
   // en la fila de lista (pcardListHtml) -- se arman una sola vez aqui para
-  // que ambas vistas nunca queden desincronizadas.
+  // que ambas vistas nunca queden desincronizadas. Editar/Ver quedan
+  // visibles; el resto (Pausar, Reactivar sync, Eliminar) vive en el menu
+  // "•••" para no llenar la tarjeta de botones.
   function pcardAcciones(p) {
-    var togglePausa = p.estado !== 'borrador'
-      ? '<button class="btn btn--ghost" data-toggle-pausa="' + p.id + '">' + (p.estado === 'pausada' ? 'Activar' : 'Pausar') + '</button>'
+    var togglePausaItem = p.estado !== 'borrador'
+      ? '<button type="button" class="user-menu-item" data-toggle-pausa="' + p.id + '">' + (p.estado === 'pausada' ? 'Activar' : 'Pausar') + '</button>'
       : '';
     var verLink = p.estado === 'disponible'
-      ? '<a class="btn btn--ghost" href="' + esc(urlPublicacion(p)) + '" target="_blank" rel="noopener">Ver</a>'
+      ? '<a class="btn btn--ghost" href="' + esc(urlPublicacion(p)) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">Ver en sitio</a>'
       : '';
     // Etiqueta de origen: una ficha con easybroker_id viene de la
     // sincronizacion diaria con EasyBroker (RE/MAX Blue) -- se avisa si
     // sigue recibiendo esos cambios automaticos o si ya se edito a mano
     // (y por lo tanto dejo de recibirlos, ver saveProperty()).
     var origenBadge = '';
-    var reactivarBtn = '';
+    var reactivarItem = '';
     if (p.easybroker_id) {
       if (p.bloqueado_por_panel) {
         origenBadge = '<span class="pcard-tag pcard-tag--bloqueada" title="Ya no recibe cambios automaticos de EasyBroker">Editado a mano</span>';
         var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
         if (esAdmin) {
-          reactivarBtn = '<button class="btn btn--ghost" data-reactivar-sync="' + p.id + '" title="La siguiente sincronizacion diaria volvera a traer los datos de EasyBroker">Reactivar sincronización</button>';
+          reactivarItem = '<button type="button" class="user-menu-item" data-reactivar-sync="' + p.id + '" title="La siguiente sincronizacion diaria volvera a traer los datos de EasyBroker">Reactivar sincronización</button>';
         }
       } else {
         origenBadge = '<span class="pcard-tag" title="Se actualiza solo todos los dias desde EasyBroker">Sincronizado con EasyBroker</span>';
       }
     }
+    var menuItems = togglePausaItem + reactivarItem +
+      '<button type="button" class="user-menu-item" data-del="' + p.id + '" style="color:var(--danger)">Eliminar</button>';
+    var menu = (
+      '<div class="pcard-menu">' +
+        '<button type="button" class="btn btn--ghost" data-menu-toggle="' + p.id + '" aria-haspopup="true" title="Más acciones" onclick="event.stopPropagation()">•••</button>' +
+        '<div class="user-menu-dropdown" data-menu="' + p.id + '" hidden>' + menuItems + '</div>' +
+      '</div>'
+    );
     return {
-      togglePausa: togglePausa, verLink: verLink, origenBadge: origenBadge, reactivarBtn: reactivarBtn,
-      botones: verLink + togglePausa + '<button class="btn btn--ghost" data-edit="' + p.id + '">Editar</button>' + reactivarBtn + '<button class="btn btn--danger" data-del="' + p.id + '">Eliminar</button>'
+      origenBadge: origenBadge,
+      menuItems: menuItems,
+      botones: '<button type="button" class="btn btn--gold" data-edit="' + p.id + '" onclick="event.stopPropagation()">Editar</button>' + verLink + menu
     };
   }
 
   function pcardHtml(p) {
-    var meta = [];
-    if (p.rec) meta.push(p.rec + ' rec');
-    if (p.ban) meta.push(p.ban + ' baños');
-    if (p.m2c) meta.push(p.m2c + ' m²');
-    if (p.m2t) meta.push(p.m2t + ' m² terreno');
-    var badge = p.estado === 'disponible'
-      ? '<span class="pcard-badge">' + (p.operacion === 'renta' ? 'Renta' : 'Venta') + '</span>'
-      : '<span class="pcard-badge borrador">' + (p.estado === 'pausada' ? 'Pausada' : 'Borrador') + '</span>';
     var foto = fotoSrc((p.fotos && p.fotos[0]) || '');
     var acc = pcardAcciones(p);
+    var estadoInfo = pcardStatusInfo(p);
+    var metas = pcardMetaIconos(p);
     return (
-      '<div class="pcard" data-id="' + p.id + '">' +
-        '<div class="pcard-media">' + badge +
+      '<div class="pcard" data-id="' + p.id + '" data-abrir-detalle="' + p.id + '">' +
+        '<div class="pcard-media"><span class="pcard-badge">' + (p.operacion === 'renta' ? 'Renta' : 'Venta') + '</span>' +
           (foto ? '<img src="' + esc(foto) + '" alt="" loading="lazy">' : '') +
         '</div>' +
         '<div class="pcard-body">' +
-          '<div class="pcard-price">' + nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') + '</div>' +
           '<div class="pcard-title">' + esc(p.titulo || 'Sin título') + '</div>' +
-          '<div class="pcard-meta"><span>' + esc(coloniaLabel(p.colonia_slug)) + '</span><span>' + meta.join(' · ') + '</span></div>' +
+          '<div class="pcard-meta-loc">' + ICON_PIN + '<span>' + esc(coloniaLabel(p.colonia_slug)) + '</span></div>' +
+          '<div class="pcard-meta">' + metas.map(function (m) { return '<span class="pcard-meta-item">' + m.icon + m.text + '</span>'; }).join('') + '</div>' +
+          '<div class="pcard-price">' + nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') + '</div>' +
           (acc.origenBadge ? '<div class="pcard-origen">' + acc.origenBadge + '</div>' : '') +
+          '<div class="pcard-foot">' +
+            '<span class="pcard-status pcard-status--' + estadoInfo.clase + '">' + estadoInfo.icon + estadoInfo.label + '</span>' +
+            '<span>' + pcardCreadaTexto(p) + '</span>' +
+          '</div>' +
           '<div class="pcard-actions">' + acc.botones + '</div>' +
         '</div>' +
       '</div>'
@@ -360,32 +580,129 @@
   // datos), no la misma tarjeta acostada -- para de verdad ganar densidad
   // frente a la vista de cuadricula en vez de solo rotarla.
   function pcardListHtml(p) {
-    var meta = [];
-    if (p.rec) meta.push(p.rec + ' rec');
-    if (p.ban) meta.push(p.ban + ' baños');
-    if (p.m2c) meta.push(p.m2c + ' m²');
-    if (p.m2t) meta.push(p.m2t + ' m² terreno');
-    var badgeTxt = p.estado === 'disponible'
-      ? (p.operacion === 'renta' ? 'Renta' : 'Venta')
-      : (p.estado === 'pausada' ? 'Pausada' : 'Borrador');
-    var badgeClase = p.estado === 'disponible' ? 'prow-badge' : 'prow-badge borrador';
-    var foto = fotoSrc((p.fotos && p.fotos[0]) || '');
     var acc = pcardAcciones(p);
+    var estadoInfo = pcardStatusInfo(p);
+    var metas = pcardMetaIconos(p);
+    var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
+    var asesorTxt = esAdmin && p.asesor_id ? '<span class="prow-asesor">' + esc(nombrePerfil(p.asesor_id)) + '</span>' : '';
+    var foto = fotoSrc((p.fotos && p.fotos[0]) || '');
     return (
-      '<div class="prow" data-id="' + p.id + '">' +
+      '<div class="prow" data-id="' + p.id + '" data-abrir-detalle="' + p.id + '">' +
         '<div class="prow-media">' + (foto ? '<img src="' + esc(foto) + '" alt="" loading="lazy">' : '') + '</div>' +
         '<div class="prow-body">' +
           '<div class="prow-main">' +
             '<span class="prow-price">' + nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') + '</span>' +
             '<span class="prow-title">' + esc(p.titulo || 'Sin título') + '</span>' +
-            '<span class="' + badgeClase + '">' + badgeTxt + '</span>' +
+            '<span class="prow-badge">' + (p.operacion === 'renta' ? 'Renta' : 'Venta') + '</span>' +
+            '<span class="pcard-status pcard-status--' + estadoInfo.clase + '">' + estadoInfo.icon + estadoInfo.label + '</span>' +
             (acc.origenBadge ? acc.origenBadge : '') +
           '</div>' +
-          '<div class="prow-meta"><span>' + esc(coloniaLabel(p.colonia_slug)) + '</span>' + meta.map(function (m) { return '<span>' + m + '</span>'; }).join('') + '</div>' +
+          '<div class="prow-meta"><span>' + esc(coloniaLabel(p.colonia_slug)) + '</span>' +
+            metas.map(function (m) { return '<span class="pcard-meta-item">' + m.icon + m.text + '</span>'; }).join('') +
+            '<span>' + pcardCreadaTexto(p) + '</span>' + asesorTxt +
+          '</div>' +
         '</div>' +
         '<div class="prow-actions">' + acc.botones + '</div>' +
       '</div>'
     );
+  }
+
+  // ------------------------------------------------------ PANEL DE DETALLE
+  // Vista previa de solo lectura al hacer clic en una tarjeta/fila -- no
+  // reemplaza el modal de edicion (openModal), que sigue siendo la unica
+  // forma de guardar cambios. "Editar" en el pie abre ese mismo modal.
+  function infoDrawerCampos(p) {
+    var campos = [
+      { lbl: 'Precio', val: nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') },
+      { lbl: 'Tipo de propiedad', val: TIPO_LABEL_PROP[p.tipo] || p.tipo },
+      { lbl: 'Operación', val: p.operacion === 'renta' ? 'Renta' : 'Venta' },
+      { lbl: 'Estado', val: pcardStatusInfo(p).label },
+    ];
+    if (p.rec) campos.push({ lbl: 'Recámaras', val: p.rec });
+    if (p.ban) campos.push({ lbl: 'Baños', val: p.ban });
+    if (p.est) campos.push({ lbl: 'Estacionamientos', val: p.est });
+    if (p.m2c) campos.push({ lbl: 'Construcción', val: p.m2c + ' m²' });
+    if (p.m2t) campos.push({ lbl: 'Terreno', val: p.m2t + ' m²' });
+    campos.push({ lbl: 'Colonia', val: coloniaLabel(p.colonia_slug) });
+    var alc = alcaldiaLabel(p.colonia_slug);
+    if (alc) campos.push({ lbl: 'Alcaldía', val: alc });
+    return campos;
+  }
+
+  function renderDetalleTabBody(p, fotos) {
+    if (STATE.propDrawerTab === 'galeria') {
+      return fotos.length
+        ? '<div class="prop-drawer-gallery">' + fotos.map(function (f) { return '<img src="' + esc(f) + '" alt="">'; }).join('') + '</div>'
+        : '<div class="inicio-empty"><strong>Sin fotos</strong>Esta ficha todavía no tiene fotos cargadas.</div>';
+    }
+    if (STATE.propDrawerTab === 'ubicacion') {
+      if (!(p.lat && p.lng)) return '<div class="inicio-empty"><strong>Sin ubicación exacta</strong>Esta ficha no trae coordenadas.</div>';
+      return '<iframe src="https://maps.google.com/maps?q=' + p.lat + ',' + p.lng + '&z=15&output=embed" width="100%" height="220" style="border:0;border-radius:var(--r-md)" loading="lazy"></iframe>';
+    }
+    if (STATE.propDrawerTab === 'actividad') {
+      return '<div id="hiloCont-propiedad-' + p.id + '">' + hiloHtml('propiedad', p.id) + '</div>';
+    }
+    return '<div class="prop-drawer-info">' + infoDrawerCampos(p).map(function (c) {
+      return '<div class="prop-drawer-info-item"><div class="lbl">' + esc(c.lbl) + '</div><div class="val">' + esc(String(c.val)) + '</div></div>';
+    }).join('') + '</div>';
+  }
+
+  function abrirDetalleProp(id) {
+    var p = STATE.propiedades.filter(function (x) { return x.id === id; })[0];
+    if (!p) return;
+    STATE.propDrawerId = id;
+    STATE.propDrawerTab = 'info';
+    STATE.propDrawerFotoIdx = 0;
+    $('#propDrawer').hidden = false;
+    renderDetalleProp();
+  }
+
+  function cerrarDetalleProp() {
+    STATE.propDrawerId = null;
+    $('#propDrawer').hidden = true;
+  }
+
+  var PROP_DRAWER_TABS = [
+    { key: 'info', label: 'Información' },
+    { key: 'galeria', label: 'Galería' },
+    { key: 'ubicacion', label: 'Ubicación' },
+    { key: 'actividad', label: 'Actividad' },
+  ];
+
+  function renderDetalleProp() {
+    if (!STATE.propDrawerId) return;
+    var p = STATE.propiedades.filter(function (x) { return x.id === STATE.propDrawerId; })[0];
+    if (!p) { cerrarDetalleProp(); return; }
+    var estadoInfo = pcardStatusInfo(p);
+    $('#drawerTitulo').textContent = p.titulo || 'Sin título';
+    $('#drawerEstadoBadge').className = 'pcard-status pcard-status--' + estadoInfo.clase;
+    $('#drawerEstadoBadge').innerHTML = estadoInfo.icon + estadoInfo.label;
+    var idPublico = p.easybroker_id || ('GF-' + p.id.slice(0, 8).toUpperCase());
+    $('#drawerSub').textContent = 'ID: ' + idPublico + ' · ' + pcardCreadaTexto(p);
+
+    var fotos = (p.fotos || []).map(fotoSrc).filter(Boolean);
+    var idxActivo = Math.min(STATE.propDrawerFotoIdx, Math.max(fotos.length - 1, 0));
+    $('#drawerMedia').innerHTML = fotos.length
+      ? '<img src="' + esc(fotos[idxActivo]) + '" alt="">'
+      : '<div class="inicio-empty" style="padding:2rem 0"><strong>Sin fotos</strong></div>';
+    $('#drawerThumbs').innerHTML = fotos.slice(0, 5).map(function (f, i) {
+      return '<img src="' + esc(f) + '" class="' + (i === idxActivo ? 'is-active' : '') + '" data-foto-idx="' + i + '">';
+    }).join('') + (fotos.length > 5 ? '<div class="prop-drawer-thumbs-more">+' + (fotos.length - 5) + '</div>' : '');
+
+    var tabsDisponibles = PROP_DRAWER_TABS.filter(function (t) { return t.key !== 'ubicacion' || !!(p.lat && p.lng); });
+    if (!tabsDisponibles.some(function (t) { return t.key === STATE.propDrawerTab; })) STATE.propDrawerTab = 'info';
+    $('#drawerTabs').innerHTML = tabsDisponibles.map(function (t) {
+      return '<button type="button" class="prop-drawer-tab' + (STATE.propDrawerTab === t.key ? ' is-active' : '') + '" data-drawer-tab="' + t.key + '">' + t.label + '</button>';
+    }).join('');
+
+    $('#drawerBody').innerHTML = renderDetalleTabBody(p, fotos);
+    if (STATE.propDrawerTab === 'actividad' && !comentariosDe('propiedad', p.id)) cargarHilo('propiedad', p.id);
+
+    $('#drawerVerBtn').hidden = p.estado !== 'disponible';
+    if (p.estado === 'disponible') $('#drawerVerBtn').href = urlPublicacion(p);
+    var acc = pcardAcciones(p);
+    $('#drawerMasDropdown').innerHTML = acc.menuItems;
+    $('#drawerEditarBtn').dataset.edit = p.id;
   }
 
   function reactivarSyncPropiedad(id) {
@@ -416,30 +733,83 @@
     return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   }
 
+  // Solo admin ve todo el inventario -- para cualquier otro rol este filtro
+  // no aporta nada (ya solo ve lo suyo + EasyBroker) y se mantiene oculto.
+  function llenarFiltroAsesorPropiedades() {
+    var sel = $('#propFiltroAsesor');
+    var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
+    sel.hidden = !esAdmin;
+    if (!esAdmin) return;
+    var actual = sel.value;
+    sel.innerHTML = '<option value="">Todo asesor</option>' + (STATE.equipo || []).map(function (a) {
+      return '<option value="' + a.id + '">' + esc(a.nombre || a.email) + '</option>';
+    }).join('');
+    sel.value = actual;
+  }
+
   function filtrarPropiedades() {
     var texto = normalizaBusqueda($('#propBuscar').value.trim());
     var operacion = $('#propFiltroOperacion').value;
     var tipo = $('#propFiltroTipo').value;
     var estado = $('#propFiltroEstado').value;
-    return STATE.propiedades.filter(function (p) {
+    var asesor = $('#propFiltroAsesor').value;
+    var precioMin = Number($('#propFiltroPrecioMin').value) || 0;
+    var precioMax = Number($('#propFiltroPrecioMax').value) || Infinity;
+    var lista = STATE.propiedades.filter(function (p) {
       if (operacion && p.operacion !== operacion) return false;
       if (tipo && p.tipo !== tipo) return false;
       if (estado && p.estado !== estado) return false;
+      if (asesor && p.asesor_id !== asesor) return false;
+      if ((p.precio || 0) < precioMin || (p.precio || 0) > precioMax) return false;
       if (texto) {
         var haystack = normalizaBusqueda([p.titulo, coloniaLabel(p.colonia_slug), p.id, p.easybroker_id].filter(Boolean).join(' '));
         if (haystack.indexOf(texto) === -1) return false;
       }
       return true;
     });
+    var orden = $('#propOrden').value;
+    if (orden === 'precio-desc') lista.sort(function (a, b) { return (b.precio || 0) - (a.precio || 0); });
+    else if (orden === 'precio-asc') lista.sort(function (a, b) { return (a.precio || 0) - (b.precio || 0); });
+    return lista;
   }
 
   function hayFiltrosPropiedadesActivos() {
-    return !!($('#propBuscar').value.trim() || $('#propFiltroOperacion').value || $('#propFiltroTipo').value || $('#propFiltroEstado').value);
+    return !!($('#propBuscar').value.trim() || $('#propFiltroOperacion').value || $('#propFiltroTipo').value ||
+      $('#propFiltroEstado').value || $('#propFiltroAsesor').value ||
+      $('#propFiltroPrecioMin').value || $('#propFiltroPrecioMax').value);
+  }
+
+  function limpiarFiltrosPropiedades() {
+    $('#propBuscar').value = '';
+    $('#propFiltroOperacion').value = '';
+    $('#propFiltroTipo').value = '';
+    $('#propFiltroEstado').value = '';
+    $('#propFiltroAsesor').value = '';
+    $('#propFiltroPrecioMin').value = '';
+    $('#propFiltroPrecioMax').value = '';
+    activarTabProp('todas');
+  }
+
+  var TAB_PROP_FILTRO = {
+    todas: { operacion: '', estado: '' },
+    venta: { operacion: 'venta', estado: 'disponible' },
+    renta: { operacion: 'renta', estado: 'disponible' },
+    borrador: { operacion: '', estado: 'borrador' },
+    pausada: { operacion: '', estado: 'pausada' },
+  };
+
+  function activarTabProp(tab) {
+    var cfg = TAB_PROP_FILTRO[tab] || TAB_PROP_FILTRO.todas;
+    $('#propFiltroOperacion').value = cfg.operacion;
+    $('#propFiltroEstado').value = cfg.estado;
+    $$('#propTabs .prop-tab').forEach(function (b) { b.classList.toggle('is-active', b.dataset.tab === tab); });
+    renderGrid();
   }
 
   function renderGrid() {
     var grid = $('#grid');
     grid.classList.toggle('is-lista', STATE.propVista === 'lista');
+    $('#propFiltroLimpiarBtnTop').hidden = !hayFiltrosPropiedadesActivos();
     if (!STATE.propiedades.length) {
       grid.innerHTML = '';
       $('#emptyState').style.display = 'block';
@@ -475,6 +845,7 @@
       }
       STATE.propiedades = res.data || [];
       llenarFiltroTipoPropiedades();
+      llenarFiltroAsesorPropiedades();
       renderGrid();
       renderNotifBell(); // por si una notificacion de propiedad cargo antes que esta lista
     });
@@ -775,22 +1146,33 @@
   }
 
   // --------------------------------------------------------------- TABS
+  var VISTAS = ['inicio', 'propiedades', 'contactos', 'tareas', 'solicitudes', 'estimador', 'documentos', 'equipo', 'configuracion'];
+
   function setView(view) {
-    $('#viewPropiedades').hidden = view !== 'propiedades';
-    $('#viewContactos').hidden = view !== 'contactos';
-    $('#viewTareas').hidden = view !== 'tareas';
-    $('#viewSolicitudes').hidden = view !== 'solicitudes';
-    $('#viewEstimador').hidden = view !== 'estimador';
-    $('#viewDocumentos').hidden = view !== 'documentos';
-    $('#viewEquipo').hidden = view !== 'equipo';
-    ['propiedades', 'contactos', 'tareas', 'solicitudes', 'estimador', 'documentos', 'equipo'].forEach(function (v) {
+    VISTAS.forEach(function (v) {
+      var main = $('#view' + v.charAt(0).toUpperCase() + v.slice(1));
+      if (main) main.hidden = view !== v;
       var tab = $('#tab' + v.charAt(0).toUpperCase() + v.slice(1));
+      if (!tab) return;
       var activo = view === v;
       tab.classList.toggle('is-active', activo);
       tab.setAttribute('aria-selected', String(activo));
     });
     $('#addPropBtnFab').style.display = view === 'propiedades' && STATE.propiedades.length ? 'inline-flex' : 'none';
     if (view === 'documentos') mostrarDocLanding();
+    cerrarSidebarMovil();
+  }
+
+  // El sidebar es fijo en escritorio; en pantallas angostas se vuelve un
+  // cajon deslizable (misma idea que un drawer movil estandar) -- se abre
+  // con el boton hamburguesa del topbar y se cierra solo o con el overlay.
+  function abrirSidebarMovil() {
+    $('#sidebar').classList.add('is-open');
+    $('#sidebarOverlay').classList.add('is-visible');
+  }
+  function cerrarSidebarMovil() {
+    $('#sidebar').classList.remove('is-open');
+    $('#sidebarOverlay').classList.remove('is-visible');
   }
 
   // --------------------------------------------------------------- DOCUMENTOS
@@ -1433,6 +1815,7 @@
     var badge = $('#tabTareasBadge');
     badge.textContent = pendientes.length;
     badge.hidden = !pendientes.length;
+    renderInicio();
   }
 
   function cargarTareas() {
@@ -1604,6 +1987,7 @@
     var badge = $('#tabSolicitudesBadge');
     badge.textContent = nuevas.length;
     badge.hidden = !nuevas.length;
+    renderInicio();
   }
 
   function cargarSolicitudes() {
@@ -2917,6 +3301,7 @@
       STATE.equipo = perfilesRes.data || [];
       STATE.invitaciones = invRes.data || [];
       renderEquipo();
+      llenarFiltroAsesorPropiedades();
     });
   }
 
@@ -3060,6 +3445,7 @@
     var badge = $('#tabContactosBadge');
     badge.textContent = porEstado.nuevo.length;
     badge.hidden = !porEstado.nuevo.length;
+    renderInicio();
   }
 
   function cargarLeads() {
@@ -3151,6 +3537,16 @@
       var item = e.target.closest && e.target.closest('[data-notif-entidad]');
       if (item) abrirNotificacion(item.dataset.notifEntidad, item.dataset.notifId);
     });
+    $('#userMenuBtn').addEventListener('click', function (e) {
+      e.stopPropagation();
+      $('#userMenuDropdown').hidden = !$('#userMenuDropdown').hidden;
+    });
+    document.addEventListener('click', function (e) {
+      var menu = $('#userMenu');
+      if (menu && !menu.contains(e.target)) $('#userMenuDropdown').hidden = true;
+    });
+    $('#sidebarToggle').addEventListener('click', abrirSidebarMovil);
+    $('#sidebarOverlay').addEventListener('click', cerrarSidebarMovil);
     $('#addPropBtn').addEventListener('click', function () { openModal(null); });
     $('#emptyAddBtn').addEventListener('click', function () { openModal(null); });
     $('#addPropBtnFab').addEventListener('click', function () { openModal(null); });
@@ -3159,13 +3555,7 @@
     $('#propFiltroOperacion').addEventListener('change', renderGrid);
     $('#propFiltroTipo').addEventListener('change', renderGrid);
     $('#propFiltroEstado').addEventListener('change', renderGrid);
-    $('#propFiltroLimpiarBtn').addEventListener('click', function () {
-      $('#propBuscar').value = '';
-      $('#propFiltroOperacion').value = '';
-      $('#propFiltroTipo').value = '';
-      $('#propFiltroEstado').value = '';
-      renderGrid();
-    });
+    $('#propFiltroLimpiarBtn').addEventListener('click', function () { limpiarFiltrosPropiedades(); renderGrid(); });
     $('#propVistaGrid').addEventListener('click', function () {
       STATE.propVista = 'grid';
       $('#propVistaGrid').classList.add('is-active');
@@ -3202,6 +3592,28 @@
       renderEquipo();
     });
 
+    $('#tabInicio').addEventListener('click', function () { setView('inicio'); });
+    $('#inicioAddPropBtn').addEventListener('click', function () { openModal(null); });
+    $('#viewInicio').addEventListener('click', function (e) {
+      var toggleId = e.target.closest && e.target.closest('[data-toggle-tarea]');
+      if (toggleId) { toggleTarea(toggleId.dataset.toggleTarea); return; }
+      var invItem = e.target.closest && e.target.closest('[data-inv]');
+      if (invItem) {
+        var MAPA_INV = { venta: ['venta', 'disponible'], renta: ['renta', 'disponible'], borrador: ['', 'borrador'], pausada: ['', 'pausada'] };
+        var par = MAPA_INV[invItem.dataset.inv] || ['', ''];
+        $('#propFiltroOperacion').value = par[0];
+        $('#propFiltroEstado').value = par[1];
+        setView('propiedades');
+        renderGrid();
+        return;
+      }
+      var goto = e.target.closest && e.target.closest('[data-goto]');
+      if (goto) {
+        if (goto.dataset.bandeja) { STATE.tareaBandeja = goto.dataset.bandeja; renderTareas(); }
+        setView(goto.dataset.goto);
+        if (goto.dataset.abrirSol) openSolModal(goto.dataset.abrirSol);
+      }
+    });
     $('#tabPropiedades').addEventListener('click', function () { setView('propiedades'); });
     $('#tabContactos').addEventListener('click', function () { setView('contactos'); });
     $('#tabTareas').addEventListener('click', function () { setView('tareas'); });
@@ -3210,6 +3622,7 @@
     $('#tabDocumentos').addEventListener('click', function () { setView('documentos'); });
     wireDocumentos();
     $('#tabEquipo').addEventListener('click', function () { setView('equipo'); });
+    $('#tabConfiguracion').addEventListener('click', function () { setView('configuracion'); });
 
     $('#solicitudesLista').addEventListener('click', function (e) {
       var row = e.target.closest && e.target.closest('[data-open-sol]');
@@ -3321,6 +3734,12 @@
     $('#propActividadCont').addEventListener('change', wireHiloChange);
     $('#propActividadCont').addEventListener('input', wireHiloInput);
     $('#propActividadCont').addEventListener('keydown', wireHiloKeydown);
+    // Pestaña "Actividad" del panel de detalle (#drawerBody) -- mismos
+    // botones/inputs del hilo de comentarios, misma logica que el modal.
+    $('#drawerBody').addEventListener('click', wireHiloClick);
+    $('#drawerBody').addEventListener('change', wireHiloChange);
+    $('#drawerBody').addEventListener('input', wireHiloInput);
+    $('#drawerBody').addEventListener('keydown', wireHiloKeydown);
 
     $('#addAsesorBtn').addEventListener('click', openInviteModal);
     $('#inviteModalClose').addEventListener('click', closeInviteModal);
@@ -3403,7 +3822,7 @@
       b.addEventListener('click', function () { setOperacion(b.dataset.op); });
     });
 
-    $('#grid').addEventListener('click', function (e) {
+    function manejarAccionPropiedad(e) {
       var editId = e.target.dataset.edit;
       var delId = e.target.dataset.del;
       var pausaId = e.target.dataset.togglePausa;
@@ -3411,13 +3830,78 @@
       if (editId) {
         var p = STATE.propiedades.filter(function (x) { return x.id === editId; })[0];
         openModal(p);
+        return true;
       } else if (delId) {
         deleteProperty(delId);
+        return true;
       } else if (pausaId) {
         togglePausa(pausaId);
+        return true;
       } else if (reactivarId) {
         reactivarSyncPropiedad(reactivarId);
+        return true;
       }
+      return false;
+    }
+
+    $('#grid').addEventListener('click', function (e) {
+      var menuToggle = e.target.closest && e.target.closest('[data-menu-toggle]');
+      if (menuToggle) {
+        e.stopPropagation();
+        var dd = $('.user-menu-dropdown[data-menu="' + menuToggle.dataset.menuToggle + '"]');
+        var abrir = dd.hidden;
+        $$('#grid .user-menu-dropdown').forEach(function (d) { d.hidden = true; });
+        dd.hidden = !abrir;
+        return;
+      }
+      if (manejarAccionPropiedad(e)) return;
+      var abrirId = e.target.closest && e.target.closest('[data-abrir-detalle]');
+      if (abrirId) abrirDetalleProp(abrirId.dataset.abrirDetalle);
+    });
+    document.addEventListener('click', function (e) {
+      if (!(e.target.closest && e.target.closest('.pcard-menu'))) {
+        $$('#grid .user-menu-dropdown').forEach(function (d) { d.hidden = true; });
+      }
+    });
+
+    $('#propDrawerCloseBtn').addEventListener('click', cerrarDetalleProp);
+    $('#drawerTabs').addEventListener('click', function (e) {
+      var tab = e.target.closest && e.target.closest('[data-drawer-tab]');
+      if (!tab) return;
+      STATE.propDrawerTab = tab.dataset.drawerTab;
+      renderDetalleProp();
+    });
+    $('#drawerThumbs').addEventListener('click', function (e) {
+      var thumb = e.target.closest && e.target.closest('[data-foto-idx]');
+      if (!thumb) return;
+      STATE.propDrawerFotoIdx = Number(thumb.dataset.fotoIdx);
+      renderDetalleProp();
+    });
+    $('#drawerEditarBtn').addEventListener('click', function () {
+      var p = STATE.propiedades.filter(function (x) { return x.id === STATE.propDrawerId; })[0];
+      if (p) openModal(p);
+    });
+    $('#drawerMasBtn').addEventListener('click', function (e) {
+      e.stopPropagation();
+      $('#drawerMasDropdown').hidden = !$('#drawerMasDropdown').hidden;
+    });
+    $('#drawerMasDropdown').addEventListener('click', function (e) { manejarAccionPropiedad(e); });
+    document.addEventListener('click', function (e) {
+      var menu = $('#drawerMasBtn');
+      if (menu && !menu.parentElement.contains(e.target)) $('#drawerMasDropdown').hidden = true;
+    });
+
+    $('#propFiltroAsesor').addEventListener('change', renderGrid);
+    $('#propFiltroPrecioMin').addEventListener('input', renderGrid);
+    $('#propFiltroPrecioMax').addEventListener('input', renderGrid);
+    $('#propOrden').addEventListener('change', renderGrid);
+    $('#propMasFiltrosBtn').addEventListener('click', function () {
+      $('#propMasFiltros').hidden = !$('#propMasFiltros').hidden;
+    });
+    $('#propFiltroLimpiarBtnTop').addEventListener('click', function () { limpiarFiltrosPropiedades(); renderGrid(); });
+    $('#propTabs').addEventListener('click', function (e) {
+      var tab = e.target.closest && e.target.closest('[data-tab]');
+      if (tab) activarTabProp(tab.dataset.tab);
     });
 
     var dz = $('#dropzone');
