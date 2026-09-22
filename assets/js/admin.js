@@ -426,6 +426,14 @@
     return c ? c.alcaldia : '';
   }
 
+  // Mismo fallback que ya usaba urlPublicacion(): una ficha fuera de CDMX
+  // (o con un colonia_slug que no esta en el catalogo, ej. importada de
+  // EasyBroker) trae su nombre real en colonia_nombre_real -- sin esto se
+  // mostraba el slug tal cual (ej. "el-yaqui-eb-we2412").
+  function propiedadColoniaLabel(p) {
+    return p.colonia_nombre_real || coloniaLabel(p.colonia_slug);
+  }
+
   // Reproduce el mismo slug que arma _generador/prep.py (normalize()) para
   // poder enlazar directo a la ficha en giofilio.com sin ir y venir con el
   // sitio en cada publicación. Si esa lógica cambia allá, hay que
@@ -562,7 +570,7 @@
         '</div>' +
         '<div class="pcard-body">' +
           '<div class="pcard-title">' + esc(p.titulo || 'Sin título') + '</div>' +
-          '<div class="pcard-meta-loc">' + ICON_PIN + '<span>' + esc(coloniaLabel(p.colonia_slug)) + '</span></div>' +
+          '<div class="pcard-meta-loc">' + ICON_PIN + '<span>' + esc(propiedadColoniaLabel(p)) + '</span></div>' +
           '<div class="pcard-meta">' + metas.map(function (m) { return '<span class="pcard-meta-item">' + m.icon + m.text + '</span>'; }).join('') + '</div>' +
           '<div class="pcard-price">' + nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') + '</div>' +
           (acc.origenBadge ? '<div class="pcard-origen">' + acc.origenBadge + '</div>' : '') +
@@ -597,7 +605,7 @@
             '<span class="pcard-status pcard-status--' + estadoInfo.clase + '">' + estadoInfo.icon + estadoInfo.label + '</span>' +
             (acc.origenBadge ? acc.origenBadge : '') +
           '</div>' +
-          '<div class="prow-meta"><span>' + esc(coloniaLabel(p.colonia_slug)) + '</span>' +
+          '<div class="prow-meta"><span>' + esc(propiedadColoniaLabel(p)) + '</span>' +
             metas.map(function (m) { return '<span class="pcard-meta-item">' + m.icon + m.text + '</span>'; }).join('') +
             '<span>' + pcardCreadaTexto(p) + '</span>' + asesorTxt +
           '</div>' +
@@ -623,7 +631,7 @@
     if (p.est) campos.push({ lbl: 'Estacionamientos', val: p.est });
     if (p.m2c) campos.push({ lbl: 'Construcción', val: p.m2c + ' m²' });
     if (p.m2t) campos.push({ lbl: 'Terreno', val: p.m2t + ' m²' });
-    campos.push({ lbl: 'Colonia', val: coloniaLabel(p.colonia_slug) });
+    campos.push({ lbl: 'Colonia', val: propiedadColoniaLabel(p) });
     var alc = alcaldiaLabel(p.colonia_slug);
     if (alc) campos.push({ lbl: 'Alcaldía', val: alc });
     return campos;
@@ -762,7 +770,7 @@
       if (asesor && p.asesor_id !== asesor) return false;
       if ((p.precio || 0) < precioMin || (p.precio || 0) > precioMax) return false;
       if (texto) {
-        var haystack = normalizaBusqueda([p.titulo, coloniaLabel(p.colonia_slug), p.id, p.easybroker_id].filter(Boolean).join(' '));
+        var haystack = normalizaBusqueda([p.titulo, propiedadColoniaLabel(p), p.id, p.easybroker_id].filter(Boolean).join(' '));
         if (haystack.indexOf(texto) === -1) return false;
       }
       return true;

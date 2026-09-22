@@ -328,11 +328,18 @@ button{ font-family:inherit; cursor:pointer; }
   .prow-actions{ width:100%; justify-content:flex-start; margin-left:calc(48px + .9rem); }
 }
 .pcard{
-  background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden;
+  background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg);
   transition:transform .2s var(--ease), box-shadow .2s var(--ease); position:relative;
 }
 .pcard:hover{ transform:translateY(-3px); box-shadow:var(--sh-3); }
-.pcard-media{ aspect-ratio:4/3; background:var(--navy-050); position:relative; overflow:hidden; }
+/* El overflow:hidden vivia en .pcard -- recortaba el menu "•••" (position:
+   absolute) junto con las esquinas de la imagen. Se mueve el recorte solo
+   a la imagen (con su propio radio arriba) para que el menu si pueda
+   salirse de la tarjeta. */
+.pcard-media{
+  aspect-ratio:4/3; background:var(--navy-050); position:relative; overflow:hidden;
+  border-radius:var(--r-lg) var(--r-lg) 0 0;
+}
 .pcard-media img{ width:100%; height:100%; object-fit:cover; }
 .pcard-badge{
   position:absolute; top:.7rem; left:.7rem; background:rgba(7,31,74,.85); color:#fff;
@@ -406,6 +413,10 @@ button{ font-family:inherit; cursor:pointer; }
 .pcard-actions .btn--editar, .pcard-actions .btn--ver{ flex:1 1 auto; }
 .pcard-menu, .prow-menu, .prop-drawer-menu{ position:relative; }
 .pcard-menu .user-menu-dropdown, .prow-menu .user-menu-dropdown, .prop-drawer-menu .user-menu-dropdown{ left:auto; }
+/* El boton "•••" del drawer esta pegado al fondo de un contenedor con
+   scroll (.prop-drawer) -- abrir hacia abajo lo recortaria igual que
+   pasaba en las tarjetas, asi que este se abre hacia arriba. */
+.prop-drawer-menu .user-menu-dropdown{ top:auto; bottom:calc(100% + .6rem); }
 
 .prop-workspace{ display:flex; align-items:flex-start; gap:1.2rem; }
 .prop-main{ flex:1; min-width:0; }
