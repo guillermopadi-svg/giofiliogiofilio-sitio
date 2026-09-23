@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="../assets/css/admin.css?v=13">
+<link rel="stylesheet" href="../assets/css/admin.css?v=14">
 </head>
 <body>
 
@@ -334,32 +334,121 @@
     <div class="shell-head">
       <div>
         <h1>Contactos</h1>
-        <p>Leads capturados en giofilio.com (formularios, WhatsApp) — muévelos conforme les das seguimiento.</p>
+        <p>Leads capturados en giofilio.com — da seguimiento a cada uno.</p>
       </div>
     </div>
 
-    <div class="kanban" id="kanban">
-      <div class="kanban-col" data-estado="nuevo">
-        <div class="kanban-col-head"><span>Nuevo</span><span class="kanban-count" id="kc_nuevo">0</span></div>
-        <div class="kanban-cards" id="kcol_nuevo"></div>
+    <div class="stats stats--kpi">
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.8 20c0-3.4 2.8-6.1 6.2-6.1s6.2 2.7 6.2 6.1"/><circle cx="17.5" cy="8.8" r="2.4"/><path d="M15.7 14.3c2.7.4 4.7 2.7 4.7 5.6"/></svg>
+        <div><div class="num" id="statContactosTotal">0</div><div class="lbl">Total</div></div>
       </div>
-      <div class="kanban-col" data-estado="contactado">
-        <div class="kanban-col-head"><span>Contactado</span><span class="kanban-count" id="kc_contactado">0</span></div>
-        <div class="kanban-cards" id="kcol_contactado"></div>
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 14.5 8.5 21 9.3 16 13.8 17.5 20.3 12 16.9 6.5 20.3 8 13.8 3 9.3 9.5 8.5z"/></svg>
+        <div><div class="num" id="statContactosNuevo">0</div><div class="lbl">Nuevos</div></div>
       </div>
-      <div class="kanban-col" data-estado="activo">
-        <div class="kanban-col-head"><span>Activo</span><span class="kanban-count" id="kc_activo">0</span></div>
-        <div class="kanban-cards" id="kcol_activo"></div>
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.3"/><path d="M12 7v5.5l3.8 2.2"/></svg>
+        <div><div class="num" id="statContactosContactado">0</div><div class="lbl">Contactados</div></div>
       </div>
-      <div class="kanban-col" data-estado="cerrado">
-        <div class="kanban-col-head"><span>Cerrado</span><span class="kanban-count" id="kc_cerrado">0</span></div>
-        <div class="kanban-cards" id="kcol_cerrado"></div>
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.3"/><path d="M8.3 12.3l2.5 2.5L16 9.3"/></svg>
+        <div><div class="num" id="statContactosActivo">0</div><div class="lbl">Activos</div></div>
+      </div>
+      <div class="stat-card">
+        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16a1 1 0 0 1 1 1v2a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-2a1 1 0 0 1 1-1z"/><path d="M4 12V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5"/></svg>
+        <div><div class="num" id="statContactosCerrado">0</div><div class="lbl">Cerrados</div></div>
       </div>
     </div>
 
-    <div class="empty" id="leadsEmptyState" style="display:none">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      <p>Todavía no han llegado contactos desde el sitio.</p>
+    <div class="prop-toolbar">
+      <input type="search" id="leadBuscar" class="prop-buscar" placeholder="Buscar por nombre, correo, teléfono o interés...">
+      <select id="leadFiltroEstado">
+        <option value="">Todo estado</option>
+        <option value="nuevo">Nuevo</option>
+        <option value="contactado">Contactado</option>
+        <option value="activo">Activo</option>
+        <option value="cerrado">Cerrado</option>
+      </select>
+      <select id="leadFiltroOrigen">
+        <option value="">Todo origen</option>
+      </select>
+      <button type="button" class="btn btn--ghost btn--sm" id="leadFiltroLimpiarBtnTop" hidden>Limpiar filtros</button>
+      <div class="prop-vista-toggle" role="group" aria-label="Vista">
+        <button type="button" id="leadVistaLista" class="is-active" aria-label="Vista de lista" title="Lista">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg>
+        </button>
+        <button type="button" id="leadVistaKanban" aria-label="Vista de kanban" title="Kanban">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="4" height="18" rx="1"/><rect x="10" y="3" width="4" height="12" rx="1"/><rect x="17" y="3" width="4" height="15" rx="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="prop-tabs-row">
+      <div class="prop-tabs" id="leadTabs" role="tablist" aria-label="Filtrar por estado">
+        <button type="button" class="prop-tab is-active" data-lead-tab="todos">Todos <span class="prop-tab-count" id="tabCountLeadTodos">0</span></button>
+        <button type="button" class="prop-tab" data-lead-tab="nuevo">Nuevo <span class="prop-tab-count" id="tabCountLeadNuevo">0</span></button>
+        <button type="button" class="prop-tab" data-lead-tab="contactado">Contactado <span class="prop-tab-count" id="tabCountLeadContactado">0</span></button>
+        <button type="button" class="prop-tab" data-lead-tab="activo">Activo <span class="prop-tab-count" id="tabCountLeadActivo">0</span></button>
+        <button type="button" class="prop-tab" data-lead-tab="cerrado">Cerrado <span class="prop-tab-count" id="tabCountLeadCerrado">0</span></button>
+      </div>
+    </div>
+
+    <div class="prop-workspace">
+      <div class="prop-main">
+        <div class="lead-tabla" id="leadTabla"></div>
+        <div class="lead-paginacion" id="leadPaginacion" hidden></div>
+
+        <div class="kanban" id="kanban" hidden>
+          <div class="kanban-col" data-estado="nuevo">
+            <div class="kanban-col-head"><span>Nuevo</span><span class="kanban-count" id="kc_nuevo">0</span></div>
+            <div class="kanban-cards" id="kcol_nuevo"></div>
+          </div>
+          <div class="kanban-col" data-estado="contactado">
+            <div class="kanban-col-head"><span>Contactado</span><span class="kanban-count" id="kc_contactado">0</span></div>
+            <div class="kanban-cards" id="kcol_contactado"></div>
+          </div>
+          <div class="kanban-col" data-estado="activo">
+            <div class="kanban-col-head"><span>Activo</span><span class="kanban-count" id="kc_activo">0</span></div>
+            <div class="kanban-cards" id="kcol_activo"></div>
+          </div>
+          <div class="kanban-col" data-estado="cerrado">
+            <div class="kanban-col-head"><span>Cerrado</span><span class="kanban-count" id="kc_cerrado">0</span></div>
+            <div class="kanban-cards" id="kcol_cerrado"></div>
+          </div>
+        </div>
+
+        <div class="empty" id="leadFiltroEmptyState" style="display:none">
+          <p>Ningún contacto coincide con la búsqueda/filtros.</p>
+          <button class="btn btn--ghost" id="leadFiltroLimpiarBtn">Quitar filtros</button>
+        </div>
+
+        <div class="empty" id="leadsEmptyState" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <p>Todavía no han llegado contactos desde el sitio.</p>
+        </div>
+      </div>
+
+      <aside class="prop-drawer" id="leadDrawer" hidden>
+        <div class="prop-drawer-head">
+          <div class="lead-drawer-who">
+            <div class="avatar" id="leadDrawerAvatar"></div>
+            <div>
+              <h3 id="leadDrawerNombre">Contacto</h3>
+              <span class="pcard-status" id="leadDrawerEstado"></span>
+            </div>
+          </div>
+          <button type="button" class="prop-drawer-close" id="leadDrawerCloseBtn" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <p class="prop-drawer-sub" id="leadDrawerSub"></p>
+
+        <div class="lead-drawer-acciones" id="leadDrawerAcciones"></div>
+
+        <div class="prop-drawer-tabs" id="leadDrawerTabs" role="tablist"></div>
+        <div class="prop-drawer-body" id="leadDrawerBody"></div>
+      </aside>
     </div>
   </main>
 
@@ -736,26 +825,6 @@
   </div>
 </div>
 
-<!-- ---------------------------------------------------------- MODAL: LEAD ---------------------------------------------------------- -->
-<div class="modal-backdrop" id="leadModalBackdrop">
-  <div class="modal modal--sm">
-    <div class="modal-head">
-      <h2 id="leadModalTitle">Contacto</h2>
-      <button class="modal-close" id="leadModalClose" aria-label="Cerrar">&times;</button>
-    </div>
-    <div class="modal-body" id="leadModalBody"></div>
-    <div class="modal-foot">
-      <button class="btn btn--ghost btn--sm" id="leadGuardarNotasBtn">Guardar notas</button>
-      <select id="leadEstadoSelect" class="lead-estado-select">
-        <option value="nuevo">Nuevo</option>
-        <option value="contactado">Contactado</option>
-        <option value="activo">Activo</option>
-        <option value="cerrado">Cerrado</option>
-      </select>
-    </div>
-  </div>
-</div>
-
 <!-- ---------------------------------------------------------- MODAL: PROPIEDAD ---------------------------------------------------------- -->
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
@@ -989,6 +1058,6 @@
 <script src="../assets/js/vendor/heic2any.min.js"></script>
 <script src="../assets/js/vendor/exceljs.min.js"></script>
 <script src="../assets/js/admin-config.js?v=9"></script>
-<script src="../assets/js/admin.js?v=13"></script>
+<script src="../assets/js/admin.js?v=14"></script>
 </body>
 </html>
