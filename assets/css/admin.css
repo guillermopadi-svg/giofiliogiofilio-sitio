@@ -303,7 +303,7 @@ button{ font-family:inherit; cursor:pointer; }
 .grid.is-lista{ grid-template-columns:1fr; gap:.4rem; }
 .prow{
   display:flex; align-items:center; gap:.9rem; background:var(--white);
-  border:1px solid var(--line); border-radius:var(--r-sm); padding:.5rem .8rem;
+  border:1px solid var(--line); border-radius:var(--r-sm); padding:.5rem .8rem; min-width:0;
 }
 .prow-media{
   width:48px; height:48px; border-radius:var(--r-xs); overflow:hidden; flex-shrink:0;
@@ -330,6 +330,9 @@ button{ font-family:inherit; cursor:pointer; }
 .pcard{
   background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg);
   transition:transform .2s var(--ease), box-shadow .2s var(--ease); position:relative;
+  min-width:0; /* sin esto, un item de grid no se encoge bajo el ancho de su
+    contenido -- el titulo con white-space:nowrap forzaba columnas ~580px
+    aunque .grid pidiera 1fr, y solo cabian 2 tarjetas por fila. */
 }
 .pcard:hover{ transform:translateY(-3px); box-shadow:var(--sh-3); }
 /* El overflow:hidden vivia en .pcard -- recortaba el menu "•••" (position:
