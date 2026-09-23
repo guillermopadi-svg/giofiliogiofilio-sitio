@@ -3735,6 +3735,57 @@
     });
   }
 
+  function openLeadCreateModal() {
+    $('#lead_nombre').value = '';
+    $('#lead_telefono').value = '';
+    $('#lead_email').value = '';
+    $('#lead_propiedad').value = '';
+    $('#lead_mensaje').value = '';
+    $('#leadError').classList.remove('show');
+    $('#leadModalBackdrop').classList.add('is-open');
+  }
+
+  function closeLeadCreateModal() {
+    $('#leadModalBackdrop').classList.remove('is-open');
+  }
+
+  // Un contacto agregado a mano desde el panel usa la misma tabla `leads`
+  // que los que llegan del sitio -- se distingue solo por formulario/fuente,
+  // para no separar "clientes manuales" de los reales en dos lugares.
+  function guardarNuevoContacto() {
+    var nombre = $('#lead_nombre').value.trim();
+    var errBox = $('#leadError');
+    if (!nombre) {
+      errBox.textContent = 'Escribe al menos el nombre del contacto.';
+      errBox.classList.add('show');
+      return;
+    }
+    errBox.classList.remove('show');
+    var data = {
+      nombre: nombre,
+      telefono: $('#lead_telefono').value.trim() || null,
+      email: $('#lead_email').value.trim() || null,
+      propiedad_titulo: $('#lead_propiedad').value.trim() || null,
+      mensaje: $('#lead_mensaje').value.trim() || null,
+      estado: 'nuevo',
+      formulario: 'panel',
+      fuente: 'manual',
+    };
+    var btn = $('#leadGuardarBtn');
+    setBusy(btn, true, 'Guardando…');
+    sb.from('leads').insert(data).then(function (res) {
+      setBusy(btn, false);
+      if (res.error) {
+        errBox.textContent = 'No se pudo guardar: ' + res.error.message;
+        errBox.classList.add('show');
+        return;
+      }
+      closeLeadCreateModal();
+      toast('Contacto agregado');
+      cargarLeads();
+    });
+  }
+
   // --------------------------------------------------------------- INIT
   document.addEventListener('DOMContentLoaded', function () {
     cargarCatalogos();
@@ -4001,6 +4052,11 @@
         if (id) cambiarEstadoLead(id, col.dataset.estado);
       });
     });
+
+    $('#addLeadBtn').addEventListener('click', openLeadCreateModal);
+    $('#leadModalClose').addEventListener('click', closeLeadCreateModal);
+    $('#leadModalBackdrop').addEventListener('click', function (e) { if (e.target.id === 'leadModalBackdrop') closeLeadCreateModal(); });
+    $('#leadGuardarBtn').addEventListener('click', guardarNuevoContacto);
 
     $('#leadBuscar').addEventListener('input', function () { STATE.leadPagina = 1; renderContactos(); });
     $('#leadFiltroEstado').addEventListener('change', function () { STATE.leadPagina = 1; renderContactos(); });

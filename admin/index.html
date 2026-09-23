@@ -336,6 +336,7 @@
         <h1>Contactos</h1>
         <p>Leads capturados en giofilio.com — da seguimiento a cada uno.</p>
       </div>
+      <button class="btn btn--gold" id="addLeadBtn">+ Nuevo contacto</button>
     </div>
 
     <div class="stats stats--kpi">
@@ -738,6 +739,45 @@
   </div>
 </div>
 
+<!-- ---------------------------------------------------------- MODAL: NUEVO CONTACTO ---------------------------------------------------------- -->
+<div class="modal-backdrop" id="leadModalBackdrop">
+  <div class="modal modal--sm">
+    <div class="modal-head">
+      <h2>Nuevo contacto</h2>
+      <button class="modal-close" id="leadModalClose" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="error-msg" id="leadError"></div>
+      <div class="field">
+        <label for="lead_nombre">Nombre</label>
+        <input type="text" id="lead_nombre" placeholder="Ana Martínez" required>
+      </div>
+      <div class="field-grid">
+        <div class="field">
+          <label for="lead_telefono">Teléfono (opcional)</label>
+          <input type="tel" id="lead_telefono" placeholder="+52 55 1234 5678">
+        </div>
+        <div class="field">
+          <label for="lead_email">Correo (opcional)</label>
+          <input type="email" id="lead_email" placeholder="ana@email.com">
+        </div>
+      </div>
+      <div class="field">
+        <label for="lead_propiedad">Propiedad de interés (opcional)</label>
+        <input type="text" id="lead_propiedad" placeholder="Departamento en Condesa">
+      </div>
+      <div class="field">
+        <label for="lead_mensaje">Notas (opcional)</label>
+        <textarea id="lead_mensaje" rows="3" placeholder="Contexto del contacto…"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn--ghost btn--sm" id="leadCancelBtn" onclick="document.getElementById('leadModalBackdrop').classList.remove('is-open')">Cancelar</button>
+      <button class="btn btn--gold" id="leadGuardarBtn">Guardar contacto</button>
+    </div>
+  </div>
+</div>
+
 <!-- ---------------------------------------------------------- MODAL: TAREA ---------------------------------------------------------- -->
 <div class="modal-backdrop" id="tareaModalBackdrop">
   <div class="modal modal--sm">
@@ -1058,6 +1098,6 @@
 <script src="../assets/js/vendor/heic2any.min.js"></script>
 <script src="../assets/js/vendor/exceljs.min.js"></script>
 <script src="../assets/js/admin-config.js?v=9"></script>
-<script src="../assets/js/admin.js?v=14"></script>
+<script src="../assets/js/admin.js?v=15"></script>
 </body>
 </html>
