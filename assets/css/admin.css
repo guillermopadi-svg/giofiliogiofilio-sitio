@@ -455,10 +455,12 @@ button{ font-family:inherit; cursor:pointer; }
 .pcard-actions .btn--editar, .pcard-actions .btn--ver{ flex:1 1 auto; }
 .pcard-menu, .prow-menu, .prop-drawer-menu{ position:relative; }
 .pcard-menu .user-menu-dropdown, .prow-menu .user-menu-dropdown, .prop-drawer-menu .user-menu-dropdown{ left:auto; }
-/* El boton "•••" del drawer esta pegado al fondo de un contenedor con
-   scroll (.prop-drawer) -- abrir hacia abajo lo recortaria igual que
-   pasaba en las tarjetas, asi que este se abre hacia arriba. */
-.prop-drawer-menu .user-menu-dropdown{ top:auto; bottom:calc(100% + .6rem); }
+/* Abrir hacia abajo tapaba la tarjeta/fila siguiente del grid (se veia
+   como si el menu "se comiera" la de junto). Se abre hacia arriba en
+   todos los menus "•••" -- se monta sobre su propia tarjeta, no sobre la
+   vecina. Mismo motivo por el que el del drawer ya abria hacia arriba
+   (ahi era por el contenedor con scroll). */
+.pcard-menu .user-menu-dropdown, .prow-menu .user-menu-dropdown, .prop-drawer-menu .user-menu-dropdown{ top:auto; bottom:calc(100% + .4rem); }
 
 .prop-workspace{ display:flex; align-items:flex-start; gap:1.2rem; }
 .prop-main{ flex:1; min-width:0; }
