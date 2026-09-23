@@ -17,7 +17,7 @@
   var COLONIAS = [];         // se llena desde assets/data/colonias.json
   var CP_A_COLONIA = {};     // '11510' -> 'polanco', armado a partir de COLONIAS
 
-  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, editingLeadId: null, fotos: [], session: null, perfil: null, propVista: 'grid', hilos: {}, adjuntosPendientes: {}, tareasConMencionSinLeer: {}, tareaSeleccionada: null, tareaBandeja: 'todo', actividadSistema: [], propDrawerId: null, propDrawerTab: 'info', propDrawerFotoIdx: 0 };
+  var STATE = { propiedades: [], leads: [], tareas: [], equipo: [], invitaciones: [], solicitudes: [], solEditando: null, solEstudioId: null, estudios: [], estudioEditando: null, editingId: null, editandoEB: false, fotos: [], session: null, perfil: null, propVista: 'grid', hilos: {}, adjuntosPendientes: {}, tareasConMencionSinLeer: {}, tareaSeleccionada: null, tareaBandeja: 'todo', actividadSistema: [], propDrawerId: null, propDrawerTab: 'info', propDrawerFotoIdx: 0, leadVista: 'lista', leadTab: 'todos', leadPagina: 1, leadDrawerId: null, leadDrawerTab: 'info' };
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -3404,6 +3404,7 @@
   var ICON_TEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
   var ICON_WA = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.29-1.39c1.44.79 3.06 1.2 4.71 1.2h.01c5.46 0 9.9-4.45 9.9-9.91C21.91 6.45 17.5 2 12.04 2zm5.8 14.1c-.24.68-1.4 1.3-1.94 1.38-.5.08-1.13.11-1.82-.12-.42-.14-.96-.32-1.65-.62-2.9-1.25-4.8-4.17-4.94-4.36-.14-.19-1.18-1.57-1.18-3s.74-2.13 1-2.42c.26-.29.57-.36.76-.36h.55c.18 0 .42-.07.65.5.24.58.82 2 .89 2.14.07.14.11.31.02.5-.09.19-.14.31-.28.48-.14.17-.29.38-.42.51-.14.14-.28.29-.12.57.16.28.71 1.17 1.53 1.9 1.05.94 1.94 1.23 2.22 1.37.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.53.72 1.79.85.26.14.43.2.5.32.07.12.07.68-.17 1.36z"/></svg>';
   var ICON_MAIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>';
+  var ICON_STATUS_DOT = '<svg class="pcard-status-dot-svg" viewBox="0 0 24 24" width="8" height="8"><circle cx="12" cy="12" r="12" fill="currentColor"/></svg>';
 
   function tiempoRelativo(iso) {
     var min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -3449,11 +3450,152 @@
     });
     var hayLeads = STATE.leads.length > 0;
     $('#leadsEmptyState').style.display = hayLeads ? 'none' : 'block';
-    $('#kanban').style.display = hayLeads ? 'grid' : 'none';
+  }
+
+  function estadoLeadInfo(estado) {
+    var MAPA = {
+      nuevo: { clase: 'info', icon: ICON_STATUS_DOT },
+      contactado: { clase: 'atencion', icon: ICON_STATUS_DOT },
+      activo: { clase: 'ok', icon: ICON_STATUS_DOT },
+      cerrado: { clase: 'inactivo', icon: ICON_STATUS_DOT },
+    };
+    var m = MAPA[estado] || MAPA.nuevo;
+    return { clase: m.clase, icon: m.icon, label: ESTADO_LEAD_LABEL[estado] || estado };
+  }
+
+  // Mismo patron que llenarFiltroTipoPropiedades: opciones armadas con lo
+  // que de verdad hay en los leads cargados.
+  function llenarFiltroOrigenContactos() {
+    var sel = $('#leadFiltroOrigen');
+    var actual = sel.value;
+    var origenes = [];
+    STATE.leads.forEach(function (l) { if (l.fuente && origenes.indexOf(l.fuente) === -1) origenes.push(l.fuente); });
+    origenes.sort();
+    sel.innerHTML = '<option value="">Todo origen</option>' + origenes.map(function (o) {
+      return '<option value="' + esc(o) + '">' + esc(o) + '</option>';
+    }).join('');
+    sel.value = origenes.indexOf(actual) !== -1 ? actual : '';
+  }
+
+  function filtrarContactos() {
+    var texto = normalizaBusqueda($('#leadBuscar').value.trim());
+    var estado = $('#leadFiltroEstado').value;
+    var origen = $('#leadFiltroOrigen').value;
+    return STATE.leads.filter(function (l) {
+      if (estado && l.estado !== estado) return false;
+      if (origen && l.fuente !== origen) return false;
+      if (texto) {
+        var haystack = normalizaBusqueda([l.nombre, l.email, l.telefono, l.propiedad_titulo, l.mensaje].filter(Boolean).join(' '));
+        if (haystack.indexOf(texto) === -1) return false;
+      }
+      return true;
+    });
+  }
+
+  function hayFiltrosContactosActivos() {
+    return !!($('#leadBuscar').value.trim() || $('#leadFiltroEstado').value || $('#leadFiltroOrigen').value);
+  }
+
+  function limpiarFiltrosContactos() {
+    $('#leadBuscar').value = '';
+    $('#leadFiltroEstado').value = '';
+    $('#leadFiltroOrigen').value = '';
+    activarTabContacto('todos');
+  }
+
+  function activarTabContacto(tab) {
+    STATE.leadTab = tab;
+    $('#leadFiltroEstado').value = tab === 'todos' ? '' : tab;
+    $$('#leadTabs .prop-tab').forEach(function (b) { b.classList.toggle('is-active', b.dataset.leadTab === tab); });
+    STATE.leadPagina = 1;
+    renderContactos();
+  }
+
+  var LEAD_POR_PAGINA = 8;
+
+  function leadRowHtml(l) {
+    var estadoInfo = estadoLeadInfo(l.estado);
+    var acciones = [];
+    if (l.telefono) {
+      var tel = soloDigitos(l.telefono);
+      acciones.push('<a href="tel:' + esc(tel) + '" title="Llamar" onclick="event.stopPropagation()">' + ICON_TEL + '</a>');
+      acciones.push('<a href="https://wa.me/' + esc(tel.replace(/^\+/, '')) + '" target="_blank" rel="noopener" title="WhatsApp" onclick="event.stopPropagation()">' + ICON_WA + '</a>');
+    }
+    return (
+      '<div class="lead-row" data-abrir-contacto="' + l.id + '">' +
+        '<div class="avatar">' + esc(iniciales(l.nombre)) + '</div>' +
+        '<div class="lead-row-id">' +
+          '<div class="lead-row-nombre">' + esc(l.nombre || 'Sin nombre') + '</div>' +
+          '<div class="lead-row-sub">' + esc([l.email, l.telefono].filter(Boolean).join(' · ')) + '</div>' +
+        '</div>' +
+        '<span class="pcard-status pcard-status--' + estadoInfo.clase + ' lead-row-estado">' + estadoInfo.icon + estadoInfo.label + '</span>' +
+        '<span class="lead-row-interes">' + esc(l.propiedad_titulo || 'Sin interés registrado') + '</span>' +
+        '<span class="lead-row-recibido">Recibido ' + tiempoRelativo(l.creado_en) + '</span>' +
+        '<div class="lead-row-acciones">' + acciones.join('') + '</div>' +
+      '</div>'
+    );
+  }
+
+  function leadPaginacionHtml(total, pagina) {
+    var totalPaginas = Math.max(1, Math.ceil(total / LEAD_POR_PAGINA));
+    var inicio = total ? (pagina - 1) * LEAD_POR_PAGINA + 1 : 0;
+    var fin = Math.min(pagina * LEAD_POR_PAGINA, total);
+    var botones = [];
+    for (var i = 1; i <= totalPaginas; i++) {
+      botones.push('<button type="button" class="' + (i === pagina ? 'is-active' : '') + '" data-lead-pagina="' + i + '">' + i + '</button>');
+    }
+    return (
+      '<span>Mostrando ' + inicio + '–' + fin + ' de ' + total + ' contactos</span>' +
+      '<div class="lead-paginacion-paginas">' +
+        '<button type="button" data-lead-pagina="' + (pagina - 1) + '" ' + (pagina <= 1 ? 'disabled' : '') + '>‹</button>' +
+        botones.join('') +
+        '<button type="button" data-lead-pagina="' + (pagina + 1) + '" ' + (pagina >= totalPaginas ? 'disabled' : '') + '>›</button>' +
+      '</div>'
+    );
+  }
+
+  function renderListaContactos() {
+    var filtrados = filtrarContactos();
+    var totalPaginas = Math.max(1, Math.ceil(filtrados.length / LEAD_POR_PAGINA));
+    if (STATE.leadPagina > totalPaginas) STATE.leadPagina = totalPaginas;
+    var inicio = (STATE.leadPagina - 1) * LEAD_POR_PAGINA;
+    var pagina = filtrados.slice(inicio, inicio + LEAD_POR_PAGINA);
+    $('#leadTabla').innerHTML = pagina.map(leadRowHtml).join('');
+    $('#leadPaginacion').hidden = filtrados.length <= LEAD_POR_PAGINA;
+    $('#leadPaginacion').innerHTML = filtrados.length ? leadPaginacionHtml(filtrados.length, STATE.leadPagina) : '';
+    var hayFiltro = hayFiltrosContactosActivos();
+    $('#leadFiltroEmptyState').style.display = !filtrados.length && hayFiltro ? 'block' : 'none';
+  }
+
+  // Un solo punto de entrada para refrescar Contactos: stats/tabs con
+  // conteos reales, y despues la vista activa (lista paginada o kanban).
+  function renderContactos() {
+    var porEstado = { nuevo: 0, contactado: 0, activo: 0, cerrado: 0 };
+    STATE.leads.forEach(function (l) { if (porEstado[l.estado] !== undefined) porEstado[l.estado]++; });
+    $('#statContactosTotal').textContent = STATE.leads.length;
+    $('#statContactosNuevo').textContent = porEstado.nuevo;
+    $('#statContactosContactado').textContent = porEstado.contactado;
+    $('#statContactosActivo').textContent = porEstado.activo;
+    $('#statContactosCerrado').textContent = porEstado.cerrado;
+    $('#tabCountLeadTodos').textContent = STATE.leads.length;
+    $('#tabCountLeadNuevo').textContent = porEstado.nuevo;
+    $('#tabCountLeadContactado').textContent = porEstado.contactado;
+    $('#tabCountLeadActivo').textContent = porEstado.activo;
+    $('#tabCountLeadCerrado').textContent = porEstado.cerrado;
     var badge = $('#tabContactosBadge');
-    badge.textContent = porEstado.nuevo.length;
-    badge.hidden = !porEstado.nuevo.length;
+    badge.textContent = porEstado.nuevo;
+    badge.hidden = !porEstado.nuevo;
+
+    var hayLeads = STATE.leads.length > 0;
+    $('#leadsEmptyState').style.display = hayLeads ? 'none' : 'block';
+    $('#leadTabla').hidden = !hayLeads || STATE.leadVista !== 'lista';
+    $('#kanban').hidden = !hayLeads || STATE.leadVista !== 'kanban';
+    if (hayLeads) {
+      if (STATE.leadVista === 'kanban') { renderKanban(); $('#leadFiltroEmptyState').style.display = 'none'; $('#leadPaginacion').hidden = true; }
+      else renderListaContactos();
+    }
     renderInicio();
+    renderDetalleContacto();
   }
 
   function cargarLeads() {
@@ -3465,7 +3607,8 @@
         return;
       }
       STATE.leads = res.data || [];
-      renderKanban();
+      llenarFiltroOrigenContactos();
+      renderContactos();
     });
   }
 
@@ -3474,11 +3617,11 @@
     if (!l || l.estado === estado) return;
     var anterior = l.estado;
     l.estado = estado;
-    renderKanban();
+    renderContactos();
     sb.from('leads').update({ estado: estado }).eq('id', id).then(function (res) {
       if (res.error) {
         l.estado = anterior;
-        renderKanban();
+        renderContactos();
         toast('No se pudo mover el contacto: ' + res.error.message, 'err');
         return;
       }
@@ -3486,42 +3629,107 @@
     });
   }
 
-  function openLeadModal(l) {
-    STATE.editingLeadId = l.id;
-    var tel = soloDigitos(l.telefono);
-    $('#leadModalTitle').textContent = l.nombre || 'Contacto';
-    $('#leadModalBody').innerHTML = (
-      '<div class="lead-detail"><dl>' +
-        (l.telefono ? '<dt>Teléfono</dt><dd><a href="tel:' + esc(tel) + '">' + esc(l.telefono) + '</a> · <a href="https://wa.me/' + esc(tel.replace(/^\+/, '')) + '" target="_blank" rel="noopener">WhatsApp</a></dd>' : '') +
-        (l.email ? '<dt>Correo</dt><dd><a href="mailto:' + esc(l.email) + '">' + esc(l.email) + '</a></dd>' : '') +
-        (l.propiedad_titulo ? '<dt>Propiedad de interés</dt><dd>' + esc(l.propiedad_titulo) + (l.propiedad_precio ? ' — ' + esc(l.propiedad_precio) : '') + '</dd>' : '') +
-        (l.mensaje ? '<dt>Mensaje</dt><dd>' + esc(l.mensaje) + '</dd>' : '') +
-        '<dt>Origen</dt><dd>' + esc(l.formulario || 'contacto') + ' · ' + esc(l.fuente || 'sitio_web') + '</dd>' +
-        '<dt>Recibido</dt><dd>' + new Date(l.creado_en).toLocaleString('es-MX') + '</dd>' +
-      '</dl></div>' +
-      '<div class="field" style="margin-top:1.2rem">' +
-        '<label for="leadNotas">Notas internas</label>' +
-        '<textarea id="leadNotas" rows="3" placeholder="Notas de seguimiento…">' + esc(l.notas || '') + '</textarea>' +
-      '</div>'
-    );
-    $('#leadEstadoSelect').value = l.estado;
-    $('#leadModalBackdrop').classList.add('is-open');
+  // Tarea pendiente mas proxima ligada a este contacto (tareas.lead_id) --
+  // mismo campo que ya usa Inicio para "Mi dia"/"Requieren atencion".
+  function proximaAccionLead(leadId) {
+    var pendientes = STATE.tareas.filter(function (t) { return t.lead_id === leadId && t.estado === 'pendiente'; });
+    pendientes.sort(function (a, b) {
+      if (!a.vence) return 1;
+      if (!b.vence) return -1;
+      return a.vence < b.vence ? -1 : 1;
+    });
+    return pendientes[0] || null;
   }
 
-  function closeLeadModal() {
-    $('#leadModalBackdrop').classList.remove('is-open');
-    STATE.editingLeadId = null;
+  function abrirDetalleContacto(id) {
+    STATE.leadDrawerId = id;
+    STATE.leadDrawerTab = 'info';
+    $('#leadDrawer').hidden = false;
+    renderDetalleContacto();
+  }
+
+  function cerrarDetalleContacto() {
+    STATE.leadDrawerId = null;
+    $('#leadDrawer').hidden = true;
+  }
+
+  function leadDrawerAccionesHtml(l) {
+    var botones = [];
+    if (l.telefono) {
+      var tel = soloDigitos(l.telefono);
+      botones.push('<a class="btn btn--ghost" href="tel:' + esc(tel) + '">' + ICON_TEL + ' Llamar</a>');
+      botones.push('<a class="btn btn--ghost" href="https://wa.me/' + esc(tel.replace(/^\+/, '')) + '" target="_blank" rel="noopener">' + ICON_WA + ' WhatsApp</a>');
+    }
+    if (l.email) botones.push('<a class="btn btn--ghost" href="mailto:' + esc(l.email) + '">' + ICON_MAIL + ' Email</a>');
+    return botones.join('');
+  }
+
+  function renderDetalleContactoTab(l) {
+    if (STATE.leadDrawerTab === 'proxima') {
+      var t = proximaAccionLead(l.id);
+      if (!t) return '<div class="inicio-empty"><strong>Sin próxima acción</strong>No hay una tarea pendiente ligada a este contacto.</div>';
+      return (
+        '<div class="lead-row" style="cursor:pointer" data-ir-tarea="' + t.id + '">' +
+          '<div class="lead-row-id">' +
+            '<div class="lead-row-nombre">' + esc(t.titulo) + '</div>' +
+            (t.vence ? '<div class="lead-row-sub">' + (tareaVencidaP(t) ? 'Venció ' : '') + formatFechaCorta(t.vence) + '</div>' : '') +
+          '</div>' +
+        '</div>'
+      );
+    }
+    var campos = [];
+    if (l.email) campos.push({ lbl: 'Correo', val: l.email });
+    if (l.telefono) campos.push({ lbl: 'Teléfono', val: l.telefono });
+    if (l.propiedad_titulo) campos.push({ lbl: 'Propiedad de interés', val: l.propiedad_titulo + (l.propiedad_precio ? ' — ' + l.propiedad_precio : '') });
+    if (l.mensaje) campos.push({ lbl: 'Mensaje', val: l.mensaje });
+    campos.push({ lbl: 'Origen', val: (l.formulario || 'contacto') + ' · ' + (l.fuente || 'sitio_web') });
+    campos.push({ lbl: 'Recibido', val: new Date(l.creado_en).toLocaleString('es-MX') });
+    return (
+      '<div class="prop-drawer-info" style="grid-template-columns:1fr;">' + campos.map(function (c) {
+        return '<div class="prop-drawer-info-item"><div class="lbl">' + esc(c.lbl) + '</div><div class="val">' + esc(String(c.val)) + '</div></div>';
+      }).join('') + '</div>' +
+      '<div class="field" style="margin-top:1.1rem">' +
+        '<label for="leadNotas">Notas internas</label>' +
+        '<textarea id="leadNotas" rows="3" placeholder="Notas de seguimiento…">' + esc(l.notas || '') + '</textarea>' +
+        '<button type="button" class="btn btn--ghost btn--sm" id="leadGuardarNotasBtn" style="margin-top:.6rem">Guardar notas</button>' +
+      '</div>' +
+      '<div class="field" style="margin-top:1.1rem">' +
+        '<label>Estado</label>' +
+        '<select id="leadEstadoSelect">' + ESTADOS_LEAD.map(function (e) {
+          return '<option value="' + e + '"' + (e === l.estado ? ' selected' : '') + '>' + ESTADO_LEAD_LABEL[e] + '</option>';
+        }).join('') + '</select>' +
+      '</div>'
+    );
+  }
+
+  function renderDetalleContacto() {
+    if (!STATE.leadDrawerId) return;
+    var l = STATE.leads.filter(function (x) { return x.id === STATE.leadDrawerId; })[0];
+    if (!l) { cerrarDetalleContacto(); return; }
+    var estadoInfo = estadoLeadInfo(l.estado);
+    $('#leadDrawerAvatar').textContent = iniciales(l.nombre);
+    $('#leadDrawerNombre').textContent = l.nombre || 'Sin nombre';
+    $('#leadDrawerEstado').className = 'pcard-status pcard-status--' + estadoInfo.clase;
+    $('#leadDrawerEstado').innerHTML = estadoInfo.icon + estadoInfo.label;
+    $('#leadDrawerSub').textContent = 'Contacto desde ' + new Date(l.creado_en).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+    $('#leadDrawerAcciones').innerHTML = leadDrawerAccionesHtml(l);
+
+    var tabs = [{ key: 'info', label: 'Información' }, { key: 'proxima', label: 'Próxima acción' }];
+    $('#leadDrawerTabs').innerHTML = tabs.map(function (t) {
+      return '<button type="button" class="prop-drawer-tab' + (STATE.leadDrawerTab === t.key ? ' is-active' : '') + '" data-lead-drawer-tab="' + t.key + '">' + t.label + '</button>';
+    }).join('');
+    $('#leadDrawerBody').innerHTML = renderDetalleContactoTab(l);
   }
 
   function guardarNotasLead() {
-    if (!STATE.editingLeadId) return;
+    if (!STATE.leadDrawerId) return;
     var notas = $('#leadNotas').value;
     var btn = $('#leadGuardarNotasBtn');
     setBusy(btn, true, 'Guardando…');
-    sb.from('leads').update({ notas: notas }).eq('id', STATE.editingLeadId).then(function (res) {
+    sb.from('leads').update({ notas: notas }).eq('id', STATE.leadDrawerId).then(function (res) {
       setBusy(btn, false);
       if (res.error) { toast('No se pudo guardar la nota: ' + res.error.message, 'err'); return; }
-      var l = STATE.leads.filter(function (x) { return x.id === STATE.editingLeadId; })[0];
+      var l = STATE.leads.filter(function (x) { return x.id === STATE.leadDrawerId; })[0];
       if (l) l.notas = notas;
       toast('Nota guardada');
     });
@@ -3781,8 +3989,7 @@
       if (e.target.closest && e.target.closest('a')) return;
       var card = e.target.closest && e.target.closest('.lead-card');
       if (!card) return;
-      var l = STATE.leads.filter(function (x) { return x.id === card.dataset.leadId; })[0];
-      if (l) openLeadModal(l);
+      abrirDetalleContacto(card.dataset.leadId);
     });
     $$('.kanban-col').forEach(function (col) {
       col.addEventListener('dragover', function (e) { e.preventDefault(); col.classList.add('is-dragover'); });
@@ -3795,12 +4002,53 @@
       });
     });
 
-    $('#leadModalClose').addEventListener('click', closeLeadModal);
-    $('#leadModalBackdrop').addEventListener('click', function (e) { if (e.target.id === 'leadModalBackdrop') closeLeadModal(); });
-    $('#leadEstadoSelect').addEventListener('change', function () {
-      if (STATE.editingLeadId) cambiarEstadoLead(STATE.editingLeadId, $('#leadEstadoSelect').value);
+    $('#leadBuscar').addEventListener('input', function () { STATE.leadPagina = 1; renderContactos(); });
+    $('#leadFiltroEstado').addEventListener('change', function () { STATE.leadPagina = 1; renderContactos(); });
+    $('#leadFiltroOrigen').addEventListener('change', function () { STATE.leadPagina = 1; renderContactos(); });
+    $('#leadFiltroLimpiarBtnTop').addEventListener('click', function () { limpiarFiltrosContactos(); renderContactos(); });
+    $('#leadFiltroLimpiarBtn').addEventListener('click', function () { limpiarFiltrosContactos(); renderContactos(); });
+    $('#leadTabla').addEventListener('click', function (e) {
+      var fila = e.target.closest && e.target.closest('[data-abrir-contacto]');
+      if (fila) abrirDetalleContacto(fila.dataset.abrirContacto);
     });
-    $('#leadGuardarNotasBtn').addEventListener('click', guardarNotasLead);
+    $('#leadPaginacion').addEventListener('click', function (e) {
+      var btn = e.target.closest && e.target.closest('[data-lead-pagina]');
+      if (!btn || btn.disabled) return;
+      STATE.leadPagina = Number(btn.dataset.leadPagina);
+      renderListaContactos();
+    });
+    $('#leadTabs').addEventListener('click', function (e) {
+      var tab = e.target.closest && e.target.closest('[data-lead-tab]');
+      if (tab) activarTabContacto(tab.dataset.leadTab);
+    });
+    $('#leadVistaLista').addEventListener('click', function () {
+      STATE.leadVista = 'lista';
+      $('#leadVistaLista').classList.add('is-active');
+      $('#leadVistaKanban').classList.remove('is-active');
+      renderContactos();
+    });
+    $('#leadVistaKanban').addEventListener('click', function () {
+      STATE.leadVista = 'kanban';
+      $('#leadVistaKanban').classList.add('is-active');
+      $('#leadVistaLista').classList.remove('is-active');
+      renderContactos();
+    });
+
+    $('#leadDrawerCloseBtn').addEventListener('click', cerrarDetalleContacto);
+    $('#leadDrawerTabs').addEventListener('click', function (e) {
+      var tab = e.target.closest && e.target.closest('[data-lead-drawer-tab]');
+      if (!tab) return;
+      STATE.leadDrawerTab = tab.dataset.leadDrawerTab;
+      renderDetalleContacto();
+    });
+    $('#leadDrawerBody').addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('#leadGuardarNotasBtn')) { guardarNotasLead(); return; }
+      var irTarea = e.target.closest && e.target.closest('[data-ir-tarea]');
+      if (irTarea) { setView('tareas'); seleccionarTarea(irTarea.dataset.irTarea); }
+    });
+    $('#leadDrawerBody').addEventListener('change', function (e) {
+      if (e.target.id === 'leadEstadoSelect' && STATE.leadDrawerId) cambiarEstadoLead(STATE.leadDrawerId, e.target.value);
+    });
     $('#modalClose').addEventListener('click', closeModal);
     $('#modalBackdrop').addEventListener('click', function (e) { if (e.target.id === 'modalBackdrop') closeModal(); });
     $('#saveDraftBtn').addEventListener('click', function () { saveProperty(false); });
