@@ -429,14 +429,27 @@ button{ font-family:inherit; cursor:pointer; }
 .lead-row-sub{ font-size:.76rem; color:var(--ink-50); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .lead-row-interes{ flex:1 1 160px; min-width:0; font-size:.82rem; color:var(--ink-70); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .lead-row-recibido{ flex:0 0 110px; font-size:.78rem; color:var(--ink-50); }
-.lead-row-estado{ flex:0 0 120px; }
+.lead-row-estado{ flex:0 0 auto; }
+.lead-row-asesor{ flex:0 0 auto; width:30px; height:30px; font-size:.7rem; }
+.lead-row-asesor--vacio{
+  display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:50%;
+  background:var(--line-soft); color:var(--ink-30); font-size:.85rem;
+}
 .lead-row-acciones{ display:flex; gap:.35rem; flex-shrink:0; }
 .lead-row-acciones a{ display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:var(--r-xs); background:var(--navy-050); color:var(--navy); }
 .lead-row-acciones a:hover{ background:var(--navy-100); }
 .lead-row-acciones svg{ width:15px; height:15px; }
+/* Pills con color de fondo para el estado del contacto -- a diferencia de
+   .pcard-status (texto+icono discreto de Propiedades), aqui se pidio algo
+   mas vistoso, tipo CRM. */
+.lead-pill{ display:inline-block; font-size:.74rem; font-weight:700; padding:.3rem .7rem; border-radius:var(--r-full); white-space:nowrap; }
+.lead-pill--nuevo{ background:var(--navy-100); color:var(--navy-700); }
+.lead-pill--contactado{ background:#DCEBFB; color:#1D5FA8; }
+.lead-pill--activo{ background:#DCF3E8; color:var(--ok); }
+.lead-pill--cerrado{ background:var(--line-soft); color:var(--ink-50); }
 @media (max-width:900px){
   .lead-row{ flex-wrap:wrap; }
-  .lead-row-interes, .lead-row-recibido{ display:none; }
+  .lead-row-interes, .lead-row-recibido, .lead-row-asesor, .lead-row-asesor--vacio{ display:none; }
 }
 .lead-paginacion{ display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-top:1rem; font-size:.82rem; color:var(--ink-50); flex-wrap:wrap; }
 .lead-paginacion-paginas{ display:flex; gap:.3rem; }
