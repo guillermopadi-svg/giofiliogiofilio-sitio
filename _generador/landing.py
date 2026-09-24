@@ -28,6 +28,7 @@ LP_ICONS = {
     "dining": f'<svg {_S}><path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.2 1.2-3.5 3.6-3.5 7 0 1.6 1.3 2.5 3.5 2.5"/></svg>',
     "site": f'<svg {_S}><rect x="5" y="3.5" width="14" height="17" rx="1.5"/><path d="M8.5 8h7M8.5 12h7M8.5 16h2M15 16h.01"/></svg>',
     "bath": f'<svg {_S}><path d="M4 12h16v2.5a4.5 4.5 0 0 1-4.5 4.5h-7A4.5 4.5 0 0 1 4 14.5V12zM6 12V6.2A2.2 2.2 0 0 1 8.2 4c.9 0 1.7.5 2 1.3M7 19l-1 2M17 19l1 2"/></svg>',
+    "view": f'<svg {_S}><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>',
     "zoom": f'<svg {_S}><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5M10.5 8v5M8 10.5h5"/></svg>',
     "route": f'<svg {_S}><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6.5a3.5 3.5 0 0 0 0-7h-5a3.5 3.5 0 0 1 0-7H16"/></svg>',
 }
@@ -152,6 +153,7 @@ def build_landing(l, write, K):
         ("layers", f'Piso {l["floor"]}', "Ubicación"),
         ("building", l["buildingClass"], "Corporativo"),
         ("cert", l["certification"], "Certificación"),
+        ("view", "Panorámica", "Vistas"),
     ]
     facts_html = "".join(
         f'<li class="lp-fact">{_ic(ic)}<b>{e(v)}</b><span>{e(lab)}</span></li>' for ic, v, lab in facts)
