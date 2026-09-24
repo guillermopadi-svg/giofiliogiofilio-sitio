@@ -191,11 +191,26 @@ def build_landing(l, write, K):
     dist_html = "".join(f'<li>{_ic(ic)}<span>{e(t)}</span></li>' for ic, t in l["distribution"])
     access_html = "".join(f'<li>{_ic("route")}<span>{e(a)}</span></li>' for a in l["accessibility"])
 
+    hs = l["heroSlides"]
+    def _slide(i, img, alt, lab, cta, href):
+        act = " is-active" if i == 0 else ""
+        prio = 'fetchpriority="high"' if i == 0 else 'loading="lazy"'
+        return (f'<picture class="lp-hero-slide{act}" data-label="{e(lab)}" data-cta="{e(cta)}" data-href="{e(href)}">'
+                f'<source type="image/webp" srcset="{R(_imgs(img)[1])}">'
+                f'<img src="{R(_imgs(img)[0])}" alt="{e(alt)}" width="948" height="948" {prio}></picture>')
+    hero_slides = "".join(_slide(i, *h) for i, h in enumerate(hs))
+    hero_dots = "".join(
+        f'<button type="button" class="lp-hero-dot{" is-active" if i == 0 else ""}" data-lp-dot="{i}" aria-label="Ir a la foto {i+1}: {e(h[2])}"></button>'
+        for i, h in enumerate(hs))
     body = f'''
 <section class="hero lp-hero" id="top">
-  <div class="hero-media">
-    <picture><source type="image/webp" srcset="{R(_imgs(l["heroImage"])[1])}">
-      <img src="{R(_imgs(l["heroImage"])[0])}" alt="{e(hero_alt)}" fetchpriority="high" width="948" height="948"></picture>
+  <div class="hero-media" data-lp-hero>
+    {hero_slides}
+  </div>
+  <div class="lp-hero-nav" aria-label="Fotografías del hero">
+    <button type="button" class="lp-hero-arrow" data-lp-prev aria-label="Foto anterior">{icon("chevl")}</button>
+    <span class="lp-hero-dots">{hero_dots}</span>
+    <button type="button" class="lp-hero-arrow" data-lp-next aria-label="Foto siguiente">{icon("chev")}</button>
   </div>
   <div class="wrap hero-inner lp-hero-inner">
     <p class="eyebrow hero-eyebrow">Propiedad destacada</p>
@@ -206,7 +221,7 @@ def build_landing(l, write, K):
     <div class="lp-hero-cta">
       <a class="btn btn--gold-solid btn--lg" href="#agendar" data-schedule="{e(pid)}" data-lp="schedule_visit" data-lp-src="hero">Agendar visita</a>
       <a class="btn btn--wa btn--lg" href="{wa_href}" target="_blank" rel="noopener" data-lp-wa="hero">{icon("wa")} WhatsApp</a>
-      <a class="btn btn--outline-light btn--lg" href="#galeria" data-lp="gallery_jump">Ver galería</a>
+      <a class="btn btn--outline-light btn--lg" id="lpSlideCta" href="#galeria" data-lp="gallery_jump">Ver galería</a>
     </div>
   </div>
 </section>

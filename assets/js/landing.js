@@ -39,6 +39,49 @@
     });
   }
 
+  // -------------------------------------------------------- hero en slide
+  // Las fotos rotan solas (6 s), se pueden cambiar con flechas, puntos o
+  // deslizando, y el botón secundario cambia según la foto activa.
+  (function heroSlider() {
+    var media = $('[data-lp-hero]'); if (!media) return;
+    var slides = $$('.lp-hero-slide', media), dots = $$('[data-lp-dot]'), cta = $('#lpSlideCta');
+    if (slides.length < 2) return;
+    var i = 0, timer = null;
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function go(n) {
+      i = (n + slides.length) % slides.length;
+      slides.forEach(function (s, k) { s.classList.toggle('is-active', k === i); });
+      dots.forEach(function (d, k) { d.classList.toggle('is-active', k === i); });
+      if (!cta) return;
+      var s = slides[i];
+      cta.classList.add('is-changing');
+      setTimeout(function () {
+        cta.textContent = s.dataset.cta || 'Ver galería';
+        cta.setAttribute('href', s.dataset.href || '#galeria');
+        cta.setAttribute('data-lp', s.dataset.href === '#agendar' ? 'schedule_visit' : 'gallery_jump');
+        cta.setAttribute('data-lp-src', 'hero_slide');
+        cta.classList.remove('is-changing');
+      }, 300);
+    }
+    function start() { if (reduce || timer) return; timer = setInterval(function () { go(i + 1); }, 6000); }
+    function stop() { clearInterval(timer); timer = null; }
+    var prev = $('[data-lp-prev]'), next = $('[data-lp-next]');
+    if (prev) prev.addEventListener('click', function () { stop(); go(i - 1); });
+    if (next) next.addEventListener('click', function () { stop(); go(i + 1); });
+    dots.forEach(function (d) { d.addEventListener('click', function () { stop(); go(Number(d.dataset.lpDot)); }); });
+    var hero = media.parentElement, x0 = null;
+    hero.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+    hero.addEventListener('touchend', function (e) {
+      if (x0 === null) return;
+      var dx = e.changedTouches[0].clientX - x0; x0 = null;
+      if (Math.abs(dx) > 50) { stop(); go(i + (dx < 0 ? 1 : -1)); }
+    }, { passive: true });
+    hero.addEventListener('mouseenter', stop);
+    hero.addEventListener('mouseleave', start);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) stop(); else start(); });
+    start();
+  })();
+
   // ------------------------------------------------------ plano con zoom
   $$('[data-lp-plan]').forEach(function (b) {
     b.addEventListener('click', function () {

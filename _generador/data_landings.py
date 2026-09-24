@@ -101,6 +101,14 @@ LANDINGS = [
             "Acceso desde la Carretera México–Toluca",
         ],
         "heroImage": _IMG + "01-vista-panoramica-piso-18",
+        # Slides del hero: (imagen, texto alterno, etiqueta, texto del botón, destino)
+        # El botón secundario del hero cambia con cada slide.
+        "heroSlides": [
+            (_IMG + "01-vista-panoramica-piso-18", "Vista panorámica de la ciudad desde el piso 18 de Espacio Santa Fe", "Vista panorámica", "Ver galería", "#galeria"),
+            (_IMG + "02-torre-espacio-santa-fe", "Torre Espacio Santa Fe, edificio corporativo Clase A+ en Santa Fe, CDMX", "Edificio Clase A+", "Ver ubicación", "#ubicacion"),
+            (_IMG + "03-planta-abierta-privados-vidrio", "Planta de oficina con privados de cristal en Espacio Santa Fe Piso 18", "Planta con privados de cristal", "Ver distribución", "#distribucion"),
+            (_IMG + "07-privado-vista", "Privado con ventanales y vista a la ciudad en Santa Fe", "Privados con vista", "Agendar visita", "#agendar"),
+        ],
         # (base sin extensión, texto alternativo)
         "gallery": [
             (_IMG + "01-vista-panoramica-piso-18", "Vista panorámica de la ciudad desde el piso 18 de Espacio Santa Fe"),

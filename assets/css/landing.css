@@ -86,3 +86,21 @@
   body[data-page-type="property_landing"]{ padding-bottom:4.5rem; }
   body[data-page-type="property_landing"] .wa-fab{ display:none; }
 }
+
+/* Hero en slide: las fotos rotan y el botón secundario cambia con cada una */
+.lp-hero .hero-media picture{ position:absolute; inset:0; opacity:0; transition:opacity 1.1s ease; }
+.lp-hero .hero-media picture.is-active{ opacity:1; }
+.lp-hero-nav{ position:absolute; z-index:3; right:max(1.25rem,calc((100% - var(--wrap)) / 2)); bottom:clamp(1.25rem,3vw,2.25rem); display:flex; align-items:center; gap:.75rem; }
+.lp-hero-arrow{ width:40px; height:40px; border-radius:50%; border:1px solid rgba(255,255,255,.5); background:rgba(7,31,74,.35); color:#fff; display:grid; place-items:center; cursor:pointer; }
+.lp-hero-arrow:hover{ background:rgba(255,255,255,.2); }
+.lp-hero-arrow svg{ width:18px; height:18px; }
+.lp-hero-dots{ display:flex; gap:.5rem; }
+.lp-hero-dot{ width:9px; height:9px; padding:0; border-radius:50%; border:1px solid #fff; background:transparent; cursor:pointer; }
+.lp-hero-dot.is-active{ background:var(--gold-soft); border-color:var(--gold-soft); }
+#lpSlideCta{ transition:opacity .35s ease; }
+#lpSlideCta.is-changing{ opacity:0; }
+@media (max-width:700px){
+  .lp-hero-arrow{ display:none; }
+  .lp-hero-nav{ right:50%; transform:translateX(50%); bottom:auto; top:1rem; }
+}
+@media (prefers-reduced-motion:reduce){ .lp-hero .hero-media picture{ transition:none; } }
