@@ -304,6 +304,10 @@ def emit_data_js(props, colonias, alcaldias, path=os.path.join(OUT, "assets/data
             "publicado": p["publicado"], "actualizado": p["actualizado"],
             "foto_card": p["foto_card"], "precio_m2": p["precio_m2"], "estado": p["estado"],
         })
+        if p.get("landing"):
+            # Propiedad con landing propia (ver landing.py / data_landings.py)
+            slim[-1].update({k: p[k] for k in ("landing", "precio_consultar", "operaciones",
+                                               "operacion_label", "privados", "wa_text")})
     calles = sorted({(p["calle"], p["colonia_nombre"]) for p in props})
     data = {
         "meta": {"demo": DATASET_ES_DEMO, "ciudad": "Ciudad de México", "generado": "2026-08-16", "total": len(slim)},

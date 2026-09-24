@@ -3,9 +3,59 @@
     "demo": false,
     "ciudad": "Ciudad de México",
     "generado": "2026-08-16",
-    "total": 54
+    "total": 55
   },
   "propiedades": [
+    {
+      "id": "GF-ESF-P18",
+      "titulo": "Espacio Santa Fe — Piso 18",
+      "titulo_wa": "la oficina Espacio Santa Fe — Piso 18",
+      "url": "propiedades/oficina-espacio-santa-fe-piso-18/",
+      "operacion": "venta",
+      "tipo": "oficina",
+      "tipo_label": "Oficina",
+      "precio": 0,
+      "moneda": "MXN",
+      "mantenimiento": 0,
+      "colonia": "santa-fe",
+      "colonia_nombre": "Santa Fe",
+      "alcaldia": "cuajimalpa-de-morelos",
+      "alcaldia_nombre": "Cuajimalpa de Morelos",
+      "alcaldia_tiene_pagina": true,
+      "estado_nombre": "Ciudad de México",
+      "sin_pagina": false,
+      "calle": "Carretera México–Toluca 5420",
+      "cp": "05320",
+      "lat": 19.3629937,
+      "lng": -99.2813264,
+      "rec": 0,
+      "ban": 0,
+      "medios": 0,
+      "est": 36,
+      "m2c": 1099.44,
+      "m2t": 0,
+      "antig": 0,
+      "piso": 18,
+      "estado_inm": "excelente",
+      "amenidades": [],
+      "badges": [],
+      "destacada": true,
+      "exclusiva": false,
+      "publicado": "2026-09-24",
+      "actualizado": "2026-09-24",
+      "foto_card": "assets/img/propiedades/espacio-santa-fe-piso-18/01-vista-panoramica-piso-18-card.jpg",
+      "precio_m2": 0,
+      "estado": "disponible",
+      "landing": true,
+      "precio_consultar": true,
+      "operaciones": [
+        "venta",
+        "renta"
+      ],
+      "operacion_label": "Venta y renta",
+      "privados": 18,
+      "wa_text": "Hola Gio, me interesa la oficina Espacio Santa Fe Piso 18 de 1,099.44 m². Quisiera recibir más información."
+    },
     {
       "id": "EB-VT0576",
       "titulo": "Casa en Venta, Av. Cuauhtémoc, Colonia Chapultepec, Cuernavaca, Morelos.",
@@ -2998,6 +3048,10 @@
     {
       "calle": "Carretera México -  Toluca",
       "colonia": "Cuajimalpa"
+    },
+    {
+      "calle": "Carretera México–Toluca 5420",
+      "colonia": "Santa Fe"
     },
     {
       "calle": "Cerrada de Monte Everest",

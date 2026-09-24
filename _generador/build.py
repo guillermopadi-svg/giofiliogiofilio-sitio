@@ -13,6 +13,8 @@ from data_colonias_todas import COLONIAS_TODAS
 from data_props import TIPOS, TIPO_LABEL, TIPO_PLURAL, AMENIDAD_LABEL, ESTADOS_INMUEBLE, AMENIDADES
 from data_content import TESTIMONIOS, PROCESO, FAQS_GENERALES, BLOG, BLOG_CATEGORIAS, BLOG_EXTRA
 import prep
+import landing
+from data_landings import LANDINGS
 
 OUT = ".."  # el sitio real es el directorio padre de _generador
 PAGES = []          # rutas generadas para sitemap
@@ -76,7 +78,11 @@ PROPS_ALL = prep.normalize(IMAGES)
 # tambien generan negocio y no deben quedar solo con una ficha huerfana
 # (alcanzable por link directo pero invisible en el buscador propio).
 PROPS = [p for p in PROPS_ALL if p.get("estado_nombre", "Ciudad de México") == "Ciudad de México"]
-prep.emit_data_js(PROPS_ALL, COLONIAS, ALCALDIAS)
+# Propiedades con landing propia (data_landings.py): entran al buscador y al
+# home como tarjetas, pero no a las estadisticas de colonia/zona (no tienen precio).
+LANDINGS_ON = [l for l in LANDINGS if landing.published(l)]
+LANDING_PROPS = [landing.shadow_prop(l) for l in LANDINGS_ON]
+prep.emit_data_js(LANDING_PROPS + PROPS_ALL, COLONIAS, ALCALDIAS)
 prep.emit_config_js()
 print(f"   {len(PROPS)} propiedades CDMX · {len(PROPS_ALL) - len(PROPS)} fuera de CDMX (ahora tambien en el buscador) · {len(COLONIAS)} colonias · {len(ALCALDIAS)} alcaldías")
 
@@ -90,6 +96,9 @@ def by(**kw):
         elif k == "badge": out = [p for p in out if v in p["badges"]]
         else: out = [p for p in out if p.get(k) == v]
     return out
+
+LANDING_PATHS = {landing.landing_path(l) for l in LANDINGS_ON}
+LANDING_PROPS_FEATURED = [p for p in LANDING_PROPS if p.get("destacada")]
 
 def destacadas(n=6, **kw):
     l = sorted(by(**kw), key=lambda p: (not p.get("destacada"), not p.get("exclusiva"), -p["precio"]))
@@ -156,7 +165,7 @@ def listing_schema(p):
 def build_home():
     path = "index.html"
     R = lambda t: rel(path, t)
-    dest = destacadas(8)
+    dest = (LANDING_PROPS_FEATURED + destacadas(8))[:8]
     zonas_home = ["polanco", "roma-norte", "condesa"]
 
     objetivos = [
@@ -1904,7 +1913,7 @@ def build_sitemap():
         loc = canonical(p)
         if p == "index.html":
             pr, cf = "1.0", "daily"
-        elif p.startswith("propiedad/"):
+        elif p.startswith("propiedad/") or p in LANDING_PATHS:
             pr, cf = "0.9", "weekly"
         elif p.startswith(("propiedades/", "zonas/")):
             pr, cf = "0.8", "daily"
@@ -1928,8 +1937,8 @@ def build_sitemap():
     # urlset — más fácil de vigilar por sección en Search Console y listo
     # para crecer sin acercarse al límite de 50,000 URLs por archivo.
     secciones = [
-        ("sitemap-propiedades.xml", lambda p: p.startswith("propiedad/")),
-        ("sitemap-zonas.xml", lambda p: p.startswith("zonas/") or p == "propiedades/index.html" or (p.startswith("propiedades/") and p.count("/") == 2)),
+        ("sitemap-propiedades.xml", lambda p: p.startswith("propiedad/") or p in LANDING_PATHS),
+        ("sitemap-zonas.xml", lambda p: p not in LANDING_PATHS and (p.startswith("zonas/") or p == "propiedades/index.html" or (p.startswith("propiedades/") and p.count("/") == 2))),
         ("sitemap-listados.xml", lambda p: p.startswith(("venta/", "renta/", "departamentos/", "casas/"))),
         ("sitemap-blog.xml", lambda p: p.startswith("blog/")),
     ]
@@ -2063,6 +2072,8 @@ def main():
     build_search_pages()
     for p in PROPS_ALL:
         build_property(p)
+    for l in LANDINGS_ON:
+        landing.build_landing(l, write, K)
     build_zonas_index()
     for a in ALCALDIAS:
         build_alcaldia(a)

@@ -398,7 +398,39 @@ BADGE_LABEL = {
     "preventa": "Preventa", "entrega-inmediata": "Entrega inmediata",
 }
 
+def pcard_landing(path, p):
+    """Tarjeta de una propiedad con landing propia (ver landing.py)."""
+    R = lambda t: rel(path, t)
+    from urllib.parse import quote
+    wa = f'https://wa.me/{MARCA["whatsapp"]}?text={quote(p["wa_text"])}'
+    specs = (f'<span>{icon("area")}{p["m2c"]:,.2f} m²</span>'
+             f'<span>{icon("car")}{p["est"]} estacionamientos</span>'
+             f'<span>{icon("layers")}{p["privados"]} privados</span>')
+    return f'''<article class="pcard pcard--landing" data-id="{e(p["id"])}">
+  <a class="pcard-link" href="{R(p["url"])}" data-track-select="{e(p["id"])}" aria-label="Ver {e(p["titulo"])}"></a>
+  <div class="pcard-media">
+    <picture>
+      <source type="image/webp" srcset="{R(p["foto_card_webp"])}">
+      <img src="{R(p["foto_card"])}" alt="{e(p["titulo"])} — oficina corporativa en Santa Fe, CDMX" loading="lazy" decoding="async" width="640" height="480">
+    </picture>
+    <div class="pcard-badges"><span class="badge badge--destacada">Destacada</span></div>
+  </div>
+  <div class="pcard-body">
+    <p class="pcard-kicker">{e(p["tipo_label"])} · Santa Fe</p>
+    <h3 class="pcard-title">{e(p["titulo"])}</h3>
+    <div class="pcard-specs pcard-specs--text">{specs}</div>
+    <div class="pcard-price pcard-price--consult">{e(p["operacion_label"])}</div>
+  </div>
+  <div class="pcard-actions">
+    <a class="btn btn--ghost btn--sm" href="{R(p["url"])}">Ver propiedad</a>
+    <a class="btn btn--wa btn--sm btn--icon" href="{wa}" target="_blank" rel="noopener" data-wa="{e(p["id"])}" aria-label="Contactar por WhatsApp">{icon("wa")}</a>
+  </div>
+</article>'''
+
+
 def pcard(path, p, no_cmp=False):
+    if p.get("landing"):
+        return pcard_landing(path, p)
     R = lambda t: rel(path, t)
     badges = f'<span class="badge badge--{p["operacion"]}">{"Venta" if p["operacion"]=="venta" else "Renta"}</span>'
     for b in p.get("badges", []):

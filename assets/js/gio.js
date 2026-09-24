@@ -78,8 +78,8 @@
     if (n >= 1e3) return '$' + Math.round(n / 1e3) + ' K' + suf;
     return '$' + nfNum.format(n) + suf;
   }
-  function moneyP(p) { return money(p.precio, p.moneda); }
-  function moneyShortP(p) { return moneyShort(p.precio, p.moneda); }
+  function moneyP(p) { return p.precio_consultar ? 'Precio a consultar' : money(p.precio, p.moneda); }
+  function moneyShortP(p) { return p.precio_consultar ? 'Precio a consultar' : moneyShort(p.precio, p.moneda); }
   function num(n) { return nfNum.format(Math.round(Number(n) || 0)); }
 
   // ------------------------------------------------------- ANALÍTICA
@@ -90,6 +90,22 @@
     if (CFG.debug) console.log('[dataLayer]', payload);
   }
   window.gfTrack = track;
+
+  // Atribucion de campana: se guarda durante la sesion del navegador para que
+  // un lead enviado despues de navegar por el sitio conserve su origen.
+  var ATTR_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+                   'gclid', 'gbraid', 'wbraid', 'fbclid', 'ttclid'];
+  function readAttribution() {
+    try { return JSON.parse(sessionStorage.getItem('gf_attr') || '{}') || {}; } catch (e) { return {}; }
+  }
+  (function captureAttribution() {
+    try {
+      var q = new URLSearchParams(location.search), cur = {}, any = false;
+      ATTR_KEYS.forEach(function (k) { var v = q.get(k); if (v) { cur[k] = v; any = true; } });
+      if (any) sessionStorage.setItem('gf_attr', JSON.stringify(cur));
+    } catch (e) { /* almacenamiento bloqueado: se ignora */ }
+  })();
+  window.gfAttribution = readAttribution;
 
   function propParams(p, extra) {
     if (!p) return extra || {};
@@ -139,6 +155,8 @@
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
     building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/></svg>',
     map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M9 4L3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4zM9 4v13M15 6.5v13"/></svg>',
+    wa: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.298-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.404" fill-rule="evenodd"/></svg>',
+    layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5M3 17l9 5 9-5"/></svg>',
     home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19v-8z"/><path d="M9.5 20.5v-6h5v6"/></svg>'
   };
   window.GF_ICON = ICON;
@@ -237,8 +255,35 @@
   }
 
   // -------------------------------------------------------- PROPERTY CARD
+  function landingCardHTML(p) {
+    var href = url(p.url);
+    return '' +
+      '<article class="pcard pcard--landing" data-id="' + esc(p.id) + '">' +
+        '<a class="pcard-link" href="' + href + '" data-track-select="' + esc(p.id) + '" aria-label="Ver ' + esc(p.titulo) + '"></a>' +
+        '<div class="pcard-media">' +
+          '<img src="' + url(p.foto_card) + '" alt="' + esc(p.titulo) + ' — oficina corporativa en Santa Fe, CDMX" loading="lazy" decoding="async" width="640" height="480">' +
+          '<div class="pcard-badges"><span class="badge badge--destacada">Destacada</span></div>' +
+        '</div>' +
+        '<div class="pcard-body">' +
+          '<p class="pcard-kicker">' + esc(p.tipo_label) + ' · Santa Fe</p>' +
+          '<h3 class="pcard-title">' + esc(p.titulo) + '</h3>' +
+          '<div class="pcard-specs pcard-specs--text">' +
+            '<span>' + ICON.area + num(p.m2c) + ' m²</span>' +
+            '<span>' + ICON.car + p.est + ' estacionamientos</span>' +
+            '<span>' + ICON.layers + p.privados + ' privados</span>' +
+          '</div>' +
+          '<div class="pcard-price pcard-price--consult">' + esc(p.operacion_label) + '</div>' +
+        '</div>' +
+        '<div class="pcard-actions">' +
+          '<a class="btn btn--ghost btn--sm" href="' + href + '">Ver propiedad</a>' +
+          '<a class="btn btn--wa btn--sm btn--icon" href="' + waLink(p) + '" target="_blank" rel="noopener" data-wa="' + esc(p.id) + '" aria-label="Contactar por WhatsApp">' + ICON.wa + '</a>' +
+        '</div>' +
+      '</article>';
+  }
+
   function cardHTML(p, opts) {
     opts = opts || {};
+    if (p.landing) return landingCardHTML(p);
     var href = url(p.url);
     var badges = '<span class="badge badge--' + p.operacion + '">' + (p.operacion === 'venta' ? 'Venta' : 'Renta') + '</span>';
     (p.badges || []).forEach(function (b) {
@@ -282,6 +327,7 @@
       '</article>';
   }
   window.gfCardHTML = cardHTML;
+  window.gfOpenLightbox = function (imgs, i) { openLightbox(imgs, i); };
 
   var BADGE_LABEL = {
     nueva: 'Nueva', exclusiva: 'Exclusiva', oportunidad: 'Oportunidad',
@@ -290,7 +336,9 @@
 
   function waLink(p) {
     var t;
-    if (p) {
+    if (p && p.wa_text) {
+      t = p.wa_text;
+    } else if (p) {
       t = 'Hola Gio, estoy interesado en ' + p.titulo_wa + ' con ID ' + p.id + '. ¿Podrías darme más información?';
     } else {
       t = 'Hola Gio, me gustaría recibir asesoría para encontrar mi espacio ideal en CDMX.';
@@ -487,12 +535,12 @@
   }
 
   function matches(p, f) {
-    if (f.operacion && p.operacion !== f.operacion) return false;
+    if (f.operacion && (p.operaciones || [p.operacion]).indexOf(f.operacion) < 0) return false;
     if (f.colonia && p.colonia !== f.colonia) return false;
     if (f.alcaldia && p.alcaldia !== f.alcaldia) return false;
     if (f.tipo && p.tipo !== f.tipo) return false;
-    if (f.precioMin && p.precio < f.precioMin) return false;
-    if (f.precioMax && p.precio > f.precioMax) return false;
+    if (f.precioMin && !p.precio_consultar && p.precio < f.precioMin) return false;
+    if (f.precioMax && !p.precio_consultar && p.precio > f.precioMax) return false;
     if (f.rec && p.rec < f.rec) return false;
     if (f.ban && p.ban < f.ban) return false;
     if (f.est && p.est < f.est) return false;
@@ -534,7 +582,10 @@
       case 'superficie': l.sort(function (a, b) { return (b.m2c || b.m2t) - (a.m2c || a.m2t); }); break;
       case 'm2': l.sort(function (a, b) { return precioM2(a) - precioM2(b); }); break;
       default:
-        l.sort(function (a, b) { return (b.publicado || '').localeCompare(a.publicado || ''); });
+        l.sort(function (a, b) {
+          if (!!a.landing !== !!b.landing) return a.landing ? -1 : 1;
+          return (b.publicado || '').localeCompare(a.publicado || '');
+        });
     }
     return l;
   }
@@ -1184,6 +1235,8 @@
       gclid: q.get('gclid'), fbclid: q.get('fbclid'),
       fecha: new Date().toISOString()
     });
+    var attr = readAttribution();
+    ATTR_KEYS.forEach(function (k) { if (!lead[k] && attr[k]) lead[k] = attr[k]; });
 
     // Auditoria de seguridad 2026-09-11 (GIO-007): esto guardaba TODOS los
     // leads enviados desde este navegador, para siempre, con nombre/correo/

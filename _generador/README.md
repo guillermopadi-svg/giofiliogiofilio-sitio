@@ -22,3 +22,13 @@ python3 shots.py     # pruebas E2E + capturas (requiere playwright)
 Las fotografías de origen (`raw/unsplash/`) no se incluyen; `build.py` las
 regenera solo si están presentes. Los assets ya procesados viven en
 `../assets/img/`.
+
+## Propiedades con landing propia
+
+`data_landings.py` define propiedades que tienen página individual en
+`propiedades/{slug}/` (plantilla en `landing.py`, estilos en
+`assets/css/landing.css`, comportamiento y tracking en `assets/js/landing.js`).
+Cada registro también aparece como tarjeta en el home (si `featured`), en el
+buscador `/propiedades/` y en `sitemap-propiedades.xml`. Para agregar otra:
+copiar el registro, cambiar datos, subir las imágenes a
+`assets/img/propiedades/{slug}/` y correr `python3 build.py`.
