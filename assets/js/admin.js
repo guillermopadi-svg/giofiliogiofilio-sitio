@@ -143,6 +143,7 @@
     sb.from('perfiles').select('id,nombre,email,activo').eq('activo', true).then(function (res) {
       if (res.error) { console.warn('[Panel] no se pudo cargar el equipo:', res.error.message); return; }
       STATE.equipo = res.data || [];
+      llenarFiltroAsesorContactos();
     });
   }
 
@@ -3310,6 +3311,7 @@
       STATE.invitaciones = invRes.data || [];
       renderEquipo();
       llenarFiltroAsesorPropiedades();
+      llenarFiltroAsesorContactos();
     });
   }
 
@@ -3463,6 +3465,18 @@
     return { clase: m.clase, icon: m.icon, label: ESTADO_LEAD_LABEL[estado] || estado };
   }
 
+  // Mismo patron que llenarFiltroTipoPropiedades/llenarFiltroAsesorPropiedades
+  // -- leads.asesor_id ya existe en el esquema (bandeja compartida, cualquier
+  // asesor autenticado puede tomar/reasignar cualquier lead).
+  function llenarFiltroAsesorContactos() {
+    var sel = $('#leadFiltroAsesor');
+    var actual = sel.value;
+    sel.innerHTML = '<option value="">Todo asesor</option>' + (STATE.equipo || []).map(function (a) {
+      return '<option value="' + a.id + '">' + esc(a.nombre || a.email) + '</option>';
+    }).join('');
+    sel.value = actual;
+  }
+
   // Mismo patron que llenarFiltroTipoPropiedades: opciones armadas con lo
   // que de verdad hay en los leads cargados.
   function llenarFiltroOrigenContactos() {
@@ -3481,9 +3495,11 @@
     var texto = normalizaBusqueda($('#leadBuscar').value.trim());
     var estado = $('#leadFiltroEstado').value;
     var origen = $('#leadFiltroOrigen').value;
+    var asesor = $('#leadFiltroAsesor').value;
     return STATE.leads.filter(function (l) {
       if (estado && l.estado !== estado) return false;
       if (origen && l.fuente !== origen) return false;
+      if (asesor && l.asesor_id !== asesor) return false;
       if (texto) {
         var haystack = normalizaBusqueda([l.nombre, l.email, l.telefono, l.propiedad_titulo, l.mensaje].filter(Boolean).join(' '));
         if (haystack.indexOf(texto) === -1) return false;
@@ -3493,13 +3509,14 @@
   }
 
   function hayFiltrosContactosActivos() {
-    return !!($('#leadBuscar').value.trim() || $('#leadFiltroEstado').value || $('#leadFiltroOrigen').value);
+    return !!($('#leadBuscar').value.trim() || $('#leadFiltroEstado').value || $('#leadFiltroOrigen').value || $('#leadFiltroAsesor').value);
   }
 
   function limpiarFiltrosContactos() {
     $('#leadBuscar').value = '';
     $('#leadFiltroEstado').value = '';
     $('#leadFiltroOrigen').value = '';
+    $('#leadFiltroAsesor').value = '';
     activarTabContacto('todos');
   }
 
@@ -3521,6 +3538,9 @@
       acciones.push('<a href="tel:' + esc(tel) + '" title="Llamar" onclick="event.stopPropagation()">' + ICON_TEL + '</a>');
       acciones.push('<a href="https://wa.me/' + esc(tel.replace(/^\+/, '')) + '" target="_blank" rel="noopener" title="WhatsApp" onclick="event.stopPropagation()">' + ICON_WA + '</a>');
     }
+    var asesorHtml = l.asesor_id
+      ? '<div class="avatar lead-row-asesor" title="' + esc(nombrePerfil(l.asesor_id)) + '">' + esc(iniciales(nombrePerfil(l.asesor_id))) + '</div>'
+      : '<div class="lead-row-asesor lead-row-asesor--vacio" title="Sin asignar">—</div>';
     return (
       '<div class="lead-row" data-abrir-contacto="' + l.id + '">' +
         '<div class="avatar">' + esc(iniciales(l.nombre)) + '</div>' +
@@ -3528,9 +3548,10 @@
           '<div class="lead-row-nombre">' + esc(l.nombre || 'Sin nombre') + '</div>' +
           '<div class="lead-row-sub">' + esc([l.email, l.telefono].filter(Boolean).join(' · ')) + '</div>' +
         '</div>' +
-        '<span class="pcard-status pcard-status--' + estadoInfo.clase + ' lead-row-estado">' + estadoInfo.icon + estadoInfo.label + '</span>' +
+        '<span class="lead-pill lead-pill--' + l.estado + ' lead-row-estado">' + estadoInfo.label + '</span>' +
         '<span class="lead-row-interes">' + esc(l.propiedad_titulo || 'Sin interés registrado') + '</span>' +
         '<span class="lead-row-recibido">Recibido ' + tiempoRelativo(l.creado_en) + '</span>' +
+        asesorHtml +
         '<div class="lead-row-acciones">' + acciones.join('') + '</div>' +
       '</div>'
     );
@@ -3608,6 +3629,7 @@
       }
       STATE.leads = res.data || [];
       llenarFiltroOrigenContactos();
+      llenarFiltroAsesorContactos();
       renderContactos();
     });
   }
@@ -3626,6 +3648,23 @@
         return;
       }
       toast('Contacto movido a "' + ESTADO_LEAD_LABEL[estado] + '"');
+    });
+  }
+
+  function reasignarLead(id, asesorId) {
+    var l = STATE.leads.filter(function (x) { return x.id === id; })[0];
+    if (!l) return;
+    var anterior = l.asesor_id;
+    l.asesor_id = asesorId || null;
+    renderContactos();
+    sb.from('leads').update({ asesor_id: asesorId || null }).eq('id', id).then(function (res) {
+      if (res.error) {
+        l.asesor_id = anterior;
+        renderContactos();
+        toast('No se pudo reasignar: ' + res.error.message, 'err');
+        return;
+      }
+      toast(asesorId ? 'Contacto asignado a ' + nombrePerfil(asesorId) : 'Contacto sin asignar');
     });
   }
 
@@ -3698,6 +3737,15 @@
         '<select id="leadEstadoSelect">' + ESTADOS_LEAD.map(function (e) {
           return '<option value="' + e + '"' + (e === l.estado ? ' selected' : '') + '>' + ESTADO_LEAD_LABEL[e] + '</option>';
         }).join('') + '</select>' +
+      '</div>' +
+      '<div class="field" style="margin-top:1.1rem">' +
+        '<label>Asignado a</label>' +
+        '<select id="leadAsesorSelect">' +
+          '<option value="">Sin asignar</option>' +
+          (STATE.equipo || []).map(function (a) {
+            return '<option value="' + a.id + '"' + (a.id === l.asesor_id ? ' selected' : '') + '>' + esc(a.nombre || a.email) + '</option>';
+          }).join('') +
+        '</select>' +
       '</div>'
     );
   }
@@ -3709,8 +3757,8 @@
     var estadoInfo = estadoLeadInfo(l.estado);
     $('#leadDrawerAvatar').textContent = iniciales(l.nombre);
     $('#leadDrawerNombre').textContent = l.nombre || 'Sin nombre';
-    $('#leadDrawerEstado').className = 'pcard-status pcard-status--' + estadoInfo.clase;
-    $('#leadDrawerEstado').innerHTML = estadoInfo.icon + estadoInfo.label;
+    $('#leadDrawerEstado').className = 'lead-pill lead-pill--' + l.estado;
+    $('#leadDrawerEstado').textContent = estadoInfo.label;
     $('#leadDrawerSub').textContent = 'Contacto desde ' + new Date(l.creado_en).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
     $('#leadDrawerAcciones').innerHTML = leadDrawerAccionesHtml(l);
 
@@ -4061,6 +4109,7 @@
     $('#leadBuscar').addEventListener('input', function () { STATE.leadPagina = 1; renderContactos(); });
     $('#leadFiltroEstado').addEventListener('change', function () { STATE.leadPagina = 1; renderContactos(); });
     $('#leadFiltroOrigen').addEventListener('change', function () { STATE.leadPagina = 1; renderContactos(); });
+    $('#leadFiltroAsesor').addEventListener('change', function () { STATE.leadPagina = 1; renderContactos(); });
     $('#leadFiltroLimpiarBtnTop').addEventListener('click', function () { limpiarFiltrosContactos(); renderContactos(); });
     $('#leadFiltroLimpiarBtn').addEventListener('click', function () { limpiarFiltrosContactos(); renderContactos(); });
     $('#leadTabla').addEventListener('click', function (e) {
@@ -4104,6 +4153,7 @@
     });
     $('#leadDrawerBody').addEventListener('change', function (e) {
       if (e.target.id === 'leadEstadoSelect' && STATE.leadDrawerId) cambiarEstadoLead(STATE.leadDrawerId, e.target.value);
+      if (e.target.id === 'leadAsesorSelect' && STATE.leadDrawerId) reasignarLead(STATE.leadDrawerId, e.target.value);
     });
     $('#modalClose').addEventListener('click', closeModal);
     $('#modalBackdrop').addEventListener('click', function (e) { if (e.target.id === 'modalBackdrop') closeModal(); });
