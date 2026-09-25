@@ -101,8 +101,6 @@ LANDINGS = [
             "Acceso desde la Carretera México–Toluca",
         ],
         "heroImage": _IMG + "01-vista-panoramica-piso-18",
-        "homeImage": _IMG + "03-planta-abierta-privados-vidrio",   # foto de la sección destacada del home
-        "locationLabel": "Santa Fe",
         # Slides del hero: (imagen, texto alterno, etiqueta, texto del botón, destino)
         # El botón secundario del hero cambia con cada slide.
         "heroSlides": [

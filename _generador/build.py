@@ -99,7 +99,6 @@ def by(**kw):
 
 LANDING_PATHS = {landing.landing_path(l) for l in LANDINGS_ON}
 LANDING_PROPS_FEATURED = [p for p in LANDING_PROPS if p.get("destacada")]
-LANDINGS_FEATURED = [l for l in LANDINGS_ON if l.get("featured")]
 
 def destacadas(n=6, **kw):
     l = sorted(by(**kw), key=lambda p: (not p.get("destacada"), not p.get("exclusiva"), -p["precio"]))
@@ -226,24 +225,8 @@ def build_home():
       <img src="{R(s["img"] + ".jpg")}" alt="{e(s["alt"])}" {'fetchpriority="high"' if i == 0 else 'loading="lazy"'} width="1600" height="900">
     </picture>''' for i, s in enumerate(hero_slides))
 
-    # Home: si hay propiedades destacadas reales (data_landings.py) el hero y la
-    # seccion destacada se arman solo con ellas; si no, queda el hero clasico.
-    if LANDINGS_FEATURED:
-        hero_html = landing.home_hero(LANDINGS_FEATURED[0], R)
-        dest_html = landing.home_featured(LANDINGS_FEATURED, path, R, card_grid) + f'''
-<section class="section section--ivory home-search" id="buscar">
-  <div class="wrap">
-    <p class="eyebrow">Encuentra tu espacio ideal</p>
-    <h2>Busca en todo el inventario</h2>
-    {searchbox(path)}
-  </div>
-</section>'''
-        home_head = (f'<link rel="preload" as="image" type="image/webp" href="{R(landing._imgs(LANDINGS_FEATURED[0]["heroImage"])[1])}" fetchpriority="high">\n'
-                     f'<link rel="stylesheet" href="{R("assets/css/home-destacada.css")}?v=1">')
-        home_js = f'<script src="{R("assets/js/home.js")}?v=1" defer></script>\n' + landing.home_sticky(LANDINGS_FEATURED[0], R)
-    else:
-        home_head = home_js = ""
-        hero_html = f'''<section class="hero">
+    body = f'''
+<section class="hero">
   <div class="hero-media" data-hero-carousel>
     {hero_slides_html}
   </div>
@@ -261,8 +244,8 @@ def build_home():
     </div>
   </div>
 </section>
-'''
-        dest_html = f'''<section class="section" id="destacadas">
+
+<section class="section" id="destacadas">
   <div class="wrap">
     <div class="carousel-head">
       <div>
@@ -275,12 +258,6 @@ def build_home():
     {card_grid(path, dest)}
   </div>
 </section>
-'''
-
-    body = f'''
-{hero_html}
-
-{dest_html}
 
 <section class="section section--ivory" style="padding-block:var(--sp-7)">
   <div class="wrap">
@@ -362,8 +339,7 @@ def build_home():
     write(path, page(path,
         "Gio Filio | Asesoría inmobiliaria en Ciudad de México — Tu espacio ideal",
         "Encuentra tu espacio ideal en CDMX. Propiedades seleccionadas en venta y renta en Polanco, Roma, Condesa, Del Valle, Santa Fe y más, con la asesoría personal de Gio Filio.",
-        body, active="index.html", schema=schema, page_type="home",
-        extra_head=home_head, extra_js=home_js, **K()))
+        body, active="index.html", schema=schema, page_type="home", **K()))
 
 
 # =========================================================== RESULTADOS
