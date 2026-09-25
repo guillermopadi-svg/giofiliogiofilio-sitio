@@ -239,7 +239,7 @@ def build_home():
     <div class="hero-stats">
       <div class="hero-stat"><b>16</b><span>Alcaldías de CDMX</span></div>
       <div class="hero-stat"><b>{len(COLONIAS)}</b><span>Colonias con guía propia</span></div>
-      <div class="hero-stat"><b>{len(PROPS)}</b><span>Propiedades publicadas</span></div>
+      <div class="hero-stat"><b>{len(PROPS_ALL) + len(LANDINGS_ON)}</b><span>Propiedades en toda la República</span></div>
       <div class="hero-stat"><b>1</b><span>Asesora, de principio a fin</span></div>
     </div>
   </div>
