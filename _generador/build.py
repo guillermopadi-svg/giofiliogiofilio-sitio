@@ -166,7 +166,7 @@ def listing_schema(p):
 def build_home():
     path = "index.html"
     R = lambda t: rel(path, t)
-    dest = destacadas(8)
+    dest = (LANDING_PROPS_FEATURED + destacadas(8))[:8]
     zonas_home = ["polanco", "roma-norte", "condesa"]
 
     objetivos = [
@@ -231,19 +231,6 @@ def build_home():
     if LANDINGS_FEATURED:
         hero_html = landing.home_hero(LANDINGS_FEATURED[0], R)
         dest_html = landing.home_featured(LANDINGS_FEATURED, path, R, card_grid) + f'''
-<section class="section" id="inventario">
-  <div class="wrap">
-    <div class="carousel-head">
-      <div>
-        <p class="eyebrow">Selección de Gio</p>
-        <h2>Más propiedades</h2>
-        <p class="lead" style="max-width:52ch">Menos propiedades. Mejores opciones. Cada una está aquí por una razón concreta que puedo explicarte.</p>
-      </div>
-      <a class="btn btn--ghost" href="{R("propiedades/")}">Ver todas</a>
-    </div>
-    {card_grid(path, dest)}
-  </div>
-</section>
 <section class="section section--ivory home-search" id="buscar">
   <div class="wrap">
     <p class="eyebrow">Encuentra tu espacio ideal</p>
