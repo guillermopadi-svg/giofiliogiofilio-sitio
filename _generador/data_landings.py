@@ -125,6 +125,23 @@ LANDINGS = [
         "floorPlans": [
             (_IMG + "plano-piso-18", "Plano arquitectónico del piso 18 de Espacio Santa Fe con privados, sala de capacitación, comedor, baños y site"),
         ],
+        "relatedArticle": ("oficinas-en-santa-fe-comprar-o-rentar",
+                           "Oficinas en Santa Fe: comprar o rentar y qué revisar antes de decidir"),
+        "faqs": [
+            ("¿Espacio Santa Fe Piso 18 está en venta o en renta?",
+             "Está disponible en venta y en renta. El precio se comparte de forma directa: agenda una visita o escribe por WhatsApp."),
+            ("¿Cuántos estacionamientos incluye?",
+             "Incluye 36 cajones de estacionamiento para el piso de 1,099.44 m²."),
+            ("¿Cómo es la distribución del piso?",
+             "El piso 18 tiene 18 privados, tres de ellos con baño propio, una sala de juntas, una sala de capacitación, "
+             "comedor propio y un cuarto habilitado para site. Hay baños privados para hombres y mujeres, además de los "
+             "baños de las áreas comunes."),
+            ("¿Dónde está y cómo se llega?",
+             "Está en Carretera México–Toluca 5420, Col. El Yaqui, Cuajimalpa, CDMX. Se accede desde Vasco de Quiroga, "
+             "Vista Hermosa y la Carretera México–Toluca. Ocho elevadores del edificio llegan al piso."),
+            ("¿Cómo agendo una visita?",
+             "Llena el formulario de esta página o escribe por WhatsApp a Gio Filio. Ella te confirma el horario."),
+        ],
         "publicado": "2026-09-24",
         "actualizado": "2026-09-24",
     },

@@ -1090,3 +1090,13 @@ body.no-scroll{ overflow:hidden; }
 .pcard--landing .pcard-title{ font-size:var(--step-1); }
 .pcard-specs--text{ flex-wrap:wrap; row-gap:.2rem; }
 .pcard-price--consult{ font-size:var(--step-0); color:var(--gold-ink); letter-spacing:.06em; text-transform:uppercase; }
+
+/* Tablas dentro de artículos y fichas */
+.table-scroll{ overflow-x:auto; margin:1.25rem 0 1.75rem; -webkit-overflow-scrolling:touch; }
+.article ul{ margin:0 0 1.15em 1.1em; padding:0; }
+.article li{ margin-bottom:.5em; }
+.lp-zone-art,.lp-guide-link{ margin:1.5rem 0 0; }
+.table-scroll .cmp-table{ min-width:520px; font-size:var(--step--1); }
+.table-scroll .cmp-table thead th{ position:static; color:var(--navy); }
+.table-scroll .cmp-table tbody th{ width:auto; color:var(--navy); font-weight:600; }
+.table-scroll .cmp-table tbody tr:hover td{ background:transparent; }

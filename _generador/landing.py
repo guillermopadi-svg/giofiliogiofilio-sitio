@@ -11,6 +11,7 @@ from urllib.parse import quote
 from render import (page, e, rel, icon, num, breadcrumb, breadcrumb_schema,
                     person_schema, canonical, full_url, SITE)
 from parts import lightbox_markup
+from render import faq_block, faq_schema
 from data_zonas import MARCA
 from data_props import TIPO_LABEL
 from data_landings import LANDINGS
@@ -202,6 +203,11 @@ def build_landing(l, write, K):
     hero_dots = "".join(
         f'<button type="button" class="lp-hero-dot{" is-active" if i == 0 else ""}" data-lp-dot="{i}" aria-label="Ir a la foto {i+1}: {e(h[2])}"></button>'
         for i, h in enumerate(hs))
+    faq_html = faq_block(l["faqs"], "Preguntas frecuentes sobre esta oficina") if l.get("faqs") else ""
+    if l.get("relatedArticle"):
+        slug_a, tit_a = l["relatedArticle"]
+        faq_html += (f'<section class="section-sm lp-guide"><div class="wrap-narrow"><p class="eyebrow">Antes de decidir</p>'
+                     f'<p class="lp-guide-link"><a class="link-arrow" href="{R("blog/" + slug_a + "/")}">{e(tit_a)}{icon("arrow")}</a></p></div></section>')
     body = f'''
 <section class="hero lp-hero" id="top">
   <div class="hero-media" data-lp-hero>
@@ -285,6 +291,7 @@ def build_landing(l, write, K):
   </div>
 </section>
 
+{faq_html}
 <section class="section section--navy lp-cta" id="agendar">
   <div class="wrap lp-cta-grid">
     <div class="lp-cta-copy">
@@ -340,6 +347,37 @@ def build_landing(l, write, K):
                 f'{json.dumps(ctx, ensure_ascii=False)};</script>\n'
                 f'<script src="{R("assets/js/landing.js")}?v=1" defer></script>')
     write(path, page(path, l["seoTitle"], l["seoDescription"], body,
-                     schema=[landing_schema(l), breadcrumb_schema(crumbs), person_schema()],
+                     schema=([faq_schema(l["faqs"])] if l.get("faqs") else []) + [landing_schema(l), breadcrumb_schema(crumbs), person_schema()],
                      og_image=_imgs(l["heroImage"])[0], body_attrs=f'data-landing-id="{e(pid)}"',
                      page_type="property_landing", extra_head=extra_head, extra_js=extra_js, **K()))
+
+
+# ------------------------------------------------- ENLACES INTERNOS (SEO)
+def zone_block(path, card_grid, colonia=None, alcaldia=None, tipo=None, op=None, titulo=None):
+    """Sección con las propiedades con landing que corresponden a una página de zona,
+    colonia o listado tipo/operación. Devuelve "" si no hay ninguna."""
+    R = lambda t: rel(path, t)
+    ls = []
+    for l in LANDINGS:
+        if not published(l):
+            continue
+        ops = ["venta", "renta"] if l["operation"] == "venta-renta" else [l["operation"]]
+        if colonia and l["neighborhoodSlug"] != colonia: continue
+        if alcaldia and l["boroughSlug"] != alcaldia: continue
+        if tipo and l["propertyType"] != tipo: continue
+        if op and op not in ops: continue
+        ls.append(l)
+    if not ls:
+        return ""
+    arts = "".join(
+        f'<p class="lp-zone-art"><a class="link-arrow" href="{R("blog/" + l["relatedArticle"][0] + "/")}">{e(l["relatedArticle"][1])}{icon("arrow")}</a></p>'
+        for l in ls if l.get("relatedArticle"))
+    head = titulo or ("Oficina destacada en Santa Fe" if len(ls) == 1 else "Propiedades destacadas")
+    return f'''<section class="section section--ivory lp-zone">
+  <div class="wrap">
+    <p class="eyebrow">Propiedad destacada</p>
+    <h2 style="font-size:var(--step-2);margin-bottom:2rem">{e(head)}</h2>
+    {card_grid(path, [shadow_prop(l) for l in ls], True)}
+    {arts}
+  </div>
+</section>'''

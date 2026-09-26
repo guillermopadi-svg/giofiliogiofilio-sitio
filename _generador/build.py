@@ -15,6 +15,7 @@ from data_content import TESTIMONIOS, PROCESO, FAQS_GENERALES, BLOG, BLOG_CATEGO
 import prep
 import landing
 from data_landings import LANDINGS
+from data_blog_landings import ARTICULOS as ARTICULOS_LANDING
 
 OUT = ".."  # el sitio real es el directorio padre de _generador
 PAGES = []          # rutas generadas para sitemap
@@ -59,14 +60,22 @@ BLOG_IMG = prep.build_blog_images(BLOG_IMG_MAP, pool_ids=POOL)
 # los posts publicados por n8n (BLOG_EXTRA), ordenados por fecha. build_post()
 # sigue iterando solo sobre BLOG: las paginas de BLOG_EXTRA ya existen en
 # disco y no se regeneran aqui.
+BLOG = list(BLOG) + ARTICULOS_LANDING   # artículos ligados a landings (data_blog_landings.py)
 BLOG_ALL = sorted(BLOG + BLOG_EXTRA, key=lambda b: b["fecha"], reverse=True)
 for _b in BLOG_EXTRA:
     PAGES.append(f'blog/{_b["slug"]}/index.html')
 
 
+def bimg(b):
+    """Base (sin sufijo) de la imagen de un post de BLOG."""
+    return b.get("img_base") or BLOG_IMG[b["slug"]]
+
+
 def blog_card_img(b, R):
     if b.get("card_img"):
         return b["card_img"]
+    if b.get("img_base"):
+        return R(b["img_base"] + "-card.jpg")
     return R(BLOG_IMG[b["slug"]] + "-card.jpg")
 
 print("→ Normalizando dataset…")
@@ -744,7 +753,7 @@ def build_alcaldia(a):
   </div>
 </section>
 
-{listado}
+{listado}{landing.zone_block(path, card_grid, alcaldia=a["slug"])}
 
 {faq_block(faqs, f"Preguntas sobre {a['nombre']}")}
 
@@ -860,7 +869,7 @@ def build_colonia(c):
   </div>
 </section>
 
-{bloque(f'Propiedades en venta en {c["nombre"]}', venta, R("propiedades/") + f'?colonia={c["slug"]}&operacion=venta')}
+{landing.zone_block(path, card_grid, colonia=c["slug"])}{bloque(f'Propiedades en venta en {c["nombre"]}', venta, R("propiedades/") + f'?colonia={c["slug"]}&operacion=venta')}
 {bloque(f'Propiedades en renta en {c["nombre"]}', renta, R("propiedades/") + f'?colonia={c["slug"]}&operacion=renta')}
 {bloque(f'Departamentos en {c["nombre"]}', deptos, R("propiedades/") + f'?colonia={c["slug"]}&tipo=departamento') if deptos else ""}
 {bloque(f'Casas en {c["nombre"]}', casas, R("propiedades/") + f'?colonia={c["slug"]}&tipo=casa') if casas else ""}
@@ -962,7 +971,7 @@ def build_seo_combo(op, tipo, col):
   </div>
 </section>
 
-{listado_html}
+{listado_html}{landing.zone_block(path, card_grid, colonia=col["slug"], tipo=tipo, op=op)}
 
 <section class="section section--ivory">
   <div class="wrap-narrow">
@@ -1632,13 +1641,20 @@ def build_post(b):
     path = f'blog/{b["slug"]}/index.html'
     R = lambda t: rel(path, t)
     crumbs = [("Inicio", "index.html"), ("Blog", "blog/"), (b["titulo"], None)]
-    cuerpo = "".join(f'<h2>{e(t)}</h2>' + "".join(f"<p>{e(par)}</p>" for par in x.split("\n") if par.strip())
-                     for t, x in b["cuerpo"])
+    cuerpo = "".join(f'<h2>{e(it[0])}</h2>' + "".join(f"<p>{e(par)}</p>" for par in it[1].split("\n") if par.strip())
+                     + (it[2] if len(it) > 2 else "")
+                     for it in b["cuerpo"])
+    faqs_post = b.get("faqs") or []
+    land = next((l for l in LANDINGS_ON if l["id"] == b.get("landing_id")), None)
+    land_html = ""
+    if land:
+        land_html = (f'<div class="wrap" style="margin-top:2rem"><p class="eyebrow">Propiedad mencionada</p>'
+                     f'{card_grid(path, [landing.shadow_prop(land)], no_cmp=True)}</div>')
     rel_posts = [o for o in BLOG if o["slug"] != b["slug"] and o["categoria"] == b["categoria"]][:2]
     if len(rel_posts) < 2:
         rel_posts += [o for o in BLOG if o["slug"] != b["slug"] and o not in rel_posts][:2 - len(rel_posts)]
     rel_html = "".join(f'''<a class="post-card" href="{R("blog/" + o["slug"] + "/")}">
-      <div class="pc-media"><img src="{R(BLOG_IMG[o["slug"]] + "-card.jpg")}" alt="{e(o["titulo"])}" loading="lazy" width="640" height="400"></div>
+      <div class="pc-media"><img src="{blog_card_img(o, R)}" alt="{e(o["titulo"])}" loading="lazy" width="640" height="400"></div>
       <div class="pc-body"><div class="post-meta"><span class="cat">{e(o["categoria"])}</span><span>{o["lectura"]} min</span></div>
       <h3>{e(o["titulo"])}</h3></div></a>''' for o in rel_posts)
 
@@ -1654,8 +1670,8 @@ def build_post(b):
   </header>
   <div class="wrap">
     <picture>
-      <source type="image/webp" srcset="{R(BLOG_IMG[b["slug"]] + "-hero.webp")}">
-      <img src="{R(BLOG_IMG[b["slug"]] + "-hero.jpg")}" alt="{e(b["titulo"])}" style="border-radius:var(--r-lg)" fetchpriority="high" width="1400" height="700">
+      <source type="image/webp" srcset="{R(bimg(b) + "-hero.webp")}">
+      <img src="{R(bimg(b) + "-hero.jpg")}" alt="{e(b["titulo"])}" style="border-radius:var(--r-lg)" fetchpriority="high" width="1400" height="700">
     </picture>
   </div>
   <div class="section">
@@ -1668,8 +1684,8 @@ def build_post(b):
         <a class="chip" href="{R("valuacion/")}">Valuar mi propiedad</a>
       </div>
     </div>
-  </div>
-</article>
+  </div>{land_html}
+</article>{faq_block(faqs_post, "Preguntas frecuentes") if faqs_post else ""}
 
 <section class="section section--ivory">
   <div class="wrap">
@@ -1687,17 +1703,17 @@ def build_post(b):
     post_title = b["titulo"] if len(b["titulo"]) > 58 else f'{b["titulo"]} | Gio Filio'
     write(path, page(path, post_title,
         b["resumen"], body,
-        schema=[breadcrumb_schema(crumbs), person_schema(),
+        schema=([faq_schema(faqs_post)] if faqs_post else []) + [breadcrumb_schema(crumbs), person_schema(),
                 {"@context": "https://schema.org", "@type": "BlogPosting",
                  "headline": b["titulo"], "description": b["resumen"],
                  "url": canonical(path), "datePublished": b["fecha"], "dateModified": b["fecha"],
-                 "image": SITE + "/" + BLOG_IMG[b["slug"]] + "-hero.jpg",
+                 "image": SITE + "/" + bimg(b) + "-hero.jpg",
                  "articleSection": b["categoria"], "inLanguage": "es-MX",
-                 "wordCount": sum(len(x.split()) for _, x in b["cuerpo"]),
+                 "wordCount": sum(len(it[1].split()) for it in b["cuerpo"]),
                  "author": {"@type": "Person", "name": "Gio Filio", "url": SITE + "/conoce-a-gio/"},
                  "publisher": {"@id": SITE + "/#gio-filio"},
                  "mainEntityOfPage": {"@type": "WebPage", "@id": canonical(path)}}],
-        og_image=BLOG_IMG[b["slug"]] + "-hero.jpg", page_type="blog_post", **K()))
+        og_image=bimg(b) + "-hero.jpg", page_type="blog_post", **K()))
 
 
 # =========================================================== CONTACTO + LEGAL
@@ -1909,6 +1925,8 @@ def build_404():
 
 
 def build_sitemap():
+    LASTMOD = {landing.landing_path(l): l["actualizado"] for l in LANDINGS_ON}
+    LASTMOD.update({f'blog/{b["slug"]}/index.html': b["fecha"] for b in ARTICULOS_LANDING})
     def entrada(p):
         loc = canonical(p)
         if p == "index.html":
@@ -1925,7 +1943,7 @@ def build_sitemap():
             pr, cf = "0.3", "yearly"
         else:
             pr, cf = "0.7", "monthly"
-        return f"  <url>\n    <loc>{loc}</loc>\n    <lastmod>{TODAY}</lastmod>\n    <changefreq>{cf}</changefreq>\n    <priority>{pr}</priority>\n  </url>"
+        return f"  <url>\n    <loc>{loc}</loc>\n    <lastmod>{LASTMOD.get(p, TODAY)}</lastmod>\n    <changefreq>{cf}</changefreq>\n    <priority>{pr}</priority>\n  </url>"
 
     def es_valida(p):
         return not p.endswith("404.html") and not p.startswith(("favoritos/", "comparador/", "gracias/"))
@@ -2021,6 +2039,8 @@ Contacto directo: WhatsApp {MARCA["whatsapp_display"]} · {MARCA["email"]}
 - [Zonas de CDMX]({SITE}/zonas/): guía de las 16 alcaldías y sus colonias — estilo de vida, movilidad, precios de referencia.
 - [Conoce a Gio]({SITE}/conoce-a-gio/): quién es Gio Filio y cómo trabaja.
 - [Blog]({SITE}/blog/): artículos sobre el mercado inmobiliario de CDMX.
+- [Oficina en venta y renta en Santa Fe]({SITE}/propiedades/oficina-espacio-santa-fe-piso-18/): Espacio Santa Fe Piso 18, 1,099.44 m², 36 estacionamientos, Clase A+ y LEED Gold; precio a consultar.
+- [Oficinas en Santa Fe: comprar o rentar]({SITE}/blog/oficinas-en-santa-fe-comprar-o-rentar/): guía para decidir entre comprar y rentar una oficina en Santa Fe.
 - [Contacto]({SITE}/contacto/): formulario y WhatsApp directo.
 
 ## Datos e inventario
