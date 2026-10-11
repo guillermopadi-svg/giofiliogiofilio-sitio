@@ -16,6 +16,7 @@ import prep
 import landing
 from data_landings import LANDINGS
 from data_blog_landings import ARTICULOS as ARTICULOS_LANDING
+from blog_descubrir import descubrir as descubrir_blog
 
 OUT = ".."  # el sitio real es el directorio padre de _generador
 PAGES = []          # rutas generadas para sitemap
@@ -61,6 +62,13 @@ BLOG_IMG = prep.build_blog_images(BLOG_IMG_MAP, pool_ids=POOL)
 # sigue iterando solo sobre BLOG: las paginas de BLOG_EXTRA ya existen en
 # disco y no se regeneran aqui.
 BLOG = list(BLOG) + ARTICULOS_LANDING   # artículos ligados a landings (data_blog_landings.py)
+# Artículos que n8n ya dejó como página en blog/<slug>/ pero no están en BLOG_EXTRA:
+# se descubren leyendo la propia página, para que nunca se pierdan del índice.
+BLOG_DESCUBIERTOS = descubrir_blog(os.path.join(OUT, "blog"),
+                                   {b["slug"] for b in BLOG} | {b["slug"] for b in BLOG_EXTRA})
+BLOG_EXTRA = list(BLOG_EXTRA) + BLOG_DESCUBIERTOS
+for _c in sorted({b["categoria"] for b in BLOG_DESCUBIERTOS} - set(BLOG_CATEGORIAS)):
+    BLOG_CATEGORIAS = list(BLOG_CATEGORIAS) + [_c]
 BLOG_ALL = sorted(BLOG + BLOG_EXTRA, key=lambda b: b["fecha"], reverse=True)
 for _b in BLOG_EXTRA:
     PAGES.append(f'blog/{_b["slug"]}/index.html')
@@ -1927,6 +1935,7 @@ def build_404():
 def build_sitemap():
     LASTMOD = {landing.landing_path(l): l["actualizado"] for l in LANDINGS_ON}
     LASTMOD.update({f'blog/{b["slug"]}/index.html': b["fecha"] for b in ARTICULOS_LANDING})
+    LASTMOD.update({f'blog/{b["slug"]}/index.html': b["fecha"] for b in BLOG_DESCUBIERTOS})
     def entrada(p):
         loc = canonical(p)
         if p == "index.html":
