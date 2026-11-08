@@ -768,15 +768,15 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 /* Lightbox */
 .lightbox{ position:fixed; inset:0; z-index:400; background:rgba(7,31,74,.96); display:none; flex-direction:column; }
 .lightbox.is-open{ display:flex; }
-.lb-head{ display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; color:#fff; }
+.lb-head{ flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; color:#fff; }
 .lb-head button{ color:#fff; width:44px; height:44px; border-radius:var(--r-full); display:grid; place-items:center; }
 .lb-head button:hover{ background:rgba(255,255,255,.12); }
-.lb-stage{ flex:1; display:grid; place-items:center; padding:0 1rem 1rem; position:relative; min-height:0; }
-.lb-stage img{ max-height:100%; max-width:100%; object-fit:contain; border-radius:var(--r-sm); }
-.lb-nav{ position:absolute; top:50%; transform:translateY(-50%); width:48px; height:48px; border-radius:var(--r-full); background:rgba(255,255,255,.14); color:#fff; display:grid; place-items:center; }
+.lb-stage{ flex:1 1 0; position:relative; min-height:0; overflow:hidden; }
+.lb-stage img{ position:absolute; inset:0; display:block; width:100%; height:100%; max-height:100%; max-width:100%; padding:0 1rem 1rem; object-fit:contain; object-position:center; background:transparent; border-radius:var(--r-sm); }
+.lb-nav{ z-index:1; position:absolute; top:50%; transform:translateY(-50%); width:48px; height:48px; border-radius:var(--r-full); background:rgba(255,255,255,.14); color:#fff; display:grid; place-items:center; }
 .lb-nav:hover{ background:rgba(255,255,255,.26); }
 .lb-prev{ left:1rem; } .lb-next{ right:1rem; }
-.lb-thumbs{ display:flex; gap:.5rem; overflow-x:auto; padding:1rem 1.25rem calc(1rem + env(safe-area-inset-bottom)); }
+.lb-thumbs{ flex:0 0 auto; display:flex; gap:.5rem; overflow-x:auto; padding:1rem 1.25rem calc(1rem + env(safe-area-inset-bottom)); }
 .lb-thumbs button{ flex:0 0 92px; aspect-ratio:4/3; border-radius:var(--r-sm); overflow:hidden; opacity:.5; transition:opacity var(--t-fast); }
 .lb-thumbs button[aria-current="true"]{ opacity:1; box-shadow:0 0 0 2px var(--gold); }
 .lb-thumbs img{ width:100%; height:100%; object-fit:cover; }
@@ -1056,12 +1056,12 @@ a.chip:hover{ border-color:var(--navy-300); color:var(--navy); }
 .footer-bottom{ margin-top:var(--sp-7); padding-top:var(--sp-5); border-top:1px solid rgba(255,255,255,.14); display:flex; justify-content:space-between; gap:var(--sp-4); flex-wrap:wrap; font-size:var(--step--2); }
 .footer-bottom nav{ display:flex; gap:1.2rem; flex-wrap:wrap; }
 .powered-by{
-  display:inline-flex; align-items:center; gap:.5rem; background:#fff; padding:.35rem .75rem;
+  display:inline-flex; align-items:center; gap:.5rem; background:transparent; padding:.2rem 0;
   border-radius:var(--r-full); opacity:.9; transition:opacity var(--t-fast), transform var(--t-fast);
 }
 .powered-by:hover{ opacity:1; transform:translateY(-1px); }
-.powered-by span{ font-size:var(--step--2); color:var(--ink-50); }
-.powered-by img{ height:14px; width:auto; display:block; background:transparent; }
+.powered-by span{ font-size:11px; color:rgba(255,255,255,.65); }
+.powered-by img{ content:url("../img/brand/igniter-ai-white-2026.png"); height:25px; width:86px; object-fit:cover; object-position:center; display:block; background:transparent; }
 .footer-demo{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:var(--r-md); padding:.85rem 1rem; margin-top:var(--sp-5); font-size:var(--step--2); line-height:1.6; }
 
 /* -------------------------------------------------------- 17. UTILIDADES */
@@ -1100,3 +1100,31 @@ body.no-scroll{ overflow:hidden; }
 .table-scroll .cmp-table thead th{ position:static; color:var(--navy); }
 .table-scroll .cmp-table tbody th{ width:auto; color:var(--navy); font-weight:600; }
 .table-scroll .cmp-table tbody tr:hover td{ background:transparent; }
+/* Public navigation: compact, legible controls and preserved destinations. */
+.site-header{background:rgba(255,255,255,.98);border-bottom:1px solid #e6e9ed}
+.header-inner{height:78px;gap:24px;width:min(100% - 40px,1440px)}
+.brand{gap:10px}
+.brand-icon{height:38px}
+.brand-word{height:45px}
+.nav-main{gap:3px}
+.nav-main>a,.nav-main>.nav-item>a{font:500 13px/1.4 Inter,sans-serif;padding:12px 13px;border-radius:8px;white-space:nowrap}
+.nav-main>.nav-item>a{padding-right:25px}
+.nav-main a::after{content:none}
+.nav-main>a:hover,.nav-main>.nav-item>a:hover,.nav-main a[aria-current="page"]{background:#f2f4f7;color:#09234b}
+.nav-main a[aria-current="page"]{font-weight:600}
+.nav-caret{right:7px;color:#738293}
+.nav-dropdown{padding:8px;min-width:240px;border:1px solid #e4e8ef;border-radius:12px;box-shadow:0 12px 32px #09234b16}
+.nav-dropdown a{font:500 13px/1.5 Inter,sans-serif;padding:12px}
+.header-actions>.btn{font:600 13px/1.4 Inter,sans-serif;border-radius:9px;padding:12px 20px;min-height:42px;background:#09234b;border-color:#09234b;color:white}
+.header-actions>.btn:hover{background:#173962;border-color:#173962}
+.burger{border-radius:10px;background:#f2f4f7}
+.mobile-nav{border-radius:18px 0 0 18px}
+.mobile-nav-body>a,.mnav-acc>summary{font:500 17px/1.5 Inter,sans-serif;padding:15px 16px;border-radius:10px}
+.mnav-acc-body a{font:400 14px/1.5 Inter,sans-serif;padding:11px 16px}
+.mobile-nav-body>a:hover,.mnav-acc>summary:hover{background:#f3f5f8}
+@media(max-width:1100px){.header-inner{gap:14px}.nav-main>a,.nav-main>.nav-item>a{font-size:12px;padding-inline:9px}.nav-main>.nav-item>a{padding-right:20px}.brand-word{height:36px}}
+@media(max-width:900px){.brand-word{display:block;height:34px}.brand-icon{height:32px}.header-inner{justify-content:space-between;height:64px}.header-actions{margin-left:auto}.mobile-nav-head img{height:38px!important}}
+.photo-credits{width:min(100% - 40px,1280px);margin:16px auto 0;font:400 11px/1.6 Inter,sans-serif;color:#c2cbd7}
+.photo-credits summary{cursor:pointer}.photo-credits p{font:inherit;margin-top:8px}.photo-credits a{text-decoration:underline}
+:root{--header-h:78px}
+@media(max-width:900px){:root{--header-h:64px}}

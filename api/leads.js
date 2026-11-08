@@ -112,6 +112,7 @@ async function guardarEnSupabase(lead) {
 }
 
 module.exports = async (req, res) => {
+  res.setHeader('Cache-Control', 'private, no-store');
   const origin = req.headers.origin;
   // CORS acotado al propio sitio: un formulario legítimo del sitio siempre
   // manda Origin; scripts de otros dominios que intenten llenar el
@@ -134,6 +135,20 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     res.status(405).json({ ok: false, error: 'method_not_allowed' });
     return;
+  }
+
+  if (origin && !esOrigenValido(origin)) {
+    return res.status(403).json({ ok: false, error: 'origen_no_permitido' });
+  }
+
+  const input = req.body;
+  if (!input || typeof input !== 'object' || Array.isArray(input) ||
+      Object.keys(input).some(k => ['__proto__', 'constructor', 'prototype'].includes(k)) ||
+      Object.values(input).some(v => v != null && !['string', 'number', 'boolean'].includes(typeof v))) {
+    return res.status(400).json({ ok: false, error: 'payload_invalido' });
+  }
+  if (Buffer.byteLength(JSON.stringify(input), 'utf8') > 65536) {
+    return res.status(413).json({ ok: false, error: 'payload_demasiado_grande' });
   }
 
   const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';

@@ -7,3 +7,27 @@ shots/
 __pycache__/
 .DS_Store
 .claude/
+
+admin/preview.html
+assets/js/admin-preview.js
+LOCAL-PREVIEW.md
+
+private-backups/
+
+/*.png
+.claude/
+
+.env*
+
+.git/
+
+.github/
+
+tests/
+
+*.sql
+README.md
+
+# Internal release notes and operations are never public assets.
+docs/
+/set-domain.sh

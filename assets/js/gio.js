@@ -262,17 +262,16 @@
         '<a class="pcard-link" href="' + href + '" data-track-select="' + esc(p.id) + '" aria-label="Ver ' + esc(p.titulo) + '"></a>' +
         '<div class="pcard-media">' +
           '<img src="' + url(p.foto_card) + '" alt="' + esc(p.titulo) + ' — oficina corporativa en Santa Fe, CDMX" loading="lazy" decoding="async" width="640" height="480">' +
-          '<div class="pcard-badges"><span class="badge badge--destacada">Destacada</span></div>' +
+          '<div class="pcard-badges"><span class="badge badge--renta">Renta</span></div>' +
         '</div>' +
         '<div class="pcard-body">' +
-          '<p class="pcard-kicker">' + esc(p.tipo_label) + ' · Santa Fe</p>' +
+          '<div class="pcard-price">' + '$' + Number(p.precio).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) + ' <span class="cur">MXN / mes</span></div>' +
           '<h3 class="pcard-title">' + esc(p.titulo) + '</h3>' +
           '<div class="pcard-specs pcard-specs--text">' +
-            '<span>' + ICON.area + num(p.m2c) + ' m²</span>' +
+            '<span>' + ICON.area + Number(p.m2c).toLocaleString('en-US', {maximumFractionDigits:2}) + ' m²</span>' +
             '<span>' + ICON.car + p.est + ' estacionamientos</span>' +
             '<span>' + ICON.layers + p.privados + ' privados</span>' +
           '</div>' +
-          '<div class="pcard-price pcard-price--consult">' + esc(p.operacion_label) + '</div>' +
         '</div>' +
         '<div class="pcard-actions">' +
           '<a class="btn btn--ghost btn--sm" href="' + href + '">Ver propiedad</a>' +
@@ -296,7 +295,7 @@
       specs.push('<span aria-label="' + banVal + ' baños">' + ICON.bath + banVal + '</span>');
     }
     if (p.est) specs.push('<span aria-label="' + p.est + ' estacionamientos">' + ICON.car + p.est + '</span>');
-    if (p.m2c) specs.push('<span aria-label="' + num(p.m2c) + ' metros cuadrados de construcción">' + ICON.area + num(p.m2c) + ' m²</span>');
+    if (p.m2c) specs.push('<span aria-label="' + num(p.m2c) + ' metros cuadrados de construcción">' + ICON.area + Number(p.m2c).toLocaleString('en-US', {maximumFractionDigits:2}) + ' m²</span>');
     else if (p.m2t) specs.push('<span aria-label="' + num(p.m2t) + ' metros cuadrados de terreno">' + ICON.area + num(p.m2t) + ' m² terreno</span>');
 
     var precioBase = money(p.precio, p.moneda).replace(' USD', '');
@@ -590,6 +589,27 @@
     return l;
   }
 
+  // Paginate the compact catalog while retaining the complete map result set.
+  function renderPropertyResults(host, list) {
+    var paginated = document.body.dataset.compact === 'propiedades';
+    var size = paginated ? 8 : Math.max(1, list.length), page = 0;
+    function render(moveFocus) {
+      var pages = Math.ceil(list.length / size);
+      host.innerHTML = '<div class="card-grid">' + list.slice(page * size, (page + 1) * size).map(cardHTML).join('') + '</div>';
+      if (pages > 1) {
+        var nav = document.createElement('nav');
+        nav.className = 'catalog-pagination'; nav.setAttribute('aria-label', 'Páginas de propiedades');
+        nav.innerHTML = '<button type="button" class="btn btn--ghost" data-page-prev '+(page === 0 ? 'disabled' : '')+'>Anterior</button><span role="status">'+(page+1)+' de '+pages+'</span><button type="button" class="btn btn--ghost" data-page-next '+(page === pages-1 ? 'disabled' : '')+'>Siguiente</button>';
+        host.appendChild(nav);
+        on($('[data-page-prev]', nav), 'click', function () { page--; render(true); });
+        on($('[data-page-next]', nav), 'click', function () { page++; render(true); });
+      }
+      syncFavUI(); syncCmpUI();
+      if (moveFocus) { host.setAttribute('tabindex', '-1'); host.focus({preventScroll:true}); host.scrollIntoView({block:'start'}); }
+    }
+    render(false);
+  }
+
   function initResults() {
     var root = $('#resultados'); if (!root) return;
     RES.filtros = readQuery();
@@ -612,7 +632,7 @@
           '<a class="btn" href="' + waLink(null) + '" target="_blank" rel="noopener" data-wa-global="empty_results">Pedir ayuda a Gio</a></div></div>';
         on($('#clearAll2'), 'click', clearAll);
       } else {
-        listEl.innerHTML = '<div class="card-grid">' + list.map(function (p) { return cardHTML(p); }).join('') + '</div>';
+        renderPropertyResults(listEl, list);
       }
 
       renderActive();
@@ -1137,9 +1157,8 @@
         });
         RES.lista = sortList(list, RES.orden);
         var le = $('#resList'), ce = $('#resCount');
-        if (le) le.innerHTML = RES.lista.length
-          ? '<div class="card-grid">' + RES.lista.map(function (p) { return cardHTML(p); }).join('') + '</div>'
-          : '<div class="empty">' + ICON.search + '<h3>No hay propiedades en esta zona del mapa</h3><p>Desplaza o aleja el mapa para ver más opciones.</p></div>';
+        if (le && RES.lista.length) renderPropertyResults(le, RES.lista);
+        else if (le) le.innerHTML = '<div class="empty">' + ICON.search + '<h3>No hay propiedades en esta zona del mapa</h3><p>Desplaza o aleja el mapa para ver más opciones.</p></div>';
         if (ce) ce.innerHTML = '<b>' + RES.lista.length + '</b> propiedades en esta zona <span class="muted small">de Ciudad de México</span>';
         syncFavUI(); syncCmpUI();
       } else {

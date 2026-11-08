@@ -74,12 +74,7 @@ def es_heic_real(url):
 
 def main():
     if not SUPABASE_URL or not SERVICE_KEY:
-        # Todavía no hay proyecto de Supabase conectado — no es un error,
-        # el sitio sigue funcionando solo con el inventario de EasyBroker.
-        write_data_props_manual([])
-        print("Supabase no configurado (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY vacíos) — "
-              "data_props_manual.py se deja vacío.")
-        return
+        sys.exit("Faltan credenciales Supabase; se conserva el inventario anterior.")
 
     rows = sb_get("/rest/v1/propiedades_manual", {
         "estado": "eq.disponible",
@@ -89,6 +84,8 @@ def main():
 
     props, warnings = [], []
     for row in rows:
+        if row["id"] == "bae806c9-33a4-501e-8322-708ea1075d4f":
+            continue  # Santa Fe tiene una landing curada; evitar duplicarla.
         colonia = COLONIA_TODAS_BY_SLUG.get(row.get("colonia_slug"))
         if not colonia:
             # No esta en el catalogo de colonias con pagina propia -- normal

@@ -12,7 +12,7 @@ window.GF_CONFIG = {
   googleMapsKey: "AIzaSyC4QYbTXnHFZ6jj4Ns3y2y3_uwUnn7TNSI",
 
   /* --- WhatsApp ---------------------------------------------------------- */
-  whatsapp: "5215544876074",
+  whatsapp: "5215539624239",
 
   /* --- Analítica ---------------------------------------------------------
      Al declarar estos IDs, agrega los snippets de GTM/GA4 en el <head>.
@@ -40,3 +40,17 @@ window.gfSendToCRM = async function (lead) {
     body: JSON.stringify(lead),
   });
 };
+
+// Site-wide published appearance, with the original assets as an offline fallback.
+(function(){var script=document.createElement('script');script.src='/assets/js/site-brand.js?v=1';document.head.appendChild(script);})();
+
+// Keep the agency credit destination consistent across generated pages.
+(function () {
+  function updateAgencyLink() {
+    document.querySelectorAll('a.powered-by').forEach(function (link) {
+      link.href = 'https://ignitersystems.com/';
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', updateAgencyLink);
+  else updateAgencyLink();
+})();

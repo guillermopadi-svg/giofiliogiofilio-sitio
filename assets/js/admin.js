@@ -9,8 +9,9 @@
   'use strict';
 
   var CFG = window.GF_ADMIN_CONFIG || {};
-  var SUPABASE_READY = !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
-  var sb = SUPABASE_READY ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey) : null;
+  var PREVIEW = !!window.GF_PREVIEW_CLIENT;
+  var SUPABASE_READY = PREVIEW || !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
+  var sb = window.GF_PREVIEW_CLIENT || (SUPABASE_READY ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey) : null);
 
   var AMENIDADES = [];       // se llena desde assets/data/amenidades.json
   var AMENIDAD_LABEL = {};
@@ -125,6 +126,7 @@
     $('#userRole').textContent = esAdmin ? 'Admin' : (STATE.perfil && STATE.perfil.rol === 'administrativo' ? 'Administrativo' : 'Asesor');
     actualizarSaludo();
     $('#tabEquipo').hidden = !esAdmin;
+    $('#syncGhlBtn').hidden = !esAdmin;
     cargarPropiedades();
     cargarLeads();
     cargarTareas();
@@ -143,6 +145,7 @@
     sb.from('perfiles').select('id,nombre,email,activo').eq('activo', true).then(function (res) {
       if (res.error) { console.warn('[Panel] no se pudo cargar el equipo:', res.error.message); return; }
       STATE.equipo = res.data || [];
+      renderTareas();
       llenarFiltroAsesorContactos();
     });
   }
@@ -173,7 +176,7 @@
   // trigger handle_new_user() rechazó el correo por no estar invitado), se
   // muestra un aviso claro en vez de dejar la URL con un error crudo.
   function mostrarErrorDeAuthSiHay() {
-    if (!/error=/.test(location.hash || '')) return false;
+    if (!window.GF_ADMIN_NAV.hasAuthError()) return false;
     var errBox = $('#loginError');
     errBox.textContent = 'No pudimos iniciar tu sesión. Si tu correo no ha sido invitado, pídele a Gio que te agregue primero en "Equipo".';
     errBox.classList.add('show');
@@ -196,6 +199,7 @@
         return;
       }
       showApp();
+      setView(PREVIEW && !location.hash ? 'tareas' : window.GF_ADMIN_NAV.current(), true);
     });
   }
 
@@ -210,8 +214,8 @@
   // --------------------------------------------------------------- GRID
   function renderStats() {
     var disponibles = STATE.propiedades.filter(function (p) { return p.estado === 'disponible'; });
-    var venta = disponibles.filter(function (p) { return p.operacion === 'venta'; }).length;
-    var renta = disponibles.filter(function (p) { return p.operacion === 'renta'; }).length;
+    var venta = disponibles.filter(function (p) { return p.operacion === 'venta' || (p.operaciones || []).includes('venta'); }).length;
+    var renta = disponibles.filter(function (p) { return p.operacion === 'renta' || (p.operaciones || []).includes('renta'); }).length;
     var borradores = STATE.propiedades.filter(function (p) { return p.estado === 'borrador'; }).length;
     var pausadas = STATE.propiedades.filter(function (p) { return p.estado === 'pausada'; }).length;
     $('#statTotal').textContent = STATE.propiedades.length;
@@ -373,8 +377,8 @@
 
   function inicioInventarioHtml() {
     var disponibles = STATE.propiedades.filter(function (p) { return p.estado === 'disponible'; });
-    var venta = disponibles.filter(function (p) { return p.operacion === 'venta'; }).length;
-    var renta = disponibles.filter(function (p) { return p.operacion === 'renta'; }).length;
+    var venta = disponibles.filter(function (p) { return p.operacion === 'venta' || (p.operaciones || []).includes('venta'); }).length;
+    var renta = disponibles.filter(function (p) { return p.operacion === 'renta' || (p.operaciones || []).includes('renta'); }).length;
     var borradores = STATE.propiedades.filter(function (p) { return p.estado === 'borrador'; }).length;
     var pausadas = STATE.propiedades.filter(function (p) { return p.estado === 'pausada'; }).length;
     return (
@@ -450,7 +454,11 @@
     for (var k in rep) s = s.split(k).join(rep[k]);
     return s.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   }
+  function operacionPropiedad(p) { return p.operaciones && p.operaciones.length > 1 ? 'Venta y renta' : (p.operacion === 'renta' ? 'Renta' : 'Venta'); }
+  function precioPropiedad(p) { return p.precio_consultar ? 'Precio a consultar' : nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : ''); }
   function urlPublicacion(p) {
+    if (p.id === SANTA_FE_PANEL_ID) return 'https://www.giofilio.com/propiedades/oficina-espacio-santa-fe-piso-18/';
+    if (p.public_url && /^https:\/\/www\.giofilio\.com\//.test(p.public_url)) return p.public_url;
     var detalleParte = '';
     if (p.titulo && p.titulo.indexOf(' con ') !== -1) {
       var partes = p.titulo.split(' con ');
@@ -525,13 +533,15 @@
       ? '<button type="button" class="user-menu-item" data-toggle-pausa="' + p.id + '">' + (p.estado === 'pausada' ? 'Activar' : 'Pausar') + '</button>'
       : '';
     var verLink = p.estado === 'disponible'
-      ? '<a class="btn btn--ghost" href="' + esc(urlPublicacion(p)) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">Ver en sitio</a>'
+      ? (PREVIEW && !p.public_url
+        ? '<button type="button" class="btn btn--ghost" disabled title="Propiedad de ejemplo: no tiene una publicación real">Ver en sitio</button>'
+        : '<a class="btn btn--ghost" href="' + esc(urlPublicacion(p)) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">Ver en sitio</a>')
       : '';
     // Etiqueta de origen: una ficha con easybroker_id viene de la
     // sincronizacion diaria con EasyBroker (RE/MAX Blue) -- se avisa si
     // sigue recibiendo esos cambios automaticos o si ya se edito a mano
     // (y por lo tanto dejo de recibirlos, ver saveProperty()).
-    var origenBadge = '';
+    var origenBadge = p.destacada ? '<span class="pcard-tag">★ Destacada</span>' : '';
     var reactivarItem = '';
     if (p.easybroker_id) {
       if (p.bloqueado_por_panel) {
@@ -565,15 +575,15 @@
     var estadoInfo = pcardStatusInfo(p);
     var metas = pcardMetaIconos(p);
     return (
-      '<div class="pcard" data-id="' + p.id + '" data-abrir-detalle="' + p.id + '">' +
-        '<div class="pcard-media"><span class="pcard-badge">' + (p.operacion === 'renta' ? 'Renta' : 'Venta') + '</span>' +
+      '<div class="pcard" tabindex="0" role="button" data-id="' + p.id + '" data-abrir-detalle="' + p.id + '">' +
+        '<div class="pcard-media"><span class="pcard-badge">' + operacionPropiedad(p) + '</span>' +
           (foto ? '<img src="' + esc(foto) + '" alt="" loading="lazy">' : '') +
         '</div>' +
         '<div class="pcard-body">' +
           '<div class="pcard-title">' + esc(p.titulo || 'Sin título') + '</div>' +
           '<div class="pcard-meta-loc">' + ICON_PIN + '<span>' + esc(propiedadColoniaLabel(p)) + '</span></div>' +
           '<div class="pcard-meta">' + metas.map(function (m) { return '<span class="pcard-meta-item">' + m.icon + m.text + '</span>'; }).join('') + '</div>' +
-          '<div class="pcard-price">' + nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') + '</div>' +
+          '<div class="pcard-price">' + precioPropiedad(p) + '</div>' +
           (acc.origenBadge ? '<div class="pcard-origen">' + acc.origenBadge + '</div>' : '') +
           '<div class="pcard-foot">' +
             '<span class="pcard-status pcard-status--' + estadoInfo.clase + '">' + estadoInfo.icon + estadoInfo.label + '</span>' +
@@ -600,9 +610,9 @@
         '<div class="prow-media">' + (foto ? '<img src="' + esc(foto) + '" alt="" loading="lazy">' : '') + '</div>' +
         '<div class="prow-body">' +
           '<div class="prow-main">' +
-            '<span class="prow-price">' + nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') + '</span>' +
+            '<span class="prow-price">' + precioPropiedad(p) + '</span>' +
             '<span class="prow-title">' + esc(p.titulo || 'Sin título') + '</span>' +
-            '<span class="prow-badge">' + (p.operacion === 'renta' ? 'Renta' : 'Venta') + '</span>' +
+            '<span class="prow-badge">' + operacionPropiedad(p) + '</span>' +
             '<span class="pcard-status pcard-status--' + estadoInfo.clase + '">' + estadoInfo.icon + estadoInfo.label + '</span>' +
             (acc.origenBadge ? acc.origenBadge : '') +
           '</div>' +
@@ -622,9 +632,9 @@
   // forma de guardar cambios. "Editar" en el pie abre ese mismo modal.
   function infoDrawerCampos(p) {
     var campos = [
-      { lbl: 'Precio', val: nf.format(p.precio || 0) + (p.operacion === 'renta' ? ' /mes' : '') },
+      { lbl: 'Precio', val: precioPropiedad(p) },
       { lbl: 'Tipo de propiedad', val: TIPO_LABEL_PROP[p.tipo] || p.tipo },
-      { lbl: 'Operación', val: p.operacion === 'renta' ? 'Renta' : 'Venta' },
+      { lbl: 'Operación', val: operacionPropiedad(p) },
       { lbl: 'Estado', val: pcardStatusInfo(p).label },
     ];
     if (p.rec) campos.push({ lbl: 'Recámaras', val: p.rec });
@@ -663,12 +673,14 @@
     STATE.propDrawerTab = 'info';
     STATE.propDrawerFotoIdx = 0;
     $('#propDrawer').hidden = false;
+    $$('.pcard').forEach(function(card) { card.classList.toggle('is-selected', card.dataset.id === id); });
     renderDetalleProp();
   }
 
   function cerrarDetalleProp() {
     STATE.propDrawerId = null;
     $('#propDrawer').hidden = true;
+    $$('.pcard').forEach(function(card) { card.classList.remove('is-selected'); });
   }
 
   var PROP_DRAWER_TABS = [
@@ -708,7 +720,15 @@
     if (STATE.propDrawerTab === 'actividad' && !comentariosDe('propiedad', p.id)) cargarHilo('propiedad', p.id);
 
     $('#drawerVerBtn').hidden = p.estado !== 'disponible';
-    if (p.estado === 'disponible') $('#drawerVerBtn').href = urlPublicacion(p);
+    if (PREVIEW && !p.public_url) {
+      $('#drawerVerBtn').removeAttribute('href');
+      $('#drawerVerBtn').setAttribute('aria-disabled', 'true');
+      $('#drawerVerBtn').title = 'Propiedad de ejemplo: no tiene una publicación real';
+    } else if (p.estado === 'disponible') {
+      $('#drawerVerBtn').removeAttribute('aria-disabled');
+      $('#drawerVerBtn').title = 'Ver publicación';
+      $('#drawerVerBtn').href = urlPublicacion(p);
+    }
     var acc = pcardAcciones(p);
     $('#drawerMasDropdown').innerHTML = acc.menuItems;
     $('#drawerEditarBtn').dataset.edit = p.id;
@@ -750,7 +770,7 @@
     sel.hidden = !esAdmin;
     if (!esAdmin) return;
     var actual = sel.value;
-    sel.innerHTML = '<option value="">Todo asesor</option>' + (STATE.equipo || []).map(function (a) {
+    sel.innerHTML = '<option value="">Todo asesor</option><option value="sin_asignar">Sin asignar</option>' + (STATE.equipo || []).map(function (a) {
       return '<option value="' + a.id + '">' + esc(a.nombre || a.email) + '</option>';
     }).join('');
     sel.value = actual;
@@ -765,7 +785,7 @@
     var precioMin = Number($('#propFiltroPrecioMin').value) || 0;
     var precioMax = Number($('#propFiltroPrecioMax').value) || Infinity;
     var lista = STATE.propiedades.filter(function (p) {
-      if (operacion && p.operacion !== operacion) return false;
+      if (operacion && p.operacion !== operacion && !(p.operaciones || []).includes(operacion)) return false;
       if (tipo && p.tipo !== tipo) return false;
       if (estado && p.estado !== estado) return false;
       if (asesor && p.asesor_id !== asesor) return false;
@@ -779,6 +799,7 @@
     var orden = $('#propOrden').value;
     if (orden === 'precio-desc') lista.sort(function (a, b) { return (b.precio || 0) - (a.precio || 0); });
     else if (orden === 'precio-asc') lista.sort(function (a, b) { return (a.precio || 0) - (b.precio || 0); });
+    if (!orden || orden === 'recientes') lista.sort(function(a,b){return Number(!!b.destacada)-Number(!!a.destacada);});
     return lista;
   }
 
@@ -838,7 +859,18 @@
     renderStats();
   }
 
+  var SANTA_FE_PANEL_ID = "bae806c9-33a4-501e-8322-708ea1075d4f";
+  var santaFeEnsured = false;
   function cargarPropiedades() {
+    if (!PREVIEW && !santaFeEnsured && STATE.perfil && STATE.perfil.rol === 'admin') {
+      santaFeEnsured = true;
+      fetch('/api/landing-gallery', {method:'POST',headers:{Authorization:'Bearer '+STATE.session.access_token}})
+        .then(function(r){if(!r.ok)throw new Error('No se pudo vincular Santa Fe al panel');})
+        .catch(function(err){toast(err.message,'err');})
+        .then(cargarPropiedades);
+      return;
+    }
+
     var esAdmin = STATE.perfil && STATE.perfil.rol === 'admin';
     var q = sb.from('propiedades_manual').select('*').order('creado_en', { ascending: false });
     // Un asesor no-admin solo ve sus propias fichas EN EL PANEL (aunque las
@@ -853,6 +885,9 @@
         return;
       }
       STATE.propiedades = res.data || [];
+      STATE.propiedades.forEach(function(p){if(p.id===SANTA_FE_PANEL_ID)p.m2c=1085.50;});
+      renderTareas();
+      if (STATE.tareaSeleccionada) renderDetalleTarea();
       llenarFiltroTipoPropiedades();
       llenarFiltroAsesorPropiedades();
       renderGrid();
@@ -938,6 +973,11 @@
     } else {
       $('#propActividadCont').innerHTML = '';
     }
+    var photosOnly = !!(prop && prop.id === SANTA_FE_PANEL_ID);
+    $$('#modalBackdrop input:not([type="file"]), #modalBackdrop select, #modalBackdrop textarea, #modalBackdrop .op-toggle button').forEach(function(el){el.disabled=photosOnly;});
+    $('#saveDraftBtn').hidden = photosOnly;
+    $('#publishBtn').textContent = photosOnly ? 'Guardar fotos' : 'Publicar';
+    if(photosOnly){$('#modalTitle').textContent='Fotos de Espacio Santa Fe';$('#f_detalle_hint').textContent='Puedes agregar o quitar fotos. Los datos de esta ficha especial se conservan.';}
     $('#modalBackdrop').classList.add('is-open');
   }
 
@@ -981,14 +1021,15 @@
     }).catch(function () { return false; });
   }
 
-  // heic2any decodifica HEIC/HEIF por software (WASM) — funciona igual en
-  // Chrome/Android/Windows que en Safari, a diferencia del truco anterior
-  // (dibujar en un <canvas>) que solo servía en navegadores que YA sabían
-  // leer HEIC de forma nativa (básicamente solo Safari).
+  // Same current software decoder as the property submission form.
+  // Decode by content even when a HEIC file was renamed to .jpg.
   function convertirHeicAJpeg(file) {
-    return window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 }).then(function (resultado) {
+    return import('./vendor/heic-to-1.5.2.js').then(function (decoder) {
+      return decoder.heicTo({ blob: file, type: 'image/jpeg', quality: 0.85 });
+    }).then(function (resultado) {
       var blob = Array.isArray(resultado) ? resultado[0] : resultado;
-      return new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+      if (!blob || !blob.size || blob.type !== 'image/jpeg') throw new Error('Conversión incompleta');
+      return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
     });
   }
 
@@ -1028,7 +1069,7 @@
 
   function handleFiles(files) {
     if (!SUPABASE_READY) { toast('Conecta Supabase para poder subir fotos', 'err'); return; }
-    var lista = Array.prototype.filter.call(files, function (f) { return /^image\//.test(f.type) || esHeicPorNombre(f); });
+    var lista = Array.prototype.filter.call(files, function (f) { return /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name); });
     if (!lista.length) return;
     avisoFoto(null);
     STATE._subiendo = true;
@@ -1037,13 +1078,9 @@
     var carpeta = STATE.session.user.id + '/' + (STATE.editingId || ('tmp-' + Date.now()));
     Promise.all(lista.map(function (file) {
       return detectarHeicPorContenido(file).then(function (esHeicReal) {
-        var prep = esHeicReal
+        var prep = (esHeicReal || esHeicPorNombre(file))
           ? convertirHeicAJpeg(file).catch(function () {
-              avisoFoto(
-                'No pudimos abrir "' + file.name + '" — el archivo sigue siendo HEIC por dentro aunque su nombre diga .jpg (pasa cuando la app de Fotos solo lo renombra, sin convertirlo de verdad), y este navegador no puede leerlo. ' +
-                'Solución más fácil: en tu iPhone ve a Ajustes → Cámara → Formatos, y cambia a "Más compatible" — así las fotos nuevas ya se guardan en JPG real y este problema no vuelve a pasar. ' +
-                'Para esta foto en particular, mándatela por WhatsApp y descarga la que te llega (esa sí queda convertida), y vuelve a subirla aquí.'
-              );
+              avisoFoto('No se pudo convertir "' + file.name + '". Intenta subir el archivo original HEIC o exportarlo como JPEG desde Fotos. Las demás fotos se conservan.');
               return null;
             })
           : limpiarExifJpeg(file);
@@ -1055,6 +1092,9 @@
           if (res.error) { toast('No se pudo subir ' + f.name + ': ' + res.error.message, 'err'); return null; }
           return sb.storage.from('propiedades-manual').getPublicUrl(ruta).data.publicUrl;
         });
+      }).catch(function () {
+        avisoFoto('No se pudo subir "' + file.name + '". Inténtalo de nuevo. Las demás fotos se conservan.');
+        return null;
       });
     })).then(function (urls) {
       urls.filter(Boolean).forEach(function (u) { STATE.fotos.push(u); });
@@ -1084,6 +1124,7 @@
   }
 
   function avisarRebuild() {
+    if (PREVIEW) return;
     if (!STATE.session) return;
     fetch('/api/rebuild', {
       method: 'POST',
@@ -1092,6 +1133,17 @@
   }
 
   function saveProperty(publicar) {
+    if(STATE.editingId === SANTA_FE_PANEL_ID){
+      if(STATE._subiendo){toast('Espera a que terminen de subir las fotos','err');return;}
+      if(!STATE.fotos.length){toast('Conserva al menos una foto','err');return;}
+      var photoBtn=$('#publishBtn');setBusy(photoBtn,true,'Guardando…');
+      sb.from('propiedades_manual').update({fotos:STATE.fotos.slice()}).eq('id',SANTA_FE_PANEL_ID).select('id').then(function(res){
+        setBusy(photoBtn,false,'Guardar fotos');
+        if(res.error || !res.data || !res.data.length){toast('No se pudieron guardar las fotos','err');return;}
+        closeModal();toast('Fotos guardadas. Ya están disponibles en la galería.');cargarPropiedades();
+      });return;
+    }
+
     if (!$('#f_colonia').value) {
       toast('Elige la colonia de la propiedad', 'err');
       return;
@@ -1127,6 +1179,7 @@
   }
 
   function togglePausa(id) {
+    if(id===SANTA_FE_PANEL_ID){toast("Esta ficha especial permite administrar sus fotos desde Editar.");return;}
     var p = STATE.propiedades.filter(function (x) { return x.id === id; })[0];
     if (!p) return;
     var nuevoEstado = p.estado === 'pausada' ? 'disponible' : 'pausada';
@@ -1142,6 +1195,7 @@
   }
 
   function deleteProperty(id) {
+    if(id===SANTA_FE_PANEL_ID){toast("Esta ficha especial permite administrar sus fotos desde Editar.");return;}
     if (!confirm('¿Eliminar esta propiedad? Esta acción no se puede deshacer.')) return;
     sb.from('propiedades_manual').delete().eq('id', id).then(function (res) {
       if (res.error) {
@@ -1157,7 +1211,9 @@
   // --------------------------------------------------------------- TABS
   var VISTAS = ['inicio', 'propiedades', 'contactos', 'tareas', 'solicitudes', 'estimador', 'documentos', 'equipo', 'configuracion'];
 
-  function setView(view) {
+  function setView(view, replace) {
+    if (VISTAS.indexOf(view) < 0) view = 'inicio';
+    window.GF_ADMIN_NAV.write(view, !!replace);
     VISTAS.forEach(function (v) {
       var main = $('#view' + v.charAt(0).toUpperCase() + v.slice(1));
       if (main) main.hidden = view !== v;
@@ -1169,7 +1225,22 @@
     });
     $('#addPropBtnFab').style.display = view === 'propiedades' && STATE.propiedades.length ? 'inline-flex' : 'none';
     if (view === 'documentos') mostrarDocLanding();
+    if (view === 'configuracion') renderConfiguracion();
     cerrarSidebarMovil();
+  }
+
+  window.GF_ADMIN_NAV.listen(function (view) {
+    if (STATE.session && STATE.perfil) setView(view, true);
+  });
+
+  function renderConfiguracion() {
+    var perfil = STATE.perfil || {};
+    var user = STATE.session && STATE.session.user;
+    $('#settingsName').textContent = perfil.nombre || 'Sin nombre';
+    $('#settingsEmail').textContent = user && user.email || '—';
+    $('#settingsRole').textContent = {admin:'Admin', administrativo:'Administrativo', asesor:'Asesor'}[perfil.rol] || 'Sin rol asignado';
+    $('#settingsTeam').hidden = perfil.rol !== 'admin';
+    if (window.GF_BRAND_EDITOR) window.GF_BRAND_EDITOR.open(perfil.rol === 'admin', function () { return sb.auth.getSession().then(function (r) { return r.data.session && r.data.session.access_token; }); });
   }
 
   // El sidebar es fijo en escritorio; en pantallas angostas se vuelve un
@@ -1187,13 +1258,15 @@
   // --------------------------------------------------------------- DOCUMENTOS
   function mostrarDocLanding() {
     $('#docLanding').hidden = false;
-    $('#docDetail').hidden = true;
+    $('#docDetail').hidden = false;
+    abrirDocCategoria('doc-cat-res-contratos');
   }
   function abrirDocCategoria(targetId) {
     $$('.doc-section', $('#docDetail')).forEach(function (sec) { sec.hidden = sec.id !== targetId; });
-    $('#docLanding').hidden = true;
+    $('#docLanding').hidden = false;
     $('#docDetail').hidden = false;
-    $('#docDetail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $$('.doc-cat-card').forEach(function(card) { card.classList.toggle('is-selected', card.dataset.docTarget === targetId); });
+    document.dispatchEvent(new CustomEvent('gf:doc-category', { detail: targetId }));
   }
   function wireDocumentos() {
     $$('.doc-cat-card').forEach(function (card) {
@@ -1216,7 +1289,7 @@
 
   function tareaVencidaP(t) {
     if (!t.vence) return false;
-    var d = new Date(t.vence);
+    var d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(t.vence) ? t.vence + 'T00:00:00' : t.vence);
     return t.estado === 'pendiente' && !isNaN(d) && d < new Date(new Date().toDateString());
   }
 
@@ -1250,32 +1323,15 @@
 
   // ------------------------------------------------------ BARRA LATERAL
   function tareaSidebarItemHtml(t) {
-    var vencida = tareaVencidaP(t);
     var hecha = t.estado === 'hecha';
-    var venceTexto = t.vence ? formatFechaCorta(t.vence) : '';
-    var activa = STATE.tareaSeleccionada === t.id;
-    var comentarios = comentariosDe('tarea', t.id);
-    var relacion = t.propiedad_id ? nombrePropiedad(t.propiedad_id) : (t.lead_id ? nombreLead(t.lead_id) : '');
-    return (
-      '<div class="tasks-channel-item' + (activa ? ' is-active' : '') + (hecha ? ' is-hecha' : '') + '" data-select-tarea="' + t.id + '">' +
-        '<button type="button" class="tasks-channel-check' + (hecha ? ' is-checked' : '') + '" data-toggle-tarea="' + t.id + '" title="' + (hecha ? 'Marcar como pendiente' : 'Marcar como hecha') + '">' +
-          (hecha ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>' : '') +
-        '</button>' +
-        '<div class="tasks-channel-body">' +
-          '<div class="tasks-channel-title">' + esc(t.titulo) + '</div>' +
-          '<div class="tasks-channel-meta">' +
-            '<span>' + esc(nombrePerfil(t.asesor_id)) + '</span>' +
-            (relacion ? '<span>· ' + esc(relacion) + '</span>' : '') +
-            (venceTexto ? '<span class="' + (vencida ? 'is-vencida' : '') + '">· ' + (vencida ? 'Venció ' : '') + venceTexto + '</span>' : '') +
-          '</div>' +
-        '</div>' +
-        '<div class="tasks-channel-badges">' +
-          (t.prioridad === 'alta' && !hecha ? '<span class="tasks-channel-dot" title="Prioridad alta"></span>' : '') +
-          (tareaTieneMencionSinLeer(t.id) ? '<span class="tasks-channel-dot tasks-channel-dot--mencion" title="Te mencionaron"></span>' : '') +
-          (comentarios && comentarios.length ? '<span class="tasks-channel-count">' + comentarios.length + '</span>' : '') +
-        '</div>' +
-      '</div>'
-    );
+    var responsable = nombrePerfil(t.asesor_id);
+    var relacion = [nombrePropiedad(t.propiedad_id), nombreLead(t.lead_id)].filter(Boolean).join(' · ');
+    return '<div class="tasks-channel-item' + (STATE.tareaSeleccionada === t.id ? ' is-active' : '') + (hecha ? ' is-hecha' : '') + '">' +
+      '<div class="task-name-cell"><button type="button" class="tasks-channel-check' + (hecha ? ' is-checked' : '') + '" data-toggle-tarea="' + esc(t.id) + '" aria-label="' + (hecha ? 'Reabrir: ' : 'Completar: ') + esc(t.titulo) + '">' + (hecha ? '✓' : '') + '</button>' +
+      '<button type="button" class="task-open" data-select-tarea="' + esc(t.id) + '"><span class="tasks-channel-title">' + esc(t.titulo) + (tareaTieneMencionSinLeer(t.id) ? ' <span class="task-unread" title="Mención sin leer">●</span>' : '') + '</span><span class="tasks-channel-meta">' + esc(relacion || 'Sin vínculo') + '</span></button></div>' +
+      '<span class="task-owner"><span class="task-avatar">' + esc(iniciales(responsable)) + '</span><span>' + esc(responsable) + '</span></span>' +
+      '<span class="task-date' + (tareaVencidaP(t) ? ' is-overdue' : '') + '">' + esc(t.vence ? formatFechaCorta(t.vence) : 'Sin fecha') + '</span>' +
+      '<span class="task-priority priority-' + (['alta','baja','normal'].indexOf(t.prioridad) >= 0 ? t.prioridad : 'normal') + '">' + esc(PRIORIDAD_LABEL[t.prioridad] || 'Normal') + '</span></div>';
   }
 
   function tareaTieneMencionSinLeer(id) {
@@ -1407,7 +1463,7 @@
       if (res.error) { console.warn('[Panel] no se pudo cargar la actividad:', res.error.message); return; }
       STATE.hilos[hiloKey(entidad, id)] = res.data || [];
       marcarComentariosLeidos(cfg.tabla, res.data || []);
-      if (entidad === 'tarea') { delete STATE.tareasConMencionSinLeer[id]; renderTareas(); }
+      if (entidad === 'tarea') { delete STATE.tareasConMencionSinLeer[id]; $('#statMencionesSinLeer').textContent = Object.keys(STATE.tareasConMencionSinLeer).length; renderTareas(); }
       var cont = contenedorHilo(entidad, id);
       if (cont) cont.innerHTML = hiloHtml(entidad, id);
     });
@@ -1481,8 +1537,8 @@
 
   function relacionChipsHtml(t) {
     var chips = '';
-    if (t.propiedad_id && nombrePropiedad(t.propiedad_id)) chips += '<span class="tasks-chip">🏠 ' + esc(nombrePropiedad(t.propiedad_id)) + '</span>';
-    if (t.lead_id && nombreLead(t.lead_id)) chips += '<span class="tasks-chip">👤 ' + esc(nombreLead(t.lead_id)) + '</span>';
+    if (t.propiedad_id && nombrePropiedad(t.propiedad_id)) chips += '<button type="button" class="tasks-chip" data-task-property="' + esc(t.propiedad_id) + '">Propiedad · ' + esc(nombrePropiedad(t.propiedad_id)) + ' ↗</button>';
+    if (t.lead_id && nombreLead(t.lead_id)) chips += '<button type="button" class="tasks-chip" data-task-lead="' + esc(t.lead_id) + '">Contacto · ' + esc(nombreLead(t.lead_id)) + ' ↗</button>';
     return chips;
   }
 
@@ -1532,6 +1588,8 @@
 
   function cerrarDetalleTarea() {
     $('#tasksApp').classList.remove('is-detalle');
+    STATE.tareaSeleccionada = null;
+    renderTareas();
   }
 
   function renderDetalleTarea() {
@@ -1664,9 +1722,13 @@
     if (miId && (row.menciones || []).indexOf(miId) !== -1) cargarNotificaciones();
   }
 
+  var leadsRefreshTimer;
   function iniciarRealtime() {
+    clearInterval(leadsRefreshTimer);
+    leadsRefreshTimer = setInterval(function () { if (!document.hidden && STATE.session && !$('#viewContactos').hidden) cargarLeads(); }, 15000);
     if (!SUPABASE_READY) return;
     sb.channel('panel-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, function () { cargarLeads(); })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tarea_comentarios' }, function (payload) {
         manejarNuevoComentario('tarea', payload.new);
       })
@@ -1790,7 +1852,7 @@
     var texto = normalizaBusqueda($('#tareaBuscar').value.trim());
     if (!texto) return lista;
     return lista.filter(function (t) {
-      return normalizaBusqueda([t.titulo, t.descripcion].filter(Boolean).join(' ')).indexOf(texto) !== -1;
+      return normalizaBusqueda([t.titulo, t.descripcion, nombrePerfil(t.asesor_id), nombreLead(t.lead_id), nombrePropiedad(t.propiedad_id)].filter(Boolean).join(' ')).indexOf(texto) !== -1;
     });
   }
 
@@ -1798,7 +1860,7 @@
     var cont = $('#tareaBandejaChips');
     if (!cont) return;
     cont.innerHTML = Object.keys(BANDEJA_LABEL).map(function (k) {
-      return '<button type="button" class="tasks-bandeja-chip' + (STATE.tareaBandeja === k ? ' is-active' : '') + '" data-bandeja="' + k + '">' + BANDEJA_LABEL[k] + '</button>';
+      return '<button type="button" class="tasks-bandeja-chip' + (STATE.tareaBandeja === k ? ' is-active' : '') + '" aria-pressed="' + (STATE.tareaBandeja === k) + '" data-bandeja="' + k + '">' + BANDEJA_LABEL[k] + '</button>';
     }).join('');
   }
 
@@ -1811,7 +1873,12 @@
       var hayFiltro = !!$('#tareaBuscar').value.trim() || STATE.tareaBandeja !== 'todo';
       $('#tareaFiltroEmptyState').style.display = !filtradas.length && hayFiltro ? 'block' : 'none';
       $('#tareasLista').style.display = filtradas.length ? 'flex' : 'none';
-      $('#tareasLista').innerHTML = filtradas.map(tareaSidebarItemHtml).join('');
+      $('#tareasLista').innerHTML = [
+        { nombre: 'Por hacer', tareas: filtradas.filter(function(t) { return t.estado !== 'hecha'; }) },
+        { nombre: 'Completadas', tareas: filtradas.filter(function(t) { return t.estado === 'hecha'; }) }
+      ].filter(function(g) { return g.tareas.length; }).map(function(g) {
+        return '<div class="task-group-label">' + g.nombre + '<span>' + g.tareas.length + '</span></div>' + g.tareas.map(tareaSidebarItemHtml).join('');
+      }).join('');
     } else {
       $('#tareaFiltroEmptyState').style.display = 'none';
       $('#tareasLista').style.display = 'none';
@@ -2127,6 +2194,7 @@
         '<div class="field"><label>Teléfono</label><div><a href="https://wa.me/52' + esc((s.telefono || '').replace(/\D/g, '')) + '" target="_blank" rel="noopener">' + esc(s.telefono) + '</a></div></div>' +
       '</div>' +
       (s.email ? '<div class="field"><label>Correo</label><div>' + esc(s.email) + '</div></div>' : '') +
+      (s.curp ? '<div class="field"><label>CURP aportada · sin verificar</label><div>' + esc(s.curp) + '</div></div>' : '') +
       '<hr>' +
       '<div class="field-grid">' +
         '<div class="field"><label>Tipo / operación</label><div>' + esc(TIPO_LABEL_SOL[s.tipo] || s.tipo) + ' · ' + (s.operacion === 'renta' ? 'Renta' : 'Venta') + '</div></div>' +
@@ -2354,6 +2422,7 @@
       setBusy(btn, false);
       if (res.error) { toast('No se pudo guardar la nota: ' + res.error.message, 'err'); return; }
       s.notas_internas = notas;
+      STATE.leadNotasDirty = false;
       toast('Nota guardada');
     });
   }
@@ -3308,6 +3377,8 @@
       if (perfilesRes.error) console.warn('[Panel] no se pudo cargar el equipo:', perfilesRes.error.message);
       if (invRes.error) console.warn('[Panel] no se pudieron cargar las invitaciones:', invRes.error.message);
       STATE.equipo = perfilesRes.data || [];
+      renderTareas();
+      if (STATE.tareaSeleccionada) renderDetalleTarea();
       STATE.invitaciones = invRes.data || [];
       renderEquipo();
       llenarFiltroAsesorPropiedades();
@@ -3401,7 +3472,7 @@
 
   // --------------------------------------------------------------- CONTACTOS (leads)
   var ESTADOS_LEAD = ['nuevo', 'contactado', 'activo', 'cerrado'];
-  var ESTADO_LEAD_LABEL = { nuevo: 'Nuevo', contactado: 'Contactado', activo: 'Activo', cerrado: 'Cerrado' };
+  var ESTADO_LEAD_LABEL = { nuevo: 'Nuevo', contactado: 'En seguimiento', activo: 'Cliente potencial', cerrado: 'Cerrado' };
 
   var ICON_TEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
   var ICON_WA = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.29-1.39c1.44.79 3.06 1.2 4.71 1.2h.01c5.46 0 9.9-4.45 9.9-9.91C21.91 6.45 17.5 2 12.04 2zm5.8 14.1c-.24.68-1.4 1.3-1.94 1.38-.5.08-1.13.11-1.82-.12-.42-.14-.96-.32-1.65-.62-2.9-1.25-4.8-4.17-4.94-4.36-.14-.19-1.18-1.57-1.18-3s.74-2.13 1-2.42c.26-.29.57-.36.76-.36h.55c.18 0 .42-.07.65.5.24.58.82 2 .89 2.14.07.14.11.31.02.5-.09.19-.14.31-.28.48-.14.17-.29.38-.42.51-.14.14-.28.29-.12.57.16.28.71 1.17 1.53 1.9 1.05.94 1.94 1.23 2.22 1.37.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.53.72 1.79.85.26.14.43.2.5.32.07.12.07.68-.17 1.36z"/></svg>';
@@ -3432,6 +3503,7 @@
     return (
       '<div class="lead-card" draggable="true" data-lead-id="' + l.id + '">' +
         '<div class="lead-card-name">' + esc(l.nombre) + '</div>' +
+        '<span class="lead-source">' + esc(nombreOrigenContacto(origenContacto(l))) + '</span>' +
         (l.propiedad_titulo ? '<div class="lead-card-prop">' + esc(l.propiedad_titulo) + '</div>' : '') +
         (l.mensaje ? '<div class="lead-card-msg">' + esc(l.mensaje) + '</div>' : '') +
         '<div class="lead-card-meta">' +
@@ -3445,7 +3517,7 @@
   function renderKanban() {
     var porEstado = {};
     ESTADOS_LEAD.forEach(function (e) { porEstado[e] = []; });
-    STATE.leads.forEach(function (l) { (porEstado[l.estado] || porEstado.nuevo).push(l); });
+    filtrarContactos().forEach(function (l) { (porEstado[l.estado] || porEstado.nuevo).push(l); });
     ESTADOS_LEAD.forEach(function (e) {
       $('#kcol_' + e).innerHTML = porEstado[e].map(leadCardHtml).join('');
       $('#kc_' + e).textContent = porEstado[e].length;
@@ -3471,7 +3543,7 @@
   function llenarFiltroAsesorContactos() {
     var sel = $('#leadFiltroAsesor');
     var actual = sel.value;
-    sel.innerHTML = '<option value="">Todo asesor</option>' + (STATE.equipo || []).map(function (a) {
+    sel.innerHTML = '<option value="">Todo asesor</option><option value="sin_asignar">Sin asignar</option>' + (STATE.equipo || []).map(function (a) {
       return '<option value="' + a.id + '">' + esc(a.nombre || a.email) + '</option>';
     }).join('');
     sel.value = actual;
@@ -3479,14 +3551,30 @@
 
   // Mismo patron que llenarFiltroTipoPropiedades: opciones armadas con lo
   // que de verdad hay en los leads cargados.
+  function origenContacto(l) {
+    var fuente = String(l.fuente || '').toLowerCase();
+    if (fuente === 'whatsapp_gohighlevel' || fuente === 'whatsapp' || l.formulario === 'whatsapp') return 'whatsapp';
+    if (fuente === 'manual') return 'manual';
+    return fuente || 'sitio_web';
+  }
+
+  function canalContacto(l) {
+    var o = origenContacto(l);
+    if (o === 'whatsapp' || o === 'manual') return o;
+    if (['sitio_web', 'alta_propiedad', 'ficha_propiedad'].indexOf(o) !== -1 || ['contacto', 'propiedad', 'vender', 'comprar', 'rentar', 'invertir', 'avaluo'].indexOf(l.formulario) !== -1) return 'web';
+    return 'otros';
+  }
+
+  function nombreOrigenContacto(origen) {
+    return { whatsapp: 'WhatsApp', sitio_web: 'Sitio web', manual: 'Captura manual' }[origen] || origen.replace(/_/g, ' ');
+  }
+
   function llenarFiltroOrigenContactos() {
-    var sel = $('#leadFiltroOrigen');
-    var actual = sel.value;
-    var origenes = [];
-    STATE.leads.forEach(function (l) { if (l.fuente && origenes.indexOf(l.fuente) === -1) origenes.push(l.fuente); });
-    origenes.sort();
-    sel.innerHTML = '<option value="">Todo origen</option>' + origenes.map(function (o) {
-      return '<option value="' + esc(o) + '">' + esc(o) + '</option>';
+    var sel = $('#leadFiltroOrigen'), actual = sel.value;
+    var origenes = ['whatsapp', 'sitio_web', 'manual'];
+    STATE.leads.forEach(function (l) { var o = origenContacto(l); if (origenes.indexOf(o) === -1) origenes.push(o); });
+    sel.innerHTML = '<option value="">Todos los orígenes</option>' + origenes.map(function (o) {
+      return '<option value="' + esc(o) + '">' + esc(nombreOrigenContacto(o)) + '</option>';
     }).join('');
     sel.value = origenes.indexOf(actual) !== -1 ? actual : '';
   }
@@ -3497,9 +3585,10 @@
     var origen = $('#leadFiltroOrigen').value;
     var asesor = $('#leadFiltroAsesor').value;
     return STATE.leads.filter(function (l) {
+      if (STATE.leadCanal && canalContacto(l) !== STATE.leadCanal) return false;
       if (estado && l.estado !== estado) return false;
-      if (origen && l.fuente !== origen) return false;
-      if (asesor && l.asesor_id !== asesor) return false;
+      if (origen && origenContacto(l) !== origen) return false;
+      if (asesor === 'sin_asignar' ? !!l.asesor_id : asesor && l.asesor_id !== asesor) return false;
       if (texto) {
         var haystack = normalizaBusqueda([l.nombre, l.email, l.telefono, l.propiedad_titulo, l.mensaje].filter(Boolean).join(' '));
         if (haystack.indexOf(texto) === -1) return false;
@@ -3509,10 +3598,11 @@
   }
 
   function hayFiltrosContactosActivos() {
-    return !!($('#leadBuscar').value.trim() || $('#leadFiltroEstado').value || $('#leadFiltroOrigen').value || $('#leadFiltroAsesor').value);
+    return !!(STATE.leadCanal || $('#leadBuscar').value.trim() || $('#leadFiltroEstado').value || $('#leadFiltroOrigen').value || $('#leadFiltroAsesor').value);
   }
 
   function limpiarFiltrosContactos() {
+    STATE.leadCanal = '';
     $('#leadBuscar').value = '';
     $('#leadFiltroEstado').value = '';
     $('#leadFiltroOrigen').value = '';
@@ -3542,11 +3632,12 @@
       ? '<div class="avatar lead-row-asesor" title="' + esc(nombrePerfil(l.asesor_id)) + '">' + esc(iniciales(nombrePerfil(l.asesor_id))) + '</div>'
       : '<div class="lead-row-asesor lead-row-asesor--vacio" title="Sin asignar">—</div>';
     return (
-      '<div class="lead-row" data-abrir-contacto="' + l.id + '">' +
+      '<div class="lead-row" tabindex="0" role="button" data-abrir-contacto="' + l.id + '">' +
         '<div class="avatar">' + esc(iniciales(l.nombre)) + '</div>' +
         '<div class="lead-row-id">' +
           '<div class="lead-row-nombre">' + esc(l.nombre || 'Sin nombre') + '</div>' +
           '<div class="lead-row-sub">' + esc([l.email, l.telefono].filter(Boolean).join(' · ')) + '</div>' +
+          '<span class="lead-source">' + esc(nombreOrigenContacto(origenContacto(l))) + '</span>' +
         '</div>' +
         '<span class="lead-pill lead-pill--' + l.estado + ' lead-row-estado">' + estadoInfo.label + '</span>' +
         '<span class="lead-row-interes">' + esc(l.propiedad_titulo || 'Sin interés registrado') + '</span>' +
@@ -3581,7 +3672,7 @@
     if (STATE.leadPagina > totalPaginas) STATE.leadPagina = totalPaginas;
     var inicio = (STATE.leadPagina - 1) * LEAD_POR_PAGINA;
     var pagina = filtrados.slice(inicio, inicio + LEAD_POR_PAGINA);
-    $('#leadTabla').innerHTML = pagina.map(leadRowHtml).join('');
+    $('#leadTabla').innerHTML = '<div class="lead-table-head"><span>Nombre</span><span>Estado</span><span>Interés</span><span>Recibido</span><span>Asesor</span></div>' + pagina.map(leadRowHtml).join('');
     $('#leadPaginacion').hidden = filtrados.length <= LEAD_POR_PAGINA;
     $('#leadPaginacion').innerHTML = filtrados.length ? leadPaginacionHtml(filtrados.length, STATE.leadPagina) : '';
     var hayFiltro = hayFiltrosContactosActivos();
@@ -3612,11 +3703,45 @@
     $('#leadTabla').hidden = !hayLeads || STATE.leadVista !== 'lista';
     $('#kanban').hidden = !hayLeads || STATE.leadVista !== 'kanban';
     if (hayLeads) {
-      if (STATE.leadVista === 'kanban') { renderKanban(); $('#leadFiltroEmptyState').style.display = 'none'; $('#leadPaginacion').hidden = true; }
+      if (STATE.leadVista === 'kanban') { renderKanban(); $('#leadFiltroEmptyState').style.display = !filtrarContactos().length && hayFiltrosContactosActivos() ? 'block' : 'none'; $('#leadPaginacion').hidden = true; }
       else renderListaContactos();
     }
+    $('#leadFiltroLimpiarBtnTop').hidden = !hayFiltrosContactosActivos();
+    $('#leadResultados').textContent = filtrarContactos().length + ' de ' + STATE.leads.length + ' contactos';
+    $$('#leadOrigenRapido button').forEach(function (b) {
+      var o = b.dataset.leadOrigen;
+      b.setAttribute('aria-pressed', String((STATE.leadCanal || '') === o));
+      b.querySelector('span').textContent = STATE.leads.filter(function (l) { return !o || canalContacto(l) === o; }).length;
+    });
+    $$('#leadTabs .prop-tab').forEach(function (b) { b.classList.toggle('is-active', b.dataset.leadTab === ($('#leadFiltroEstado').value || 'todos')); });
     renderInicio();
     renderDetalleContacto();
+  }
+
+  var ghlSyncRunning = false;
+  async function sincronizarGhl() {
+    if (ghlSyncRunning || !STATE.perfil || STATE.perfil.rol !== 'admin') return;
+    var btn = $('#syncGhlBtn'), total = 0, cursor = null, seen = {};
+    ghlSyncRunning = true; btn.disabled = true;
+    try {
+      do {
+        btn.textContent = 'Sincronizando… ' + total;
+        var session = await sb.auth.getSession();
+        var token = session.data && session.data.session && session.data.session.access_token;
+        if (!token) throw new Error('Inicia sesión otra vez para sincronizar.');
+        var response = await fetch('/api/ghl-sync', {method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer ' + token},body:JSON.stringify({cursor:cursor})});
+        var data = await response.json();
+        if (!response.ok) {
+          var errors = {ghl_not_configured:'Falta configurar GoHighLevel en Vercel.',ghl_location_invalid:'Revisa el Location ID de GoHighLevel.',ghl_access_denied:'GoHighLevel rechazó el acceso. Revisa el token y sus permisos.',forbidden:'Solo un administrador puede sincronizar.'};
+          throw new Error(errors[data.error] || 'No se completó la sincronización. Puedes reintentar sin duplicar los contactos importados.');
+        }
+        total += data.synced; cursor = data.nextCursor;
+        if (data.incomplete || (cursor && seen[cursor])) throw new Error('Sincronización parcial: no se pudo continuar con el historial.');
+        if (cursor) seen[cursor] = true;
+      } while (cursor);
+      toast('WhatsApp sincronizado: ' + total + ' contactos revisados.');
+    } catch (err) { toast(err.message, 'err'); }
+    finally { ghlSyncRunning = false; btn.disabled = false; btn.textContent = 'Sincronizar WhatsApp'; cargarLeads(); }
   }
 
   function cargarLeads() {
@@ -3628,6 +3753,8 @@
         return;
       }
       STATE.leads = res.data || [];
+      renderTareas();
+      if (STATE.tareaSeleccionada) renderDetalleTarea();
       llenarFiltroOrigenContactos();
       llenarFiltroAsesorContactos();
       renderContactos();
@@ -3682,14 +3809,18 @@
 
   function abrirDetalleContacto(id) {
     STATE.leadDrawerId = id;
+    STATE.leadNotasDirty = false;
     STATE.leadDrawerTab = 'info';
     $('#leadDrawer').hidden = false;
+    $$('.lead-row').forEach(function(row) { row.classList.toggle('is-selected', row.dataset.abrirContacto === id); });
     renderDetalleContacto();
   }
 
   function cerrarDetalleContacto() {
+    STATE.leadNotasDirty = false;
     STATE.leadDrawerId = null;
     $('#leadDrawer').hidden = true;
+    $$('.lead-row').forEach(function(row) { row.classList.remove('is-selected'); });
   }
 
   function leadDrawerAccionesHtml(l) {
@@ -3704,6 +3835,22 @@
   }
 
   function renderDetalleContactoTab(l) {
+    if (STATE.leadDrawerTab === 'conversacion') {
+      var ctx = l.contexto || {}, mensajes = Array.isArray(ctx.whatsapp_mensajes) ? ctx.whatsapp_mensajes : [];
+      var link = /^[a-zA-Z0-9_-]+$/.test(ctx.ghl_location_id || '') && /^[a-zA-Z0-9_-]+$/.test(ctx.ghl_conversation_id || '')
+        ? '<a class="btn btn--ghost btn--sm" target="_blank" rel="noopener" href="https://app.gohighlevel.com/v2/location/' + ctx.ghl_location_id + '/conversations/conversations/' + ctx.ghl_conversation_id + '">Abrir conversación en GoHighLevel</a>' : '';
+      return '<p class="lead-results">Últimos ' + mensajes.length + ' mensajes sincronizados de WhatsApp.</p>' + link +
+        '<div class="lead-conversation">' + (mensajes.length ? mensajes.map(function (m) {
+          return '<article class="lead-message ' + (m.direccion === 'inbound' ? 'is-inbound' : 'is-outbound') + '"><strong>' + (m.direccion === 'inbound' ? 'Cliente' : m.direccion === 'outbound' ? 'Equipo / asistente' : 'WhatsApp') + '</strong><p>' + esc(m.texto || 'Mensaje sin texto; consulta los archivos en GoHighLevel.') + '</p><time>' + esc(m.fecha ? new Date(m.fecha).toLocaleString('es-MX') : '') + '</time></article>';
+        }).join('') : '<p>El historial aparecerá con la próxima sincronización. Último mensaje registrado:</p><p>' + esc(l.mensaje || 'Sin mensajes') + '</p>') + '</div>';
+    }
+    if (STATE.leadDrawerTab === 'info') {
+      return '<button type="button" class="btn btn--gold btn--sm" id="leadEditarBtn">Editar datos</button>' +
+        '<div class="prop-drawer-info" style="grid-template-columns:1fr;margin-top:16px">' + [
+          ['Nombre', l.nombre], ['Teléfono', l.telefono], ['Correo', l.email], ['Interés', l.propiedad_titulo],
+          ['Origen', nombreOrigenContacto(origenContacto(l))], ['Registrado', new Date(l.creado_en).toLocaleString('es-MX')]
+        ].map(function (c) { return '<div class="prop-drawer-info-item"><div class="lbl">' + c[0] + '</div><div class="val">' + esc(c[1] || 'Sin registrar') + '</div></div>'; }).join('') + '</div>';
+    }
     if (STATE.leadDrawerTab === 'proxima') {
       var t = proximaAccionLead(l.id);
       if (!t) return '<div class="inicio-empty"><strong>Sin próxima acción</strong>No hay una tarea pendiente ligada a este contacto.</div>';
@@ -3721,7 +3868,7 @@
     if (l.telefono) campos.push({ lbl: 'Teléfono', val: l.telefono });
     if (l.propiedad_titulo) campos.push({ lbl: 'Propiedad de interés', val: l.propiedad_titulo + (l.propiedad_precio ? ' — ' + l.propiedad_precio : '') });
     if (l.mensaje) campos.push({ lbl: 'Mensaje', val: l.mensaje });
-    campos.push({ lbl: 'Origen', val: (l.formulario || 'contacto') + ' · ' + (l.fuente || 'sitio_web') });
+    campos.push({ lbl: 'Origen', val: nombreOrigenContacto(origenContacto(l)) });
     campos.push({ lbl: 'Recibido', val: new Date(l.creado_en).toLocaleString('es-MX') });
     return (
       '<div class="prop-drawer-info" style="grid-template-columns:1fr;">' + campos.map(function (c) {
@@ -3762,28 +3909,33 @@
     $('#leadDrawerSub').textContent = 'Contacto desde ' + new Date(l.creado_en).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
     $('#leadDrawerAcciones').innerHTML = leadDrawerAccionesHtml(l);
 
-    var tabs = [{ key: 'info', label: 'Información' }, { key: 'proxima', label: 'Próxima acción' }];
+    var tabs = [{ key: 'info', label: 'Datos' }, { key: 'conversacion', label: 'Conversación' }, { key: 'seguimiento', label: 'Seguimiento' }, { key: 'proxima', label: 'Tareas' }];
     $('#leadDrawerTabs').innerHTML = tabs.map(function (t) {
       return '<button type="button" class="prop-drawer-tab' + (STATE.leadDrawerTab === t.key ? ' is-active' : '') + '" data-lead-drawer-tab="' + t.key + '">' + t.label + '</button>';
     }).join('');
-    $('#leadDrawerBody').innerHTML = renderDetalleContactoTab(l);
+    if (!STATE.leadNotasDirty) $('#leadDrawerBody').innerHTML = renderDetalleContactoTab(l);
   }
 
   function guardarNotasLead() {
     if (!STATE.leadDrawerId) return;
+    var leadId = STATE.leadDrawerId;
     var notas = $('#leadNotas').value;
     var btn = $('#leadGuardarNotasBtn');
     setBusy(btn, true, 'Guardando…');
-    sb.from('leads').update({ notas: notas }).eq('id', STATE.leadDrawerId).then(function (res) {
+    sb.from('leads').update({ notas: notas }).eq('id', leadId).then(function (res) {
       setBusy(btn, false);
       if (res.error) { toast('No se pudo guardar la nota: ' + res.error.message, 'err'); return; }
-      var l = STATE.leads.filter(function (x) { return x.id === STATE.leadDrawerId; })[0];
+      var l = STATE.leads.filter(function (x) { return x.id === leadId; })[0];
       if (l) l.notas = notas;
+      STATE.leadNotasDirty = false;
       toast('Nota guardada');
     });
   }
 
   function openLeadCreateModal() {
+    STATE.leadEditingId = null;
+    $('#leadModalTitle').textContent = 'Nuevo contacto';
+    $('#lead_mensaje').closest('.field').hidden = false;
     $('#lead_nombre').value = '';
     $('#lead_telefono').value = '';
     $('#lead_email').value = '';
@@ -3791,6 +3943,19 @@
     $('#lead_mensaje').value = '';
     $('#leadError').classList.remove('show');
     $('#leadModalBackdrop').classList.add('is-open');
+  }
+
+  function editarContacto() {
+    var l = STATE.leads.find(function (x) { return x.id === STATE.leadDrawerId; });
+    if (!l) return;
+    openLeadCreateModal();
+    STATE.leadEditingId = l.id;
+    $('#leadModalTitle').textContent = 'Editar contacto';
+    $('#lead_nombre').value = l.nombre || '';
+    $('#lead_telefono').value = l.telefono || '';
+    $('#lead_email').value = l.email || '';
+    $('#lead_propiedad').value = l.propiedad_titulo || '';
+    $('#lead_mensaje').closest('.field').hidden = true;
   }
 
   function closeLeadCreateModal() {
@@ -3819,9 +3984,18 @@
       formulario: 'panel',
       fuente: 'manual',
     };
+    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) { errBox.textContent = 'Revisa el correo electrónico.'; errBox.classList.add('show'); return; }
+    var editingId = STATE.leadEditingId;
+    if (editingId) {
+      var original = STATE.leads.find(function (l) { return l.id === editingId; });
+      if (!original) return;
+      delete data.estado; delete data.fuente; delete data.formulario; delete data.mensaje;
+      data.contexto = Object.assign({}, original.contexto || {}, { crm_fields_edited: true });
+    }
     var btn = $('#leadGuardarBtn');
     setBusy(btn, true, 'Guardando…');
-    sb.from('leads').insert(data).then(function (res) {
+    var operation = editingId ? sb.from('leads').update(data).eq('id', editingId) : sb.from('leads').insert(data);
+    operation.then(function (res) {
       setBusy(btn, false);
       if (res.error) {
         errBox.textContent = 'No se pudo guardar: ' + res.error.message;
@@ -3829,17 +4003,27 @@
         return;
       }
       closeLeadCreateModal();
-      toast('Contacto agregado');
+      toast(editingId ? 'Contacto actualizado' : 'Contacto agregado');
       cargarLeads();
     });
   }
 
   // --------------------------------------------------------------- INIT
   document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('keydown', function(e) {
+      if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.lead-row, .pcard')) { e.preventDefault(); e.target.click(); }
+    });
     cargarCatalogos();
 
     $('#googleLoginBtn').addEventListener('click', handleGoogleLogin);
     $('#logoutBtn').addEventListener('click', handleLogout);
+    $('#settingsLogout').addEventListener('click', handleLogout);
+    $('#viewConfiguracion').addEventListener('click', function (e) {
+      var target = e.target.closest('[data-settings-view]');
+      if (!target) return;
+      if (target.dataset.settingsView === 'equipo' && (!STATE.perfil || STATE.perfil.rol !== 'admin')) return;
+      setView(target.dataset.settingsView);
+    });
     $('#notifBellBtn').addEventListener('click', function (e) {
       e.stopPropagation();
       $('#notifBellDropdown').hidden = !$('#notifBellDropdown').hidden;
@@ -4027,6 +4211,10 @@
       if (selectId) seleccionarTarea(selectId.dataset.selectTarea);
     });
     $('#tareaDetalle').addEventListener('click', function (e) {
+      var property = e.target.closest('[data-task-property]');
+      var contact = e.target.closest('[data-task-lead]');
+      if (property) { setView('propiedades'); abrirDetalleProp(property.dataset.taskProperty); return; }
+      if (contact) { setView('contactos'); abrirDetalleContacto(contact.dataset.taskLead); return; }
       var toggleId = e.target.closest && e.target.closest('[data-toggle-tarea]');
       var delId = e.target.closest && e.target.closest('[data-del-tarea]');
       var backBtn = e.target.closest && e.target.closest('[data-cerrar-detalle]');
@@ -4101,11 +4289,17 @@
       });
     });
 
+    $('#syncGhlBtn').addEventListener('click', sincronizarGhl);
     $('#addLeadBtn').addEventListener('click', openLeadCreateModal);
     $('#leadModalClose').addEventListener('click', closeLeadCreateModal);
     $('#leadModalBackdrop').addEventListener('click', function (e) { if (e.target.id === 'leadModalBackdrop') closeLeadCreateModal(); });
     $('#leadGuardarBtn').addEventListener('click', guardarNuevoContacto);
 
+    $('#leadOrigenRapido').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-lead-origen]');
+      if (!b) return;
+      STATE.leadCanal = b.dataset.leadOrigen; STATE.leadPagina = 1; renderContactos();
+    });
     $('#leadBuscar').addEventListener('input', function () { STATE.leadPagina = 1; renderContactos(); });
     $('#leadFiltroEstado').addEventListener('change', function () { STATE.leadPagina = 1; renderContactos(); });
     $('#leadFiltroOrigen').addEventListener('change', function () { STATE.leadPagina = 1; renderContactos(); });
@@ -4143,10 +4337,13 @@
     $('#leadDrawerTabs').addEventListener('click', function (e) {
       var tab = e.target.closest && e.target.closest('[data-lead-drawer-tab]');
       if (!tab) return;
+      if (STATE.leadNotasDirty) { toast('Guarda tus notas antes de cambiar de pestaña.', 'err'); return; }
       STATE.leadDrawerTab = tab.dataset.leadDrawerTab;
       renderDetalleContacto();
     });
+    $('#leadDrawerBody').addEventListener('input', function (e) { if (e.target.id === 'leadNotas') STATE.leadNotasDirty = true; });
     $('#leadDrawerBody').addEventListener('click', function (e) {
+      if (e.target.closest('#leadEditarBtn')) { editarContacto(); return; }
       if (e.target.closest && e.target.closest('#leadGuardarNotasBtn')) { guardarNotasLead(); return; }
       var irTarea = e.target.closest && e.target.closest('[data-ir-tarea]');
       if (irTarea) { setView('tareas'); seleccionarTarea(irTarea.dataset.irTarea); }
@@ -4290,9 +4487,14 @@
 
     if (mostrarErrorDeAuthSiHay()) return;
 
-    sb.auth.getSession().then(function (res) {
+    window.GF_ADMIN_NAV.session(sb.auth).then(function (res) {
+      if (res.error) throw res.error;
       STATE.session = res.data.session;
       if (STATE.session) cargarPerfilYMostrar();
+    }).catch(function () {
+      showGate();
+      $('#loginError').textContent = 'Tu enlace de acceso no es válido o ya venció. Inicia sesión de nuevo con Google.';
+      $('#loginError').classList.add('show');
     });
   });
 })();

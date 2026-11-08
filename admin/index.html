@@ -9,7 +9,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="../assets/css/admin.css?v=18">
+<link rel="stylesheet" href="../assets/css/admin.css?v=28b17c2d3b5a">
+<link rel="stylesheet" href="../assets/css/admin-workspace.css?v=7a937069c9bf">
 </head>
 <body>
 
@@ -36,12 +37,7 @@
 <div class="app" id="app">
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <div class="sidebar-brand-badge"><img src="../assets/img/brand/isotipo-gf.png" alt="Gio Filio"></div>
-      <div class="sidebar-brand-text">
-        <span class="sidebar-brand-name">Gio Filio</span>
-      </div>
-    </div>
+    <div class="sidebar-brand"><span class="sidebar-logo-frame"><img class="sidebar-full-logo" src="../assets/img/brand/firma-original.png" alt="Gio Filio — Tu espacio ideal"><img class="sidebar-full-logo logo-gold" src="../assets/img/brand/firma-original.png" alt="" aria-hidden="true"></span></div>
 
     <nav class="sidebar-nav" role="tablist" aria-label="Secciones del panel">
       <button type="button" class="tabbar-btn" id="tabInicio" data-view="inicio" role="tab" aria-selected="false">
@@ -87,10 +83,7 @@
       </button>
     </nav>
 
-    <div class="sidebar-quote">
-      <p>“Cada propiedad que subes es un paso más cerca de tu próxima venta.”</p>
-      <img class="sidebar-quote-firma" src="../assets/img/brand/firma-blanca.png" alt="Gio Filio">
-    </div>
+    <div class="sidebar-quote"><p>“Cada propiedad que subes es un paso más cerca de tu próxima venta.”</p><span class="sidebar-signature">— Gio Filio</span></div>
   </aside>
 
   <div class="app-main">
@@ -153,6 +146,17 @@
         <div class="num" id="kpiPropiedadesActivas">0</div><div class="lbl">Propiedades activas</div>
       </button>
     </div>
+
+    <section class="agenda-widget" aria-labelledby="agendaTitle">
+      <div class="agenda-heading"><div><span class="agenda-eyebrow">TU CALENDARIO PERSONAL</span><h2 id="agendaTitle">Mi agenda</h2><p>Llamadas y visitas, en un solo lugar.</p></div><span class="agenda-badge">Vista previa</span></div>
+      <div class="agenda-layout">
+        <div class="agenda-connect"><div class="agenda-icon" aria-hidden="true">▦</div><h3>Tu día, bien organizado</h3><p>Vincula tu cuenta de Google para consultar tu calendario desde aquí.</p><button class="btn btn--gold" type="button" disabled>Conectar Google Calendar</button><small>Conexión disponible próximamente. Cada asesor vinculará su propia cuenta.</small></div>
+        <div class="agenda-preview"><div class="agenda-preview-head"><strong>Así se verá tu agenda</strong><span>Datos de ejemplo</span></div>
+          <div class="agenda-days" role="group" aria-label="Día de ejemplo"><button type="button" data-agenda-day="0" aria-pressed="true">LUN<strong>05</strong></button><button type="button" data-agenda-day="1" aria-pressed="false">MAR<strong>06</strong></button><button type="button" data-agenda-day="2" aria-pressed="false">MIÉ<strong>07</strong></button><button type="button" data-agenda-day="3" aria-pressed="false">JUE<strong>08</strong></button><button type="button" data-agenda-day="4" aria-pressed="false">VIE<strong>09</strong></button></div>
+          <div class="agenda-events" aria-live="polite"></div><p class="agenda-timezone">Semana de ejemplo · Octubre 2026 · Hora de Ciudad de México</p>
+        </div>
+      </div>
+    </section>
 
     <div class="inicio-grid">
       <div class="inicio-card">
@@ -334,9 +338,9 @@
     <div class="shell-head">
       <div>
         <h1>Contactos</h1>
-        <p>Leads capturados en giofilio.com — da seguimiento a cada uno.</p>
+        <p>Gestiona tus leads, clientes y tu red de contactos.</p>
       </div>
-      <button class="btn btn--gold" id="addLeadBtn">+ Nuevo contacto</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" id="syncGhlBtn" hidden>Sincronizar WhatsApp</button><button class="btn btn--gold" id="addLeadBtn">+ Nuevo contacto</button></div>
     </div>
 
     <div class="stats stats--kpi">
@@ -350,11 +354,11 @@
       </div>
       <div class="stat-card">
         <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.3"/><path d="M12 7v5.5l3.8 2.2"/></svg>
-        <div><div class="num" id="statContactosContactado">0</div><div class="lbl">Contactados</div></div>
+        <div><div class="num" id="statContactosContactado">0</div><div class="lbl">En seguimiento</div></div>
       </div>
       <div class="stat-card">
         <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.3"/><path d="M8.3 12.3l2.5 2.5L16 9.3"/></svg>
-        <div><div class="num" id="statContactosActivo">0</div><div class="lbl">Activos</div></div>
+        <div><div class="num" id="statContactosActivo">0</div><div class="lbl">Clientes potenciales</div></div>
       </div>
       <div class="stat-card">
         <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16a1 1 0 0 1 1 1v2a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-2a1 1 0 0 1 1-1z"/><path d="M4 12V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5"/></svg>
@@ -362,19 +366,28 @@
       </div>
     </div>
 
+    <p class="lead-channel-label">Canal de contacto</p>
+    <div class="lead-origins" id="leadOrigenRapido" role="group" aria-label="Canal del contacto">
+      <button type="button" data-lead-origen="" aria-pressed="true">Todos <span>0</span></button>
+      <button type="button" data-lead-origen="whatsapp" aria-pressed="false">WhatsApp <span>0</span></button>
+      <button type="button" data-lead-origen="web" aria-pressed="false">Formulario web <span>0</span></button>
+      <button type="button" data-lead-origen="manual" aria-pressed="false">Captura manual <span>0</span></button>
+      <button type="button" data-lead-origen="otros" aria-pressed="false">Otros <span>0</span></button>
+    </div>
+
     <div class="prop-toolbar">
-      <input type="search" id="leadBuscar" class="prop-buscar" placeholder="Buscar por nombre, correo, teléfono o interés...">
-      <select id="leadFiltroEstado">
+      <input type="search" id="leadBuscar" aria-label="Buscar contactos" class="prop-buscar" placeholder="Buscar por nombre, correo, teléfono o interés...">
+      <select id="leadFiltroEstado" aria-label="Estado del contacto">
         <option value="">Todo estado</option>
         <option value="nuevo">Nuevo</option>
-        <option value="contactado">Contactado</option>
-        <option value="activo">Activo</option>
+        <option value="contactado">En seguimiento</option>
+        <option value="activo">Cliente potencial</option>
         <option value="cerrado">Cerrado</option>
       </select>
-      <select id="leadFiltroOrigen">
+      <select id="leadFiltroOrigen" aria-label="Origen del contacto">
         <option value="">Todo origen</option>
       </select>
-      <select id="leadFiltroAsesor">
+      <select id="leadFiltroAsesor" aria-label="Asesor asignado">
         <option value="">Todo asesor</option>
       </select>
       <button type="button" class="btn btn--ghost btn--sm" id="leadFiltroLimpiarBtnTop" hidden>Limpiar filtros</button>
@@ -392,14 +405,25 @@
       <div class="prop-tabs" id="leadTabs" role="tablist" aria-label="Filtrar por estado">
         <button type="button" class="prop-tab is-active" data-lead-tab="todos">Todos <span class="prop-tab-count" id="tabCountLeadTodos">0</span></button>
         <button type="button" class="prop-tab" data-lead-tab="nuevo">Nuevo <span class="prop-tab-count" id="tabCountLeadNuevo">0</span></button>
-        <button type="button" class="prop-tab" data-lead-tab="contactado">Contactado <span class="prop-tab-count" id="tabCountLeadContactado">0</span></button>
-        <button type="button" class="prop-tab" data-lead-tab="activo">Activo <span class="prop-tab-count" id="tabCountLeadActivo">0</span></button>
+        <button type="button" class="prop-tab" data-lead-tab="contactado">En seguimiento <span class="prop-tab-count" id="tabCountLeadContactado">0</span></button>
+        <button type="button" class="prop-tab" data-lead-tab="activo">Cliente potencial <span class="prop-tab-count" id="tabCountLeadActivo">0</span></button>
         <button type="button" class="prop-tab" data-lead-tab="cerrado">Cerrado <span class="prop-tab-count" id="tabCountLeadCerrado">0</span></button>
       </div>
     </div>
 
+    <aside class="lead-state-guide" aria-label="Recordatorio de estados">
+      <p><strong>Guía de colores</strong> <span>Cambia el estado desde el contacto → Seguimiento.</span></p>
+      <ul>
+        <li><span class="lead-pill lead-pill--nuevo">Nuevo</span><span>Pendiente de primer contacto.</span></li>
+        <li><span class="lead-pill lead-pill--contactado">En seguimiento</span><span>Ya inició la conversación.</span></li>
+        <li><span class="lead-pill lead-pill--activo">Cliente potencial</span><span>Con interés para avanzar.</span></li>
+        <li><span class="lead-pill lead-pill--cerrado">Cerrado</span><span>Seguimiento finalizado.</span></li>
+      </ul>
+    </aside>
+
     <div class="prop-workspace">
       <div class="prop-main">
+        <p id="leadResultados" class="lead-results" role="status" aria-live="polite"></p>
         <div class="lead-tabla" id="leadTabla"></div>
         <div class="lead-paginacion" id="leadPaginacion" hidden></div>
 
@@ -409,11 +433,11 @@
             <div class="kanban-cards" id="kcol_nuevo"></div>
           </div>
           <div class="kanban-col" data-estado="contactado">
-            <div class="kanban-col-head"><span>Contactado</span><span class="kanban-count" id="kc_contactado">0</span></div>
+            <div class="kanban-col-head"><span>En seguimiento</span><span class="kanban-count" id="kc_contactado">0</span></div>
             <div class="kanban-cards" id="kcol_contactado"></div>
           </div>
           <div class="kanban-col" data-estado="activo">
-            <div class="kanban-col-head"><span>Activo</span><span class="kanban-count" id="kc_activo">0</span></div>
+            <div class="kanban-col-head"><span>Cliente potencial</span><span class="kanban-count" id="kc_activo">0</span></div>
             <div class="kanban-cards" id="kcol_activo"></div>
           </div>
           <div class="kanban-col" data-estado="cerrado">
@@ -460,7 +484,7 @@
     <div class="shell-head">
       <div>
         <h1>Tareas</h1>
-        <p>Tus pendientes y recordatorios — solo tú ves los tuyos (Gio ve los de todo el equipo).</p>
+        <p>Coordina al equipo. Conecta cada pendiente con su contacto y propiedad.</p>
       </div>
       <button class="btn btn--gold" id="addTareaBtn">+ Nueva tarea</button>
     </div>
@@ -474,11 +498,12 @@
 
     <div class="tasks-app" id="tasksApp">
       <div class="tasks-sidebar">
-        <div class="tasks-bandeja-chips" id="tareaBandejaChips"></div>
+        <div class="tasks-bandeja-chips" id="tareaBandejaChips" aria-label="Filtrar tareas"></div>
         <div class="prop-toolbar">
           <input type="search" id="tareaBuscar" class="prop-buscar" placeholder="Buscar por título o notas...">
         </div>
 
+        <div class="task-table-head"><span>Tarea / vínculo</span><span>Responsable</span><span>Fecha límite</span><span>Prioridad</span></div>
         <div class="tasks-channel-list" id="tareasLista"></div>
 
         <div class="empty" id="tareaFiltroEmptyState" style="display:none">
@@ -726,15 +751,38 @@
   </main>
 
   <main class="shell" id="viewConfiguracion" hidden>
-    <div class="shell-head">
-      <div>
-        <h1>Configuración</h1>
-        <p>Preferencias del panel — en construcción.</p>
-      </div>
-    </div>
-    <div class="empty">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.65 1.65 0 0 0-1.8-.3 1.65 1.65 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.65 1.65 0 0 0 4.7 15a1.65 1.65 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.65 1.65 0 0 0 1 1.5 1.65 1.65 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.65 1.65 0 0 0-.3 1.8V9c.2.6.7 1 1.5 1H21a2 2 0 0 1 0 4h-.1a1.65 1.65 0 0 0-1.5 1z"/></svg>
-      <p>Muy pronto: notificaciones, tu perfil y preferencias del panel.</p>
+    <div class="shell-head"><div><h1>Configuración</h1><p>Tu cuenta y las herramientas para administrar Gio Filio.</p></div><a class="btn btn--ghost" href="/" target="_blank" rel="noopener">Ver sitio público ↗</a></div>
+    <section class="settings-card brand-editor" id="brandEditor" hidden aria-labelledby="brandEditorTitle">
+      <span class="settings-kicker">SITIO PÚBLICO</span><h2 id="brandEditorTitle">Marca y apariencia</h2>
+      <p>Personaliza los colores, logos y las tres fotos de la portada. Guarda un borrador y revísalo antes de publicarlo.</p>
+      <p id="brandStatus" role="status" aria-live="polite">Cargando configuración…</p>
+      <fieldset id="brandFields" disabled>
+        <legend>Colores y archivos</legend>
+        <div class="brand-colors"><label>Color principal <input id="brandNavy" type="color" value="#071f4a"></label><label>Color de acento <input id="brandGold" type="color" value="#b88e3e"></label></div>
+        <p>Logos: PNG transparente recomendado. Fotografías: JPG, PNG o WebP de hasta 15 MB; se optimizan al subirlas.</p>
+        <div class="brand-assets" id="brandAssets"></div>
+        <div class="brand-actions"><button type="button" class="btn btn--ghost" id="brandSave">Guardar borrador</button><button type="button" class="btn btn--ghost" id="brandPreview">Vista previa</button><button type="button" class="btn btn--gold" id="brandPublish" disabled>Publicar cambios</button><button type="button" class="btn btn--ghost" id="brandRestore" disabled>Restaurar versión anterior</button></div>
+      </fieldset>
+      <div id="brandPreviewWrap" hidden><p><strong>Vista previa del borrador</strong> · Los enlaces y formularios están desactivados.</p><iframe id="brandFrame" title="Vista previa de la portada" sandbox="allow-scripts allow-same-origin" loading="lazy"></iframe></div>
+    </section>
+    <div class="settings-grid">
+      <section class="settings-card" aria-labelledby="settingsAccountTitle">
+        <span class="settings-kicker">MI CUENTA</span><h2 id="settingsAccountTitle">Tu acceso al panel</h2>
+        <dl class="settings-details"><div><dt>Nombre</dt><dd id="settingsName">—</dd></div><div><dt>Correo</dt><dd id="settingsEmail">—</dd></div><div><dt>Rol</dt><dd id="settingsRole">—</dd></div><div><dt>Inicio de sesión</dt><dd>Google</dd></div></dl>
+        <p>Tu rol lo administra el equipo responsable del sitio.</p><button type="button" class="btn btn--ghost" id="settingsLogout">Cerrar sesión</button>
+      </section>
+      <section class="settings-card" id="settingsTeam" hidden aria-labelledby="settingsTeamTitle">
+        <span class="settings-kicker">ADMINISTRACIÓN</span><h2 id="settingsTeamTitle">Equipo y accesos</h2><p>Invita asesores, consulta invitaciones pendientes y administra los roles y accesos del equipo.</p>
+        <ul class="settings-list"><li><strong>Admin:</strong> gestiona el equipo y sus accesos.</li><li><strong>Administrativo y asesor:</strong> trabajan en las secciones operativas del panel.</li></ul>
+        <button type="button" class="btn btn--gold" data-settings-view="equipo">Gestionar equipo →</button>
+      </section>
+      <section class="settings-card" aria-labelledby="settingsOperationsTitle">
+        <span class="settings-kicker">OPERACIÓN</span><h2 id="settingsOperationsTitle">Administra tu día a día</h2><p>Accede a cada área para mantener actualizado el inventario y dar seguimiento a tus clientes.</p>
+        <div class="settings-links"><button type="button" data-settings-view="propiedades"><span><strong>Propiedades</strong><small>Inventario, fotografías y publicación</small></span><span aria-hidden="true">→</span></button><button type="button" data-settings-view="contactos"><span><strong>Contactos</strong><small>Canales, estados y conversaciones</small></span><span aria-hidden="true">→</span></button><button type="button" data-settings-view="solicitudes"><span><strong>Solicitudes</strong><small>Propiedades enviadas desde el sitio</small></span><span aria-hidden="true">→</span></button><button type="button" data-settings-view="tareas"><span><strong>Tareas</strong><small>Responsables y próximos seguimientos</small></span><span aria-hidden="true">→</span></button></div>
+      </section>
+      <section class="settings-card" aria-labelledby="settingsHelpTitle">
+        <span class="settings-kicker">GUÍA DE USO</span><h2 id="settingsHelpTitle">Un equipo organizado</h2><ol class="settings-list"><li>Revisa los contactos nuevos y asigna un responsable.</li><li>Actualiza el estado y registra las notas del seguimiento.</li><li>Crea una tarea con fecha para la siguiente llamada o visita.</li><li>Revisa las solicitudes antes de convertirlas en propiedades.</li></ol><button type="button" class="btn btn--ghost" data-settings-view="documentos">Consultar documentos →</button>
+      </section>
     </div>
   </main>
 
@@ -746,7 +794,7 @@
 <div class="modal-backdrop" id="leadModalBackdrop">
   <div class="modal modal--sm">
     <div class="modal-head">
-      <h2>Nuevo contacto</h2>
+      <h2 id="leadModalTitle">Nuevo contacto</h2>
       <button class="modal-close" id="leadModalClose" aria-label="Cerrar">&times;</button>
     </div>
     <div class="modal-body">
@@ -1097,10 +1145,13 @@
 
 <div class="toast-wrap" id="toastWrap"></div>
 
-<script src="../assets/js/vendor/supabase.js"></script>
-<script src="../assets/js/vendor/heic2any.min.js"></script>
-<script src="../assets/js/vendor/exceljs.min.js"></script>
-<script src="../assets/js/admin-config.js?v=9"></script>
-<script src="../assets/js/admin.js?v=16"></script>
+<script src="../assets/js/admin-navigation.js?v=4e55a067234d"></script>
+<script src="../assets/js/vendor/supabase.js?v=8596965fe918"></script>
+<script src="../assets/js/vendor/exceljs.min.js?v=7e49da68588e"></script>
+<script src="../assets/js/admin-config.js?v=9f9de5bc496e"></script>
+<script src="../assets/js/admin.js?v=b74263a819b1"></script>
+<script src="../assets/js/admin-documents.js?v=58769dfe4a9b"></script>
+<script src="../assets/js/admin-brand.js?v=cbfdc38443c6"></script>
+<script src="../assets/js/admin-agenda.js?v=1"></script>
 </body>
 </html>

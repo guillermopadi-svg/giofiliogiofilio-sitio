@@ -134,90 +134,116 @@
     }).catch(function () { return false; });
   }
   function convertirHeicAJpeg(file) {
-    return window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 }).then(function (resultado) {
+    return import('./vendor/heic-to-1.5.2.js').then(function (decoder) {
+      return decoder.heicTo({ blob: file, type: 'image/jpeg', quality: 0.85 });
+    }).then(function (resultado) {
       var blob = Array.isArray(resultado) ? resultado[0] : resultado;
       return new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
     });
   }
 
-  // Auditoria de seguridad 2026-09-11 (GIO-005): las fotos que NO son HEIC
-  // se subian tal cual, con su EXIF original -- si trae GPS, cualquiera que
-  // descargue la foto publicada puede sacar la ubicacion exacta de la
-  // propiedad. Re-dibujar en un <canvas> y volver a exportar como JPEG
-  // descarta el EXIF por completo (mismo efecto colateral que ya beneficia
-  // a la conversion HEIC de arriba). De paso, forzar siempre ".jpg" evita
-  // depender del nombre original del archivo para la extension (GIO-002).
+  // Reexportar siempre: elimina EXIF y reduce fotos grandes antes de subirlas.
   function limpiarExifJpeg(file) {
-    return new Promise(function (resolve) {
-      var url = URL.createObjectURL(file);
-      var img = new Image();
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
       img.onload = function () {
-        var canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        canvas.getContext('2d').drawImage(img, 0, 0);
         URL.revokeObjectURL(url);
-        canvas.toBlob(function (blob) {
-          if (!blob) { resolve(file); return; }
-          resolve(new File([blob], 'foto.jpg', { type: 'image/jpeg' }));
-        }, 'image/jpeg', 0.9);
+        try {
+          var escala = Math.min(1, 2400 / Math.max(img.naturalWidth, img.naturalHeight));
+          var canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(img.naturalWidth * escala));
+          canvas.height = Math.max(1, Math.round(img.naturalHeight * escala));
+          var ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(function (blob) {
+            if (!blob) { reject(new Error('No se pudo preparar la imagen.')); return; }
+            resolve(new File([blob], 'foto.jpg', { type: 'image/jpeg' }));
+          }, 'image/jpeg', 0.85);
+        } catch (err) { reject(err); }
       };
-      img.onerror = function () { URL.revokeObjectURL(url); resolve(file); };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('No se pudo abrir la imagen. Prueba con JPG o PNG.')); };
       img.src = url;
     });
   }
 
   var fotoAviso = $('#altaFotoAviso'), fotosWrap = $('#altaPhotos'), addBtn = $('#altaPhotoAdd'), fotoInput = $('#altaFotoInput');
   var sessionId = 'sol-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  var colaFotos = [], procesando = false, enviando = false;
+  var MAX_FOTOS = 30;
 
   function renderFotos() {
+    fotos = colaFotos.filter(function (item) { return item.estado === 'lista'; }).map(function (item) { return item.url; });
     $$('.alta-photo', fotosWrap).forEach(function (n) { n.remove(); });
-    fotos.forEach(function (url, i) {
-      var div = document.createElement('div');
-      div.className = 'alta-photo';
-      div.innerHTML = '<img src="' + url + '" alt="Foto ' + (i + 1) + '"><button type="button" aria-label="Quitar foto">&times;</button>';
-      div.querySelector('button').addEventListener('click', function () { fotos.splice(i, 1); renderFotos(); });
-      fotosWrap.insertBefore(div, addBtn);
+    colaFotos.forEach(function (item) {
+      var div = document.createElement('div'); div.className = 'alta-photo is-' + item.estado;
+      if (item.url) {
+        var img = document.createElement('img'); img.src = item.url; img.alt = item.file.name; div.appendChild(img);
+      }
+      var nombre = document.createElement('span'); nombre.className = 'alta-photo-name'; nombre.textContent = item.file.name; div.appendChild(nombre);
+      var estado = document.createElement('span'); estado.className = 'alta-photo-state';
+      estado.textContent = item.estado === 'lista' ? '✓ Lista' : item.estado === 'error' ? item.error : item.estado === 'subiendo' ? 'Subiendo…' : 'En espera…';
+      div.appendChild(estado);
+      if (item.estado === 'error') {
+        var retry = document.createElement('button'); retry.type = 'button'; retry.textContent = 'Reintentar';
+        retry.addEventListener('click', function () { item.estado = 'pendiente'; procesarCola(); }); div.appendChild(retry);
+      }
+      var quitar = document.createElement('button'); quitar.type = 'button'; quitar.textContent = 'Quitar';
+      quitar.disabled = item.estado === 'subiendo' || enviando;
+      quitar.setAttribute('aria-label', 'Quitar ' + item.file.name);
+      quitar.addEventListener('click', function () { colaFotos = colaFotos.filter(function (f) { return f !== item; }); renderFotos(); }); div.appendChild(quitar);
+      fotosWrap.appendChild(div);
     });
+    var pendientes = colaFotos.filter(function (item) { return item.estado === 'pendiente' || item.estado === 'subiendo'; }).length;
+    var fallidas = colaFotos.filter(function (item) { return item.estado === 'error'; }).length;
+    subiendo = pendientes;
+    $('#altaFotoEstado').textContent = fotos.length + ' de ' + colaFotos.length + ' fotos listas' + (pendientes ? ' · Cargando…' : '') + (fallidas ? ' · ' + fallidas + ' con error' : '');
+    $('#altaSubmitBtn').disabled = enviando || pendientes > 0 || fallidas > 0;
+    fotoInput.disabled = enviando;
+    if (fallidas) fotoAviso.textContent = 'Reintenta las fotos con error o quítalas antes de enviar. Tus datos siguen aquí.';
+    else fotoAviso.textContent = '';
+  }
+
+  function procesarCola() {
+    renderFotos();
+    if (procesando) return;
+    var item = colaFotos.find(function (f) { return f.estado === 'pendiente'; });
+    if (!item) return;
+    procesando = true; item.estado = 'subiendo'; renderFotos();
+    Promise.resolve().then(function () {
+      if (!SUPABASE_READY) throw new Error('No hay conexión con el servicio de fotos. Intenta otra vez.');
+      if (item.file.size > 40 * 1024 * 1024) throw new Error('La imagen supera 40 MB. Elige una versión más pequeña.');
+      return detectarHeicPorContenido(item.file);
+    }).then(function (heic) {
+      return heic || esHeicPorNombre(item.file) ? convertirHeicAJpeg(item.file) : item.file;
+    }).then(limpiarExifJpeg).then(function (file) {
+      if (file.size > 8 * 1024 * 1024) throw new Error('La imagen sigue superando 8 MB. Elige una versión más pequeña.');
+      var ruta = sessionId + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
+      return sb.storage.from('solicitudes-alta').upload(ruta, file, { contentType: 'image/jpeg' }).then(function (res) {
+        if (res.error) throw res.error;
+        item.url = sb.storage.from('solicitudes-alta').getPublicUrl(ruta).data.publicUrl;
+        item.estado = 'lista';
+      });
+    }).catch(function (err) {
+      item.estado = 'error';
+      item.error = 'No se pudo cargar. ' + (err && err.message ? err.message : 'Comprueba tu conexión y reintenta.');
+    }).then(function () { procesando = false; procesarCola(); });
   }
 
   function handleFiles(files) {
-    if (!SUPABASE_READY) { fotoAviso.textContent = 'No se pudo conectar para subir fotos, intenta de nuevo en un momento.'; return; }
-    var lista = Array.prototype.filter.call(files, function (f) { return /^image\//.test(f.type) || esHeicPorNombre(f); });
-    if (!lista.length) return;
-    fotoAviso.textContent = '';
-    subiendo += lista.length;
-
-    Promise.all(lista.map(function (file) {
-      return detectarHeicPorContenido(file).then(function (esHeicReal) {
-        var prep = esHeicReal
-          ? convertirHeicAJpeg(file).catch(function () {
-              fotoAviso.textContent = 'No pudimos abrir "' + file.name + '" — mándala por WhatsApp y descárgala de ahí antes de subirla aquí.';
-              return null;
-            })
-          : limpiarExifJpeg(file);
-        return prep;
-      }).then(function (f) {
-        if (!f) return null;
-        var ruta = sessionId + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
-        return sb.storage.from('solicitudes-alta').upload(ruta, f).then(function (res) {
-          if (res.error) { fotoAviso.textContent = 'No se pudo subir ' + f.name + ': ' + (res.error.message || res.error); return null; }
-          return sb.storage.from('solicitudes-alta').getPublicUrl(ruta).data.publicUrl;
-        });
-      }).catch(function (err) {
-        fotoAviso.textContent = 'No se pudo procesar "' + file.name + '": ' + (err && err.message ? err.message : err);
-        return null;
-      });
-    })).then(function (urls) {
-      urls.filter(Boolean).forEach(function (u) { fotos.push(u); });
-      subiendo -= lista.length;
-      renderFotos();
-    }).catch(function () {
-      subiendo -= lista.length;
+    var lista = Array.prototype.slice.call(files);
+    lista.forEach(function (file) {
+      if (colaFotos.length >= MAX_FOTOS) return;
+      var aceptada = /^image\//.test(file.type) || /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name);
+      colaFotos.push({ file: file, estado: aceptada ? 'pendiente' : 'error', error: 'Formato no compatible. Usa JPG, PNG, WebP o HEIC.' });
     });
+    procesarCola();
+    if (lista.length && colaFotos.length >= MAX_FOTOS) fotoAviso.textContent = 'Máximo 30 fotos. Revisa que estén todas las que quieres enviar.';
   }
-
   fotoInput.addEventListener('change', function () { handleFiles(fotoInput.files); fotoInput.value = ''; });
+  addBtn.addEventListener('dragover', function (e) { e.preventDefault(); addBtn.classList.add('is-dragging'); });
+  addBtn.addEventListener('dragleave', function () { addBtn.classList.remove('is-dragging'); });
+  addBtn.addEventListener('drop', function (e) { e.preventDefault(); addBtn.classList.remove('is-dragging'); if (!enviando) handleFiles(e.dataTransfer.files); });
 
   // ------------------------------------------------------- Envío
   function marcaError(row, on) {
@@ -231,18 +257,29 @@
     marcaError(nombre.closest('.form-row'), !nombre.value.trim()); if (!nombre.value.trim()) ok = false;
     var telOk = tel.value.replace(/\D/g, '').length >= 10;
     marcaError(tel.closest('.form-row'), !telOk); if (!telOk) ok = false;
-    var mailOk = !mail.value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail.value);
+    var mailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail.value.trim());
     marcaError(mail.closest('.form-row'), !mailOk); if (!mailOk) ok = false;
     marcaError(tipo.closest('.form-row'), !tipo.value); if (!tipo.value) ok = false;
+    var curp = $('#al-curp');
+    var curpOk = !curp.value.trim() || /^[A-Z0-9]{18}$/.test(curp.value.trim().toUpperCase());
+    marcaError(curp.closest('.form-row'), !curpOk); if (!curpOk) ok = false;
+    var consent = $('input[name="consent"]');
+    if (!consent.checked) { ok = false; $('#altaEnvioAviso').textContent = 'Acepta el aviso de privacidad para enviar tu registro.'; }
+    if (!ok) { var primero = $('.is-error input, .is-error select'); if (primero) primero.focus(); }
     return ok;
   }
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
+    $('#altaEnvioAviso').textContent = '';
+    if (enviando) return;
+    if (colaFotos.some(function (item) { return item.estado === 'error'; })) { fotoAviso.textContent = 'Reintenta o quita las fotos con error antes de enviar.'; return; }
     if (subiendo > 0) { fotoAviso.textContent = 'Espera a que terminen de subirse las fotos.'; return; }
+    if (!fotos.length) { fotoAviso.textContent = 'Agrega al menos una foto de la propiedad antes de enviar.'; fotoInput.focus(); return; }
     if (!validar()) return;
 
     var btn = $('#altaSubmitBtn');
+    enviando = true; renderFotos();
     btn.disabled = true;
     var textoOriginal = btn.textContent;
     btn.textContent = 'Enviando…';
@@ -250,6 +287,8 @@
     var amenidades = $$('input[name="amenidad"]:checked').map(function (c) { return c.value; });
 
     var payload = {
+      consentimiento: true,
+      curp: $('#al-curp').value.trim().toUpperCase(),
       nombre: $('#al-nombre').value.trim(),
       apellido: $('#al-apellido').value.trim(),
       telefono: $('#al-tel').value.trim(),
@@ -286,17 +325,17 @@
     }).then(function (r) { return r.json().catch(function () { return {}; }); })
       .then(function (data) {
         if (!data || data.ok !== true) {
-          btn.disabled = false; btn.textContent = textoOriginal;
-          fotoAviso.textContent = data && data.error === 'demasiados_intentos'
+          enviando = false; renderFotos(); btn.textContent = textoOriginal;
+          $('#altaEnvioAviso').textContent = data && data.error === 'demasiados_intentos'
             ? 'Se hicieron demasiados intentos seguidos desde esta conexión — espera unos minutos e intenta de nuevo.'
-            : 'No se pudo enviar tu registro, intenta de nuevo en un momento.';
+            : data && data.error === 'fotos_requeridas' ? 'Agrega al menos una foto de la propiedad antes de enviar.' : 'No se pudo enviar tu registro, intenta de nuevo en un momento.';
           return;
         }
         form.style.display = 'none';
         $('#altaSuccess').classList.add('is-on');
       }).catch(function () {
-        btn.disabled = false; btn.textContent = textoOriginal;
-        fotoAviso.textContent = 'No se pudo enviar tu registro, revisa tu conexión e intenta de nuevo.';
+        enviando = false; renderFotos(); btn.textContent = textoOriginal;
+        $('#altaEnvioAviso').textContent = 'No se pudo enviar tu registro, revisa tu conexión e intenta de nuevo.';
       });
   });
 })();

@@ -25,12 +25,16 @@ LANDINGS = [
         "title": "Espacio Santa Fe — Piso 18",
         "subtitle": "Oficina corporativa Clase A+ en Santa Fe",
         "propertyType": "oficina",          # clave de data_props.TIPOS
-        "operation": "venta-renta",         # venta | renta | venta-renta
+        "operation": "renta",         # venta | renta | venta-renta
         "featured": True,
         "status": "disponible",             # disponible | publicado | oculto (oculto no se genera)
-        "price": None,
+        "price": 489946.58,
+        "baseRent": 365369.74,
+        "maintenance": 66117.68,
+        "vat": 58459.16,
+        "monthlyTotal": 489946.58,
         "currency": "MXN",
-        "priceOnRequest": True,
+        "priceOnRequest": False,
         "address": "Carretera México–Toluca 5420",
         "neighborhood": "El Yaqui",
         "neighborhoodSlug": "santa-fe",     # colonia curada del sitio (data_zonas)
@@ -43,7 +47,7 @@ LANDINGS = [
         "latitude": 19.3629937,
         "longitude": -99.2813264,
         "mapsUrl": "https://maps.app.goo.gl/UDDjS5EpSJn63K547",
-        "surface": 1099.44,
+        "surface": 1085.50,
         "parkingSpaces": 36,
         "floor": 18,
         "privateOffices": 18,
@@ -54,23 +58,25 @@ LANDINGS = [
         "bathrooms": "Baños privados para hombres y mujeres, más baños en áreas comunes",
         "certification": "LEED Gold",
         "buildingClass": "Clase A+",
-        "seoTitle": "Oficina en Venta y Renta en Santa Fe | 1,099 m² | Gio Filio",
-        "seoDescription": ("Oficina corporativa acondicionada de 1,099.44 m² en Santa Fe, CDMX. "
+        "seoTitle": "Oficina en Renta en Santa Fe | 1,085 m² | Gio Filio",
+        "seoDescription": ("Oficina corporativa acondicionada de 1,085.50 m² en Santa Fe, CDMX. "
                            "Piso 18, 36 estacionamientos, 18 privados y certificación LEED Gold. "
                            "Agenda una visita con Gio Filio."),
-        "whatsappMessage": ("Hola Gio, me interesa la oficina Espacio Santa Fe Piso 18 de 1,099.44 m². "
+        "whatsappMessage": ("Hola Gio, me interesa la oficina Espacio Santa Fe Piso 18 de 1,085.50 m². "
                             "Quisiera recibir más información."),
         "intro": "Un piso completo, ya acondicionado, en el corazón corporativo de Santa Fe.",
+        "rentalNotice": 'Precio negociable · Opción de rentar la mitad',
         "description": [
-            "Espacio Santa Fe Piso 18 es una oficina corporativa acondicionada de 1,099.44 m² en un edificio "
+            'Precio de renta negociable y flexibilidad de espacio. La oficina puede rentarse completa o dividirse en dos, con opción de rentar únicamente la mitad. Consulta las condiciones y el precio para cada opción.',
+            "Espacio Santa Fe Piso 18 es una oficina corporativa acondicionada de 1,085.50 m² en un edificio "
             "Clase A+ con certificación LEED Gold. Ocupa un piso completo, con la distribución ya resuelta y "
             "vistas panorámicas de la ciudad.",
             "La planta combina 18 privados, tres de ellos con baño propio, una sala de juntas, una sala de "
             "capacitación, comedor propio y un cuarto habilitado para site. Tu equipo cuenta con baños privados "
             "para hombres y mujeres, además de los baños de las áreas comunes.",
-            "El edificio da acceso al piso mediante 8 elevadores y la renta o compra incluye 36 cajones de "
-            "estacionamiento. Se ofrece en venta y en renta.",
-            "El precio se comparte de forma directa. Escríbeme o agenda una visita y te doy las condiciones "
+            "El edificio da acceso al piso mediante 8 elevadores y la renta incluye 36 cajones de "
+            "estacionamiento. Se ofrece únicamente en renta.",
+            "La renta mensual es de $365,369.74 MXN, más $58,459.16 de IVA y $66,117.68 de mantenimiento. Total: $489,946.58 MXN al mes. Consulta las condiciones "
             "actualizadas para tu empresa.",
         ],
         "features": [
@@ -100,18 +106,18 @@ LANDINGS = [
             "Acceso desde Vista Hermosa",
             "Acceso desde la Carretera México–Toluca",
         ],
-        "heroImage": _IMG + "01-vista-panoramica-piso-18",
+        "heroImage": _IMG + "01-oficina-interior-piso-18",
         # Slides del hero: (imagen, texto alterno, etiqueta, texto del botón, destino)
         # El botón secundario del hero cambia con cada slide.
         "heroSlides": [
-            (_IMG + "01-vista-panoramica-piso-18", "Vista panorámica de la ciudad desde el piso 18 de Espacio Santa Fe", "Vista panorámica", "Ver galería", "#galeria"),
+            (_IMG + "01-oficina-interior-piso-18", "Interior de oficina con áreas de trabajo y sala de estar", "Vista panorámica", "Ver galería", "#galeria"),
             (_IMG + "02-torre-espacio-santa-fe", "Torre Espacio Santa Fe, edificio corporativo Clase A+ en Santa Fe, CDMX", "Edificio Clase A+", "Ver ubicación", "#ubicacion"),
             (_IMG + "03-planta-abierta-privados-vidrio", "Planta de oficina con privados de cristal en Espacio Santa Fe Piso 18", "Planta con privados de cristal", "Ver distribución", "#distribucion"),
             (_IMG + "07-privado-vista", "Privado con ventanales y vista a la ciudad en Santa Fe", "Privados con vista", "Agendar visita", "#agendar"),
         ],
         # (base sin extensión, texto alternativo)
         "gallery": [
-            (_IMG + "01-vista-panoramica-piso-18", "Vista panorámica de la ciudad desde el piso 18 de Espacio Santa Fe"),
+            (_IMG + "01-oficina-interior-piso-18", "Interior de oficina con áreas de trabajo y sala de estar"),
             (_IMG + "02-torre-espacio-santa-fe", "Torre Espacio Santa Fe, edificio corporativo Clase A+ en Santa Fe, CDMX"),
             (_IMG + "03-planta-abierta-privados-vidrio", "Planta de oficina con privados de cristal en Espacio Santa Fe Piso 18"),
             (_IMG + "04-planta-abierta-nucleo", "Planta abierta de la oficina corporativa en Santa Fe"),
@@ -121,6 +127,9 @@ LANDINGS = [
             (_IMG + "08-comedor-area-servicio", "Área de servicio y cocineta de la oficina en Espacio Santa Fe"),
             (_IMG + "09-privado-alfombra-vista", "Privado alfombrado con ventanal panorámico en Santa Fe"),
             (_IMG + "10-sala-capacitacion", "Sala amplia de trabajo o capacitación en oficina de Santa Fe"),
+            (_IMG + "recepcion-antes-despues", "Recepción: antes y después. Propuesta de ambientación"),
+            (_IMG + "recepcion-actual-1", "Recepción actual, primera vista"),
+            (_IMG + "recepcion-actual-2", "Recepción actual, segunda vista"),
         ],
         "floorPlans": [
             (_IMG + "plano-piso-18", "Plano arquitectónico del piso 18 de Espacio Santa Fe con privados, sala de capacitación, comedor, baños y site"),
@@ -129,9 +138,9 @@ LANDINGS = [
                            "Oficinas en Santa Fe: comprar o rentar y qué revisar antes de decidir"),
         "faqs": [
             ("¿Espacio Santa Fe Piso 18 está en venta o en renta?",
-             "Está disponible en venta y en renta. El precio se comparte de forma directa: agenda una visita o escribe por WhatsApp."),
+             "Está disponible únicamente en renta por $365,369.74 MXN al mes, más $58,459.16 de IVA y $66,117.68 de mantenimiento. Total mensual: $489,946.58 MXN."),
             ("¿Cuántos estacionamientos incluye?",
-             "Incluye 36 cajones de estacionamiento para el piso de 1,099.44 m²."),
+             "Incluye 36 cajones de estacionamiento para el piso de 1,085.50 m²."),
             ("¿Cómo es la distribución del piso?",
              "El piso 18 tiene 18 privados, tres de ellos con baño propio, una sala de juntas, una sala de capacitación, "
              "comedor propio y un cuarto habilitado para site. Hay baños privados para hombres y mujeres, además de los "

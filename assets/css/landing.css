@@ -104,3 +104,32 @@
   .lp-hero-nav{ right:50%; transform:translateX(50%); bottom:auto; top:1rem; }
 }
 @media (prefers-reduced-motion:reduce){ .lp-hero .hero-media picture{ transition:none; } }
+
+/* Contacto compacto: una acción principal y un enlace secundario. */
+.lp-hero{min-height:0}
+.lp-hero-inner{padding-block:5rem 3rem}
+.lp-hero-meta{margin-bottom:.8rem;letter-spacing:0}
+.lp-hero-op{margin-bottom:.8rem}
+.lp-rent-total{margin:0 0 1.2rem;font-size:1.25rem;line-height:1.5}
+.lp-rent-total small{font-size:.875rem;font-weight:400}
+.lp-hero-cta{align-items:center;gap:1.25rem}
+.lp-hero-cta .btn{flex:0 0 auto;min-height:44px;padding:.7rem 1.25rem;border-radius:9px;font-family:var(--font-body);font-size:.95rem;text-transform:none;letter-spacing:0}
+.lp-whatsapp-link{display:inline-flex;align-items:center;gap:.45rem;color:#fff;min-height:44px;font-size:.95rem;text-decoration:underline;text-underline-offset:4px}
+.lp-whatsapp-link svg{width:21px;height:21px}
+.lp-whatsapp-link:focus-visible{outline:2px solid #fff;outline-offset:4px}
+.lp-hero-cta #lpSlideCta{display:none}
+@media(max-width:600px){.lp-hero-inner{padding-block:3.5rem 2rem}.lp-hero h1{font-size:2.15rem}.lp-hero-sub{font-size:1rem}.lp-hero-meta{font-size:.875rem}.lp-hero-cta{gap:1rem}.lp-rent-total{font-size:1.15rem}}
+
+.lp-reception-gallery{display:grid;grid-template-columns:1fr 1fr;gap:20px}.lp-reception-gallery img{display:block;width:100%;height:auto;border-radius:12px}.lp-reception-gallery figcaption{font:14px/1.5 Inter,sans-serif;color:#526078}@media(max-width:600px){.lp-reception-gallery{gap:12px}}
+
+.lp-gallery-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:14px;background:#f5f3ef}.lp-gallery-track::-webkit-scrollbar{display:none}.lp-gallery-item{flex:0 0 100%;min-width:0;margin:0;scroll-snap-align:start}.lp-gallery-item button{display:block;width:100%;border:0;padding:0;background:transparent;cursor:zoom-in}.lp-gallery-item picture{display:block}.lp-gallery-item img{display:block;width:100%;height:min(52svh,460px);object-fit:contain}.lp-gallery-item figcaption{text-align:center;padding:10px 14px;font:14px/1.4 Inter,sans-serif}.lp-gallery-controls{display:flex;justify-content:center;align-items:center;gap:18px;margin-top:12px}.lp-gallery-controls button{width:44px;height:44px;border-radius:50%;border:1px solid #dce1ea;background:white;color:#09234b;font:24px sans-serif;cursor:pointer}.lp-gallery-controls button:disabled{opacity:.35;cursor:default}@media(max-width:600px){.lp-gallery-item img{height:min(42svh,310px)}}
+
+/* QA 2026-10-22: facts must fit narrow mobile viewports. */
+.lp-facts{grid-template-columns:repeat(7,minmax(0,1fr))}
+.lp-fact{min-width:0;overflow-wrap:anywhere}
+@media(max-width:900px){.lp-facts{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:600px){.lp-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Santa Fe: mobile empty grid cell and WhatsApp icon contrast. */
+@media(max-width:600px){body[data-landing-id="GF-ESF-P18"] .lp-facts{background:#fff}}
+.lp-whatsapp-link svg{fill:currentColor}

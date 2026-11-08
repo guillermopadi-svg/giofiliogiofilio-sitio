@@ -1,0 +1,29 @@
+{
+  "id": "bae806c9-33a4-501e-8322-708ea1075d4f",
+  "titulo": "Espacio Santa Fe — Piso 18",
+  "detalle": "Espacio Santa Fe — Piso 18",
+  "operacion": "renta",
+  "tipo": "oficina",
+  "precio": 489946.58,
+  "colonia_slug": "santa-fe",
+  "est": 36,
+  "m2c": 1085,
+  "descripcion": "Espacio Santa Fe Piso 18 es una oficina corporativa acondicionada de 1,085.50 m² en un edificio Clase A+ con certificación LEED Gold. Ocupa un piso completo, con la distribución ya resuelta y vistas panorámicas de la ciudad.\n\nLa planta combina 18 privados, tres de ellos con baño propio, una sala de juntas, una sala de capacitación, comedor propio y un cuarto habilitado para site. Tu equipo cuenta con baños privados para hombres y mujeres, además de los baños de las áreas comunes.\n\nEl edificio da acceso al piso mediante 8 elevadores y la renta incluye 36 cajones de estacionamiento. Se ofrece únicamente en renta.\n\nLa renta mensual es de $365,369.74 MXN, más $58,459.16 de IVA y $66,117.68 de mantenimiento. Total: $489,946.58 MXN al mes. Consulta las condiciones actualizadas para tu empresa.",
+  "destacada": true,
+  "estado": "disponible",
+  "fotos": [
+    "https://www.giofilio.com/assets/img/propiedades/espacio-santa-fe-piso-18/01-oficina-interior-piso-18.jpg",
+    "https://www.giofilio.com/assets/img/propiedades/espacio-santa-fe-piso-18/02-torre-espacio-santa-fe.jpg",
+    "https://www.giofilio.com/assets/img/propiedades/espacio-santa-fe-piso-18/03-planta-abierta-privados-vidrio.jpg",
+    "https://www.giofilio.com/assets/img/propiedades/espacio-santa-fe-piso-18/04-planta-abierta-nucleo.jpg",
+    "https://www.giofilio.com/assets/img/propiedades/espacio-santa-fe-piso-18/05-privados-vidrio-pasillo.jpg",
+    "https://www.giofilio.com/assets/img/propiedades/espacio-santa-fe-piso-18/06-pasillo-privados.jpg",
+    "https://www.giofilio.com/assets/img/propiedades/espacio-santa-fe-piso-18/07-privado-vista.jpg",
+    "https://www.giofilio.com/assets/img/propiedades/espacio-santa-fe-piso-18/08-comedor-area-servicio.jpg",
+    "https://www.giofilio.com/assets/img/propiedades/espacio-santa-fe-piso-18/09-privado-alfombra-vista.jpg",
+    "https://www.giofilio.com/assets/img/propiedades/espacio-santa-fe-piso-18/10-sala-capacitacion.jpg",
+    "https://www.giofilio.com/assets/img/propiedades/espacio-santa-fe-piso-18/recepcion-antes-despues.jpg",
+    "https://www.giofilio.com/assets/img/propiedades/espacio-santa-fe-piso-18/recepcion-actual-1.jpg",
+    "https://www.giofilio.com/assets/img/propiedades/espacio-santa-fe-piso-18/recepcion-actual-2.jpg"
+  ]
+}

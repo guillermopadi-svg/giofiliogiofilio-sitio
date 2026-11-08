@@ -68,7 +68,7 @@ async function usuarioValido(accessToken) {
 
     if (!serviceKey) {
       console.warn('[api/rebuild] SUPABASE_SERVICE_ROLE_KEY no configurada — no se pudo verificar si el asesor sigue activo.');
-      return true;
+      return false;
     }
     const perfilRes = await fetch(`${supabaseUrl}/rest/v1/perfiles?id=eq.${user.id}&select=activo`, {
       headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },

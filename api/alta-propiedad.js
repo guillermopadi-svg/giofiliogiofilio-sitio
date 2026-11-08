@@ -200,12 +200,16 @@ module.exports = async (req, res) => {
   }
 
   const raw = req.body || {};
+  if (raw.consentimiento !== true) {
+    res.status(400).json({ ok: false, error: 'falta_consentimiento' });
+    return;
+  }
 
   if (!raw.nombre || !raw.telefono) {
     res.status(400).json({ ok: false, error: 'faltan_datos_de_contacto' });
     return;
   }
-  if (raw.email && !EMAIL_RE.test(String(raw.email))) {
+  if (!EMAIL_RE.test(String(raw.email || '').trim())) {
     res.status(400).json({ ok: false, error: 'email_invalido' });
     return;
   }
@@ -218,14 +222,32 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const fotos = Array.isArray(raw.fotos) ? raw.fotos.slice(0, MAX_FOTOS).map((f) => texto(f, 500)) : [];
+  const curp = texto(raw.curp, 100).trim().toUpperCase();
+  if (curp && !/^[A-Z0-9]{18}$/.test(curp)) {
+    res.status(400).json({ ok: false, error: 'curp_invalida' });
+    return;
+  }
+
+  const fotos = Array.isArray(raw.fotos) ? raw.fotos.slice(0, MAX_FOTOS).map((f) => texto(f, 500)).filter((f) => {
+    try {
+      const u = new URL(f);
+      return u.origin === new URL(process.env.SUPABASE_URL).origin && u.pathname.startsWith('/storage/v1/object/public/solicitudes-alta/') && /\.jpe?g$/i.test(u.pathname) && !u.search && !u.hash;
+    } catch { return false; }
+  }) : [];
+  if (!fotos.length) {
+    res.status(400).json({ ok: false, error: 'fotos_requeridas' });
+    return;
+  }
   const amenidades = Array.isArray(raw.amenidades) ? raw.amenidades.slice(0, 40).map((a) => texto(a, 60)) : [];
 
   const fila = {
+    curp: curp || null,
+    consentimiento_en: new Date().toISOString(),
+    aviso_version: '2026-09-28',
     nombre: texto(raw.nombre, 120),
     apellido: texto(raw.apellido, 120),
     telefono: texto(raw.telefono, 40),
-    email: texto(raw.email, 200),
+    email: texto(String(raw.email).trim(), 200),
     operacion: raw.operacion,
     tipo: texto(raw.tipo, 40),
     precio: numero(raw.precio),
