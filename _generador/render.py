@@ -404,7 +404,7 @@ def pcard_landing(path, p):
       <source type="image/webp" srcset="{R(p["foto_card_webp"])}">
       <img src="{R(p["foto_card"])}" alt="{e(p["titulo"])} — oficina corporativa en Santa Fe, CDMX" loading="lazy" decoding="async" width="640" height="480">
     </picture>
-    <div class="pcard-badges"><span class="badge badge--renta">{e(p["operacion_label"])}</span></div>
+    <div class="pcard-badges"><span class="badge badge--renta">{e(p["operacion_label"])}</span>{'<span class="badge badge--exclusiva">Exclusiva</span>' if p.get("exclusiva") else ""}</div>
   </div>
   <div class="pcard-body">
     <div class="pcard-price">${p["precio"]:,.2f} <span class="cur">MXN / mes</span></div>
