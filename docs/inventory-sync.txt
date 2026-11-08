@@ -1,0 +1,22 @@
+Inventory publication repair — 2026-11-07 (CDMX)
+
+The repository was older than the approved deployment. Vercel's existing
+ignore-build guard correctly canceled inventory commits missing home-gallery.js
+and assets/img/zonas-reales/polanco.jpg. Reconciled public pages, APIs and brand
+assets from approved deployment dpl_AhL5aY73peahYmMjvNrSHP526gd4, verifying SHA1.
+Kept current repository property photographs and current inventory imports.
+
+Both inventory workflows now call _generador/build_inventory.py rather than a
+full editorial rebuild. They share concurrency group inventory-publish. The
+builder preserves blog, admin, alta-propiedad, API and editorial sitemap bytes;
+validates nonempty real inventory, unique IDs, property pages and local covers.
+Santa Fe's curated landing remains canonical, excluding imported GF-bae806c9.
+Missing Supabase credentials fail the workflow rather than erasing manual data.
+
+EasyBroker schedule: daily 12:00 UTC (06:00 CDMX).
+Manual/panel schedule: hourly at minute 15, plus dispatch.
+These schedules are not real-time guarantees; GitHub may delay scheduled jobs.
+
+Rollback: Vercel deployment dpl_AhL5aY73peahYmMjvNrSHP526gd4 is the prior approved
+release. A full build.py rebuild still requires editorial review; do not use it
+in scheduled inventory jobs. Future editorial releases must also update Git.

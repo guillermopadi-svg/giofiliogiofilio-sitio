@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Gio Filio — Normalización del dataset + pipeline de imágenes + data JS."""
 import os, json, random, hashlib
+from datetime import datetime, timezone
 from data_zonas import ALCALDIAS, COLONIAS, COLONIA_BY_SLUG, ALCALDIA_SLUG_BY_NOMBRE, MARCA
 from data_props import (TIPOS, TIPO_LABEL, TIPO_PLURAL, AMENIDADES,
                         AMENIDAD_LABEL, ESTADOS_INMUEBLE, P_SALA, P_COCINA, P_RECAMARA,
@@ -310,7 +311,7 @@ def emit_data_js(props, colonias, alcaldias, path=os.path.join(OUT, "assets/data
                                                "operacion_label", "privados", "wa_text")})
     calles = sorted({(p["calle"], p["colonia_nombre"]) for p in props})
     data = {
-        "meta": {"demo": DATASET_ES_DEMO, "ciudad": "Ciudad de México", "generado": "2026-08-16", "total": len(slim)},
+        "meta": {"demo": DATASET_ES_DEMO, "ciudad": "Ciudad de México", "generado": datetime.now(timezone.utc).isoformat(), "total": len(slim)},
         "propiedades": slim,
         "colonias": [
             {"slug": c["slug"], "nombre": c["nombre"], "alcaldia": c["alcaldia"],

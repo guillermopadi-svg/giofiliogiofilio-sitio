@@ -117,9 +117,9 @@ def icon(name, cls=""):
 NAV = [
     ("Inicio", "index.html", [
         ("Ir a Inicio", ""),
-        ("Propiedades destacadas", "#destacadas"),
+        ("Propiedades", "#destacadas"),
         ("Zonas destacadas", "#zonas-home"),
-        ("Testimonios", "#testimonios"),
+        ("Testimonios", "#home-stories"),
         ("Vender tu propiedad", "#vender-home"),
     ]),
     ("Zonas", "zonas/", None),
@@ -345,15 +345,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <noscript><div class="demo-bar">Este sitio usa JavaScript para los filtros, el mapa y los favoritos. Puedes navegar el catálogo y las páginas de zona sin JavaScript.</div></noscript>
-<!-- Franja de temporada -- quitar despues de septiembre 2026. -->
-<div class="fiestas-bar" id="fiestasBar">
-<span>🇲🇽 <strong>¡Feliz mes patrio!</strong> Todo el equipo de Gio Filio les desea una linda Independencia.</span>
-<button type="button" class="fiestas-bar-close" id="fiestasBarClose" aria-label="Cerrar aviso">&times;</button>
-</div>
-<script>(function(){{try{{if(localStorage.getItem('gf_fiestas_2026')){{document.getElementById('fiestasBar').remove();}}}}catch(e){{}}
-var b=document.getElementById('fiestasBarClose');
-if(b)b.addEventListener('click',function(){{document.getElementById('fiestasBar').remove();try{{localStorage.setItem('gf_fiestas_2026','1');}}catch(e){{}}}});
-}})();</script>
 {header(path, active)}
 <main id="main">
 {body}
@@ -413,13 +404,13 @@ def pcard_landing(path, p):
       <source type="image/webp" srcset="{R(p["foto_card_webp"])}">
       <img src="{R(p["foto_card"])}" alt="{e(p["titulo"])} — oficina corporativa en Santa Fe, CDMX" loading="lazy" decoding="async" width="640" height="480">
     </picture>
-    <div class="pcard-badges"><span class="badge badge--destacada">Destacada</span></div>
+    <div class="pcard-badges"><span class="badge badge--renta">{e(p["operacion_label"])}</span></div>
   </div>
   <div class="pcard-body">
-    <p class="pcard-kicker">{e(p["tipo_label"])} · Santa Fe</p>
+    <div class="pcard-price">${p["precio"]:,.2f} <span class="cur">MXN / mes</span></div>
     <h3 class="pcard-title">{e(p["titulo"])}</h3>
     <div class="pcard-specs pcard-specs--text">{specs}</div>
-    <div class="pcard-price pcard-price--consult">{e(p["operacion_label"])}</div>
+
   </div>
   <div class="pcard-actions">
     <a class="btn btn--ghost btn--sm" href="{R(p["url"])}">Ver propiedad</a>

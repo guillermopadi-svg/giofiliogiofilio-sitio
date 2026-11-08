@@ -80,7 +80,7 @@ def shadow_prop(l):
         "url": landing_url(l), "url_file": landing_path(l),
         "operacion": ops[0], "operaciones": ops, "operacion_label": OP_LABEL[l["operation"]],
         "tipo": tipo, "tipo_label": TIPO_LABEL[tipo],
-        "precio": l["price"] or 0, "moneda": l["currency"], "mantenimiento": 0,
+        "precio": l["price"] or 0, "moneda": l["currency"], "mantenimiento": l.get("maintenance", 0),
         "precio_consultar": bool(l["priceOnRequest"]),
         "colonia_slug": l["neighborhoodSlug"], "colonia_nombre": "Santa Fe",
         "alcaldia": l["boroughSlug"], "alcaldia_nombre": l["borough"],
@@ -92,7 +92,7 @@ def shadow_prop(l):
         "destacada": bool(l["featured"]), "exclusiva": False, "landing": True,
         "publicado": l["publicado"], "actualizado": l["actualizado"],
         "foto_card": card_jpg, "foto_card_webp": card_webp, "sin_webp": False,
-        "precio_m2": 0, "estado": "disponible", "wa_text": _wa_text(l),
+        "precio_m2": 336.59, "estado": "disponible", "wa_text": _wa_text(l),
         "m2_ref": l["surface"],
     }
 
@@ -162,26 +162,19 @@ def build_landing(l, write, K):
     desc_html = "".join(f"<p>{e(par)}</p>" for par in l["description"])
     feats_html = "".join(f'<li>{icon("check")}{e(f)}</li>' for f in l["features"])
 
-    # galería: escritorio (principal + 4) y móvil (slider con snap)
+    # A single horizontal slide is visible at a time, at a bounded height.
     g = l["gallery"]
-    thumbs = "".join(
-        f'<button type="button" class="g-sm" data-lightbox="{i}" data-lp="gallery_open" aria-label="Ver fotografía {i+1} en pantalla completa">'
-        + _picture(R, g[i][0], g[i][1], "thumb", loading="lazy", decoding="async", width=380, height=285)
-        + "</button>" for i in range(1, min(5, len(g))))
-    main_btn = (f'<button type="button" class="g-main" data-lightbox="0" data-lp="gallery_open" aria-label="Ver galería en pantalla completa">'
-                + _picture(R, g[0][0], g[0][1], "", loading="lazy", decoding="async", width=948, height=948)
-                + "</button>")
     slides = "".join(
-        f'<button type="button" class="lp-slide" data-lightbox="{i}" data-lp="gallery_open" aria-label="Ver fotografía {i+1} de {len(g)}">'
-        + _picture(R, g[i][0], g[i][1], "card", loading="lazy" if i else "eager", decoding="async", width=640, height=480)
-        + "</button>" for i in range(len(g)))
-    gallery_html = f'''<div class="gallery lp-gallery">
-      {main_btn}
-      {thumbs}
-      <button type="button" class="gallery-more" data-lightbox="0" data-lp="gallery_open">{icon("grid")} Ver todas las fotos ({len(g)})</button>
-    </div>
-    <div class="lp-slider" aria-label="Fotografías de {e(title)}" tabindex="0">{slides}</div>
-    <p class="lp-slider-count">{len(g)} fotografías · desliza para ver más · toca para ampliar</p>'''
+        f'<figure class="lp-gallery-item"><button type="button" data-gallery-image="{i}" aria-label="Ampliar {e(item[1])}">'
+        + _picture(R, item[0], item[1], "", loading="lazy", decoding="async", width=1536, height=1024)
+        + '</button><figcaption>' + e(item[1]) + '</figcaption></figure>'
+        for i, item in enumerate(g))
+    gallery_html = f'''<div class="lp-compact-gallery" role="region" aria-label="Galería de la propiedad">
+      <div class="lp-gallery-track" tabindex="0">{slides}</div>
+      <div class="lp-gallery-controls"><button type="button" data-gallery-prev aria-label="Foto anterior">←</button>
+      <span data-gallery-counter aria-live="polite">1 / {len(g)}</span>
+      <button type="button" data-gallery-next aria-label="Foto siguiente">→</button></div>
+    </div>'''
 
     plan = l["floorPlans"][0]
     plan_jpg, plan_webp = plan[0] + ".jpg", plan[0] + ".webp"
@@ -219,14 +212,14 @@ def build_landing(l, write, K):
     <button type="button" class="lp-hero-arrow" data-lp-next aria-label="Foto siguiente">{icon("chev")}</button>
   </div>
   <div class="wrap hero-inner lp-hero-inner">
-    <p class="eyebrow hero-eyebrow">Propiedad destacada</p>
     <h1>{e(title)}</h1>
     <p class="lead lp-hero-sub">{e(l["subtitle"])}</p>
     <p class="lp-hero-meta">{e(surface)} m² <i>·</i> {l["parkingSpaces"]} estacionamientos <i>·</i> Piso {l["floor"]}</p>
     <p class="lp-hero-op"><span class="badge badge--exclusiva">{e(op_label)}</span></p>
+    <p class="lp-rent-total"><strong>${l["price"]:,.2f} MXN al mes</strong><br><small>IVA y mantenimiento incluidos</small>{("<br><small>" + e(l["rentalNotice"]) + "</small>") if l.get("rentalNotice") else ""}</p>
     <div class="lp-hero-cta">
       <a class="btn btn--gold-solid btn--lg" href="#agendar" data-schedule="{e(pid)}" data-lp="schedule_visit" data-lp-src="hero">Agendar visita</a>
-      <a class="btn btn--wa btn--lg" href="{wa_href}" target="_blank" rel="noopener" data-lp-wa="hero">{icon("wa")} WhatsApp</a>
+      <a class="lp-whatsapp-link" href="{wa_href}" target="_blank" rel="noopener" data-lp-wa="hero">{icon("wa")} WhatsApp</a>
       <a class="btn btn--outline-light btn--lg" id="lpSlideCta" href="#galeria" data-lp="gallery_jump">Ver galería</a>
     </div>
   </div>
@@ -253,7 +246,7 @@ def build_landing(l, write, K):
 <section class="section-sm" id="galeria" style="padding-top:0">
   <div class="wrap">
     <p class="eyebrow">Galería</p>
-    <h2 class="lp-h2" style="margin-bottom:1.25rem">Conoce el espacio</h2>
+    <h2 class="lp-h2" style="margin-bottom:1.25rem">{e(l.get("galleryTitle", "Conoce el espacio"))}</h2>
     {gallery_html}
   </div>
 </section>
@@ -339,7 +332,7 @@ def build_landing(l, write, K):
 '''
     gallery_json = json.dumps([_imgs(x[0])[0] for x in g], ensure_ascii=False)
     extra_head = (f'<link rel="preload" as="image" type="image/webp" href="{R(_imgs(l["heroImage"])[1])}" fetchpriority="high">\n'
-                  f'<link rel="stylesheet" href="{R("assets/css/landing.css")}?v=1">')
+                  f'<link rel="stylesheet" href="{R("assets/css/landing.css")}?v=2">')
     ctx = {"property_id": pid, "property_title": title, "property_type": l["propertyType"],
            "property_location": f'{l["neighborhood"]}, {l["borough"]}, {l["city"]}',
            "operation": op_label}

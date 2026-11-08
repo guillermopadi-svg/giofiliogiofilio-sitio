@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap>
-    <loc>https://giofilio.com/sitemap-paginas.xml</loc>
+    <loc>https://www.giofilio.com/sitemap-paginas.xml</loc>
     <lastmod>2026-08-16</lastmod>
   </sitemap>
   <sitemap>
-    <loc>https://giofilio.com/sitemap-zonas.xml</loc>
+    <loc>https://www.giofilio.com/sitemap-zonas.xml</loc>
     <lastmod>2026-08-16</lastmod>
   </sitemap>
   <sitemap>
-    <loc>https://giofilio.com/sitemap-listados.xml</loc>
+    <loc>https://www.giofilio.com/sitemap-listados.xml</loc>
     <lastmod>2026-08-16</lastmod>
   </sitemap>
   <sitemap>
-    <loc>https://giofilio.com/sitemap-propiedades.xml</loc>
+    <loc>https://www.giofilio.com/sitemap-propiedades.xml</loc>
     <lastmod>2026-08-16</lastmod>
   </sitemap>
   <sitemap>
-    <loc>https://giofilio.com/sitemap-blog.xml</loc>
-    <lastmod>2026-08-16</lastmod>
+    <loc>https://www.giofilio.com/sitemap-blog.xml</loc>
+    <lastmod>2026-11-07</lastmod>
   </sitemap>
 </sitemapindex>

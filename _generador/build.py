@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """Gio Filio — Generador del sitio estático. Ejecuta: python3 build.py"""
-import os, json, shutil, sys
+import os, json, shutil, sys, re, hashlib
 from datetime import date
+from compact_pages import compact_page, home_properties
 
 from render import (page, e, rel, icon, money, money_short, num, breadcrumb,
                     breadcrumb_schema, card_grid, pcard, searchbox, cta_band,
@@ -16,13 +17,23 @@ import prep
 import landing
 from data_landings import LANDINGS
 from data_blog_landings import ARTICULOS as ARTICULOS_LANDING
-from blog_descubrir import descubrir as descubrir_blog
 
 OUT = ".."  # el sitio real es el directorio padre de _generador
 PAGES = []          # rutas generadas para sitemap
 TODAY = "2026-08-16"
 
 def write(path, html):
+    html = compact_page(path, html)
+    # Refresh fingerprints on every generation, including CSS and catalog scripts.
+    def asset_version(match):
+        asset = match.group(2).split('?')[0]
+        target = os.path.normpath(os.path.join(OUT, os.path.dirname(path), asset))
+        if not os.path.isfile(target):
+            return match.group(0)
+        with open(target, 'rb') as source:
+            version = hashlib.sha256(source.read()).hexdigest()[:12]
+        return match.group(1) + asset + '?v=' + version + match.group(3)
+    html = re.sub(r'((?:src|href)=")([^"#]+\.(?:css|js)(?:\?[^"#]*)?)(")', asset_version, html)
     full = os.path.join(OUT, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
     with open(full, "w", encoding="utf-8") as f:
@@ -38,7 +49,7 @@ def K(**kw):
 # =========================================================== PREPARACIÓN
 print("→ Procesando fotografías…")
 POOL = [l.strip() for l in open("ok_ids.txt")]
-IMAGES = prep.build_images(POOL)
+IMAGES = {} if os.environ.get("GIO_INVENTORY_ONLY") == "1" else prep.build_images(POOL)
 
 ZONE_IMG_MAP = {
     "polanco": 24, "lomas-de-chapultepec": 40, "condesa": 19, "hipodromo-condesa": 3,
@@ -53,22 +64,15 @@ ZONE_IMG_MAP = {
     "tlalpan": 8, "venustiano-carranza": 44, "xochimilco": 23, "coyoacan-alc": 54,
     "_cdmx": 57, "_cdmx2": 60, "_hero": 22,
 }
-ZONE_IMG = prep.build_zone_images(ZONE_IMG_MAP, pool_ids=POOL)
+ZONE_IMG = {} if os.environ.get("GIO_INVENTORY_ONLY") == "1" else prep.build_zone_images(ZONE_IMG_MAP, pool_ids=POOL)
 BLOG_IMG_MAP = {b["slug"]: idx for b, idx in zip(BLOG, [24, 19, 0, 32, 38, 50, 33, 45, 48, 4])}
-BLOG_IMG = prep.build_blog_images(BLOG_IMG_MAP, pool_ids=POOL)
+BLOG_IMG = {} if os.environ.get("GIO_INVENTORY_ONLY") == "1" else prep.build_blog_images(BLOG_IMG_MAP, pool_ids=POOL)
 
 # BLOG_ALL: para listados (home, indice del blog, sitemap, schema) -- incluye
 # los posts publicados por n8n (BLOG_EXTRA), ordenados por fecha. build_post()
 # sigue iterando solo sobre BLOG: las paginas de BLOG_EXTRA ya existen en
 # disco y no se regeneran aqui.
 BLOG = list(BLOG) + ARTICULOS_LANDING   # artículos ligados a landings (data_blog_landings.py)
-# Artículos que n8n ya dejó como página en blog/<slug>/ pero no están en BLOG_EXTRA:
-# se descubren leyendo la propia página, para que nunca se pierdan del índice.
-BLOG_DESCUBIERTOS = descubrir_blog(os.path.join(OUT, "blog"),
-                                   {b["slug"] for b in BLOG} | {b["slug"] for b in BLOG_EXTRA})
-BLOG_EXTRA = list(BLOG_EXTRA) + BLOG_DESCUBIERTOS
-for _c in sorted({b["categoria"] for b in BLOG_DESCUBIERTOS} - set(BLOG_CATEGORIAS)):
-    BLOG_CATEGORIAS = list(BLOG_CATEGORIAS) + [_c]
 BLOG_ALL = sorted(BLOG + BLOG_EXTRA, key=lambda b: b["fecha"], reverse=True)
 for _b in BLOG_EXTRA:
     PAGES.append(f'blog/{_b["slug"]}/index.html')
@@ -182,14 +186,14 @@ def listing_schema(p):
 def build_home():
     path = "index.html"
     R = lambda t: rel(path, t)
-    dest = (LANDING_PROPS_FEATURED + destacadas(8))[:8]
+    dest = home_properties(LANDING_PROPS + PROPS_ALL)
     zonas_home = ["polanco", "roma-norte", "condesa"]
 
     objetivos = [
-        ("Comprar", "comprar/", "home", "Encontrar el lugar correcto para tu momento de vida, no solo una propiedad disponible.", "Quiero comprar"),
-        ("Rentar", "rentar/", "key", "Opciones verificadas que sí aceptan tus condiciones, sin perder semanas en visitas inútiles.", "Quiero rentar"),
-        ("Invertir", "invertir/", "chart", "Números reales de rendimiento y vacancia antes de comprar, no promesas de plusvalía.", "Quiero invertir"),
-        ("Vender", "vender/", "tag", "Precio correcto desde el primer día y material profesional que sí genera visitas.", "Quiero vender"),
+        ("Comprar", "comprar/", "home", "Encuentra un espacio para tu próxima etapa.", "Quiero comprar"),
+        ("Rentar", "rentar/", "key", "Opciones que se ajustan a lo que necesitas.", "Quiero rentar"),
+        ("Invertir", "invertir/", "chart", "Compara ubicaciones y rendimientos.", "Quiero invertir"),
+        ("Vender", "vender/", "tag", "Conoce su valor y prepara la venta.", "Quiero vender"),
     ]
     obj_html = "".join(f'''<a class="objetivo-card" href="{R(u)}">
       <div class="oc-icon">{icon(ic)}</div>
@@ -243,6 +247,7 @@ def build_home():
     </picture>''' for i, s in enumerate(hero_slides))
 
     body = f'''
+<link rel="stylesheet" href="assets/css/home-mobile.css?v=1">
 <section class="hero">
   <div class="hero-media" data-hero-carousel>
     {hero_slides_html}
@@ -253,12 +258,6 @@ def build_home():
     <p class="lead">Propiedades seleccionadas y asesoría personalizada para comprar, rentar o invertir en Ciudad de México.</p>
     <a class="hero-highlight" id="heroHighlight" href="#"></a>
     {searchbox(path)}
-    <div class="hero-stats">
-      <div class="hero-stat"><b>16</b><span>Alcaldías de CDMX</span></div>
-      <div class="hero-stat"><b>{len(COLONIAS)}</b><span>Colonias con guía propia</span></div>
-      <div class="hero-stat"><b>{len(PROPS_ALL) + len(LANDINGS_ON)}</b><span>Propiedades en toda la República</span></div>
-      <div class="hero-stat"><b>1</b><span>Asesora, de principio a fin</span></div>
-    </div>
   </div>
 </section>
 
@@ -267,20 +266,21 @@ def build_home():
     <div class="carousel-head">
       <div>
         <p class="eyebrow">Selección de Gio</p>
-        <h2>Propiedades destacadas</h2>
-        <p class="lead" style="max-width:52ch">Menos propiedades. Mejores opciones. Cada una está aquí por una razón concreta que puedo explicarte.</p>
+        <h2>Explora estas propiedades</h2>
+        <p class="lead" style="max-width:52ch">Opciones para comprar, rentar o invertir.</p>
       </div>
       <a class="btn btn--ghost" href="{R("propiedades/")}">Ver todas</a>
     </div>
+    <p class="home-property-hint">Desliza para explorar →</p>
     {card_grid(path, dest)}
   </div>
 </section>
 
-<section class="section section--ivory" style="padding-block:var(--sp-7)">
+<section class="section section--ivory" id="objetivos-home" style="padding-block:var(--sp-7)">
   <div class="wrap">
     <p class="eyebrow eyebrow--center center">Por dónde empezamos</p>
     <h2 class="center" style="margin-bottom:.5rem">Encuentra según tu objetivo</h2>
-    <p class="lead center" style="max-width:56ch;margin:0 auto var(--sp-6)">Cada objetivo tiene un proceso distinto. Elige el tuyo y te explico exactamente cómo trabajo.</p>
+    <p class="lead center" style="max-width:56ch;margin:0 auto var(--sp-6)">¿Qué quieres hacer con tu próxima propiedad?</p>
     <div class="grid grid-4">{obj_html}</div>
   </div>
 </section>
@@ -634,36 +634,10 @@ def build_zonas_index():
       <div class="zc-body"><h3>{e(c["nombre"])}</h3><span>{len(by(colonia=c["slug"]))} propiedades · {e(c["alcaldia"])}</span></div>
     </a>''' for c in COLONIAS)
 
-    body = f'''
-{breadcrumb(path, crumbs)}
-<section class="hero hero--page hero--light">
-  <div class="hero-inner wrap">
-    <p class="eyebrow">Ciudad de México</p>
-    <h1>Las 16 alcaldías, colonia por colonia</h1>
-    <p class="lead" style="max-width:62ch">Trabajo exclusivamente en la Ciudad de México. Conocer bien un mercado vale más que cubrir muchos de forma superficial. Aquí encuentras cómo se vive cada zona, qué se consigue y a qué precio.</p>
-  </div>
-</section>
-
-<section class="section">
-  <div class="wrap">
-    <p class="eyebrow">Colonias con guía completa</p>
-    <h2 style="margin-bottom:2rem">{len(COLONIAS)} colonias prioritarias</h2>
-    <div class="grid grid-4">{col_cards}</div>
-  </div>
-</section>
-
-<section class="section section--ivory">
-  <div class="wrap">
-    <p class="eyebrow">Por alcaldía</p>
-    <h2 style="margin-bottom:2rem">Las 16 alcaldías de la Ciudad de México</h2>
-    <div class="grid grid-3">{alc_cards}</div>
-  </div>
-</section>
-
-{cta_band(path, "¿No sabes por dónde empezar?",
-          "Cuéntame cómo es tu día y te digo en qué tres colonias deberías estar buscando. Es la conversación que más tiempo ahorra.",
-          ("Hablar con Gio", "contacto/"), ("Ver todas las propiedades", "propiedades/"))}
-'''
+    from pathlib import Path
+    template = (Path(__file__).parent / "templates" / "zonas-explorer.html").read_text(encoding="utf-8")
+    body = breadcrumb(path, crumbs) + template.replace("[[COL_CARDS]]", col_cards).replace("[[ALC_CARDS]]", alc_cards)
+    body = body.replace(">1 propiedad publicadas", ">1 propiedad publicada").replace(">1 propiedades ·", ">1 propiedad ·")
     write(path, page(path, "Zonas de CDMX: las 16 alcaldías y sus colonias | Gio Filio",
         "Guía de zonas de CDMX: las 16 alcaldías y las colonias con más demanda —Polanco, Roma, Condesa, Del Valle, Santa Fe— con precios y estilo de vida.",
         body, active="zonas/", schema=[breadcrumb_schema(crumbs), person_schema()],
@@ -1367,21 +1341,23 @@ def build_valuacion():
     ]
     body = f'''
 {breadcrumb(path, crumbs)}
-<section class="hero hero--page hero--light hero--compact">
+<link rel="stylesheet" href="../assets/css/valuacion.css?v=2">
+<section class="hero hero--page hero--light hero--compact valuation-heading">
   <div class="hero-inner wrap">
-    <p class="eyebrow">Herramienta</p>
-    <h1>¿Cuánto vale tu propiedad?</h1>
-    <p class="lead" style="max-width:60ch">Un rango estimado en menos de un minuto, calculado con el precio de referencia por metro cuadrado de tu colonia en la Ciudad de México.</p>
+    <p class="eyebrow">TU PROPIEDAD · SU SIGUIENTE PASO</p>
+    <h1>Conoce su valor. Da el siguiente paso.</h1>
+    <p class="lead" style="max-width:60ch">Estima el valor de tu propiedad en CDMX y solicita venderla, en un mismo lugar.</p>
   </div>
 </section>
 
-<section class="section">
+<div class="wrap"><nav class="valuation-journey" aria-label="Pasos para vender"><button type="button" id="journeyEstimate" aria-current="step">01 · Estimar valor</button><span aria-hidden="true">→</span><button type="button" id="journeySale">02 · Solicitar venta</button></nav><noscript><p>Para registrar tu propiedad, <a href="../alta-propiedad/">abre el formulario de venta</a>.</p></noscript><p class="valuation-direct">¿Ya decidiste vender? <button type="button" data-start-sale>Continúa directamente</button></p></div>
+<section class="section valuation-workspace" id="estimateStep">
   <div class="wrap">
-    <div class="prop-layout" style="grid-template-columns:1fr 400px">
+    <div class="prop-layout valuation-layout">
       <div>
         <form id="valForm" data-lead-form data-form-name="valuacion" data-source="herramienta_valuacion" data-event="request_valuation" novalidate>
-          <div class="progress-steps" aria-hidden="true"><i class="is-on"></i><i class="is-on"></i><i></i></div>
-          <h2 style="font-size:var(--step-2)">Datos de la propiedad</h2>
+          <div class="valuation-fields"><p class="valuation-step">01 / TU PROPIEDAD</p>
+          <h2>Empecemos por tu espacio</h2><p class="valuation-hint">Su ubicación y características nos dan el punto de partida.</p>
           <div class="form-grid-2">
             <div class="form-row"><label for="valAlcaldia">Alcaldía</label>
               <select id="valAlcaldia" name="alcaldia" required><option value="">Selecciona</option>{alcs}</select><span class="err">Elige la alcaldía</span></div>
@@ -1406,9 +1382,9 @@ def build_valuacion():
             <div class="form-row"><label for="val-ant">Antigüedad (años)</label>
               <input type="number" id="val-ant" name="antiguedad" min="0" max="120" value="10" inputmode="numeric"></div>
           </div>
-          <hr class="divider">
-          <h3 style="font-size:var(--step-1)">¿A dónde te enviamos el análisis completo?</h3>
-          <p class="small muted">Con tus datos preparo además un comparativo con operaciones cerradas reales de tu colonia.</p>
+          </div><div class="valuation-contact"><p class="valuation-step">02 / HABLEMOS</p>
+          <h2>Recibe tu análisis</h2>
+          <p class="small muted">Déjanos tus datos para dar seguimiento y revisar los comparables de tu zona.</p>
           <div class="form-grid-2">
             <div class="form-row"><label for="val-nombre">Nombre</label>
               <input type="text" id="val-nombre" name="nombre" required autocomplete="name" placeholder="Tu nombre"><span class="err">Escribe tu nombre</span></div>
@@ -1419,7 +1395,7 @@ def build_valuacion():
             <input type="email" id="val-mail" name="email" required autocomplete="email" placeholder="tu@correo.com"><span class="err">Correo válido</span></div>
           <label class="form-consent"><input type="checkbox" name="consent" required>
             <span>Acepto el <a href="{R("aviso-de-privacidad/")}">aviso de privacidad</a> y que Gio Filio me contacte.</span></label>
-          <div class="form-actions"><button type="submit" class="btn btn--lg">Ver mi valuación estimada</button></div>
+          <div class="form-actions"><button type="submit" class="btn btn--lg">Ver mi estimación ↗</button></div><p class="valuation-disclaimer">Referencia orientativa. No sustituye un avalúo formal.</p></div>
         </form>
 
         <div class="valuacion-result" id="valResult" role="status">
@@ -1439,14 +1415,13 @@ def build_valuacion():
           </table>
           <p class="fin-note">Esta cifra es orientativa y no sustituye un avalúo formal. Para vender bien, el siguiente paso es revisar operaciones cerradas comparables de tu calle y tu edificio. Gio te contacta para prepararlo.</p>
           <div class="cta-actions" style="justify-content:flex-start;margin-top:1.5rem">
-            <a class="btn" href="{R("vender/")}">Quiero vender con Gio</a>
+            <button type="button" class="btn" data-start-sale>Quiero vender con Gio →</button><button type="button" class="btn btn--ghost" id="editEstimate">Ajustar estimación</button>
             <a class="btn btn--wa" href="https://wa.me/{MARCA["whatsapp"]}" target="_blank" rel="noopener" data-wa-global="post_valuacion">{icon("wa")} WhatsApp</a>
           </div>
         </div>
       </div>
-      <aside>
-        <div class="filters-panel">
-          <h3 style="font-size:var(--step-1)">Cómo se calcula</h3>
+      <aside class="valuation-method">
+        <details class="filters-panel"><summary>Cómo calculamos tu estimación <span>Ver metodología y límites</span></summary>
           <p class="small">Se parte del precio medio por metro cuadrado de la colonia y se aplican ajustes por tipo de propiedad, antigüedad, número de recámaras y estacionamientos.</p>
           <hr class="rule-gold">
           <h4 style="font-size:var(--step-0)">Lo que la fórmula no ve</h4>
@@ -1458,18 +1433,25 @@ def build_valuacion():
             <li>Comparables cerrados de tu edificio</li>
           </ul>
           <p class="small muted">Por eso el rango es amplio: es un punto de partida, no un precio de lista.</p>
-        </div>
+        </details>
       </aside>
     </div>
   </div>
 </section>
 
+<section id="saleStep" class="section valuation-sale" hidden><div class="wrap"><p class="valuation-step">EL SIGUIENTE PASO</p><h2>Vendamos tu propiedad</h2><p>Revisa tus datos y agrega los detalles y fotografías. Nuestro equipo te acompañará con la venta.</p><p id="saleLoading" role="status">Preparando tu formulario…</p><iframe id="saleFrame" title="Solicitud de venta de tu propiedad" data-src="../alta-propiedad/?integrado=venta"></iframe><p class="small">¿No carga el formulario? <a href="../alta-propiedad/">Abrir registro de propiedad</a></p></div></section>
 {faq_block(faqs)}
 '''
+    body += '<script src="../assets/js/valuation-journey.js?v=1" defer></script>'
     write(path, page(path, "¿Cuánto vale tu propiedad en CDMX? | Valuación | Gio Filio",
         "Calcula un rango estimado del valor de tu departamento o casa en Ciudad de México con el precio de referencia por m² de tu colonia. Gratis y sin compromiso.",
         body, schema=[breadcrumb_schema(crumbs), faq_schema(faqs), person_schema()],
         page_type="valuacion", **K()))
+
+
+    write("vender/index.html", page("vender/index.html", "Vende tu propiedad | Gio Filio",
+        "Estima el valor de tu propiedad y solicita venderla con Gio Filio, sin repetir tus datos.",
+        body, page_type="vender", **K()))
 
 
 # =========================================================== FAVORITOS / COMPARADOR
@@ -1796,7 +1778,7 @@ LEGAL_PRIVACIDAD = [
     ("Responsable del tratamiento",
      "Gio Filio, con domicilio en la Ciudad de México y correo de contacto gio@giofilio.com, es responsable del uso y protección de sus datos personales, en términos de la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, su Reglamento y los Lineamientos del Aviso de Privacidad."),
     ("Datos personales que recabamos",
-     "Recabamos datos de identificación y contacto: nombre, número de teléfono o WhatsApp, correo electrónico y el contenido de los mensajes que usted nos envía. Cuando solicita una valoración o publica una propiedad, recabamos además datos del inmueble: ubicación aproximada, alcaldía, colonia, tipo, superficie, número de recámaras y baños, antigüedad y precio esperado. No recabamos datos personales sensibles."),
+     "Recabamos datos de identificación y contacto: nombre, número de teléfono o WhatsApp, correo electrónico y el contenido de los mensajes que usted nos envía. Cuando solicita una valoración o publica una propiedad, recabamos además datos del inmueble: ubicación aproximada, alcaldía, colonia, tipo, superficie, número de recámaras y baños, antigüedad y precio esperado. No recabamos datos personales sensibles. En el registro de propiedades puede proporcionar voluntariamente su CURP para apoyar la revisión de identidad y la prevención de suplantaciones. Proporcionarla no constituye una verificación oficial y puede enviar su solicitud sin ella. También recabamos la dirección del inmueble y la información patrimonial que proporcione sobre hipotecas, gravámenes o adeudos, así como la fecha de aceptación y la versión del aviso de privacidad."),
     ("Finalidades primarias",
      "Sus datos se utilizan para: atender su solicitud de información sobre una propiedad; contactarle por WhatsApp, correo o teléfono; agendar y coordinar visitas; preparar análisis de valuación y comparables de mercado; dar seguimiento a su proceso de compra, renta, venta o inversión; y cumplir con las obligaciones legales aplicables a la intermediación inmobiliaria."),
     ("Finalidades secundarias",
@@ -1935,7 +1917,6 @@ def build_404():
 def build_sitemap():
     LASTMOD = {landing.landing_path(l): l["actualizado"] for l in LANDINGS_ON}
     LASTMOD.update({f'blog/{b["slug"]}/index.html': b["fecha"] for b in ARTICULOS_LANDING})
-    LASTMOD.update({f'blog/{b["slug"]}/index.html': b["fecha"] for b in BLOG_DESCUBIERTOS})
     def entrada(p):
         loc = canonical(p)
         if p == "index.html":
@@ -2048,7 +2029,7 @@ Contacto directo: WhatsApp {MARCA["whatsapp_display"]} · {MARCA["email"]}
 - [Zonas de CDMX]({SITE}/zonas/): guía de las 16 alcaldías y sus colonias — estilo de vida, movilidad, precios de referencia.
 - [Conoce a Gio]({SITE}/conoce-a-gio/): quién es Gio Filio y cómo trabaja.
 - [Blog]({SITE}/blog/): artículos sobre el mercado inmobiliario de CDMX.
-- [Oficina en venta y renta en Santa Fe]({SITE}/propiedades/oficina-espacio-santa-fe-piso-18/): Espacio Santa Fe Piso 18, 1,099.44 m², 36 estacionamientos, Clase A+ y LEED Gold; precio a consultar.
+- [Oficina en renta en Santa Fe]({SITE}/propiedades/oficina-espacio-santa-fe-piso-18/): Espacio Santa Fe Piso 18, 1,085.50 m², 36 estacionamientos, Clase A+ y LEED Gold; $489,946.58 MXN mensuales con IVA y mantenimiento.
 - [Oficinas en Santa Fe: comprar o rentar]({SITE}/blog/oficinas-en-santa-fe-comprar-o-rentar/): guía para decidir entre comprar y rentar una oficina en Santa Fe.
 - [Contacto]({SITE}/contacto/): formulario y WhatsApp directo.
 

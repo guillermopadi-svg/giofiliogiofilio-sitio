@@ -2,8 +2,8 @@
   "meta": {
     "demo": false,
     "ciudad": "Ciudad de México",
-    "generado": "2026-08-16",
-    "total": 78
+    "generado": "2026-11-08T05:23:06.874318+00:00",
+    "total": 77
   },
   "propiedades": [
     {
@@ -11,12 +11,12 @@
       "titulo": "Espacio Santa Fe — Piso 18",
       "titulo_wa": "la oficina Espacio Santa Fe — Piso 18",
       "url": "propiedades/oficina-espacio-santa-fe-piso-18/",
-      "operacion": "venta",
+      "operacion": "renta",
       "tipo": "oficina",
       "tipo_label": "Oficina",
-      "precio": 0,
+      "precio": 489946.58,
       "moneda": "MXN",
-      "mantenimiento": 0,
+      "mantenimiento": 66117.68,
       "colonia": "santa-fe",
       "colonia_nombre": "Santa Fe",
       "alcaldia": "cuajimalpa-de-morelos",
@@ -32,7 +32,7 @@
       "ban": 0,
       "medios": 0,
       "est": 36,
-      "m2c": 1099.44,
+      "m2c": 1085.5,
       "m2t": 0,
       "antig": 0,
       "piso": 18,
@@ -43,18 +43,17 @@
       "exclusiva": false,
       "publicado": "2026-09-24",
       "actualizado": "2026-09-24",
-      "foto_card": "assets/img/propiedades/espacio-santa-fe-piso-18/01-vista-panoramica-piso-18-card.jpg",
-      "precio_m2": 0,
+      "foto_card": "assets/img/propiedades/espacio-santa-fe-piso-18/01-oficina-interior-piso-18-card.jpg",
+      "precio_m2": 336.59,
       "estado": "disponible",
       "landing": true,
-      "precio_consultar": true,
+      "precio_consultar": false,
       "operaciones": [
-        "venta",
         "renta"
       ],
-      "operacion_label": "Venta y renta",
+      "operacion_label": "Renta",
       "privados": 18,
-      "wa_text": "Hola Gio, me interesa la oficina Espacio Santa Fe Piso 18 de 1,099.44 m². Quisiera recibir más información."
+      "wa_text": "Hola Gio, me interesa la oficina Espacio Santa Fe Piso 18 de 1,085.50 m². Quisiera recibir más información."
     },
     {
       "id": "EB-KG7144",
@@ -1076,49 +1075,6 @@
       "actualizado": "2026-11-07",
       "foto_card": "assets/img/properties/eb-eb-wp8679-00-card.jpg",
       "precio_m2": 350,
-      "estado": "disponible"
-    },
-    {
-      "id": "GF-bae806c9",
-      "titulo": "Espacio Santa Fe — Piso 18",
-      "titulo_wa": "la propiedad en Santa Fe",
-      "url": "propiedad/oficina-santa-fe-gfbae806c9/",
-      "operacion": "renta",
-      "tipo": "oficina",
-      "tipo_label": "Oficina",
-      "precio": 489946.58,
-      "moneda": "MXN",
-      "mantenimiento": 0,
-      "colonia": "santa-fe",
-      "colonia_nombre": "Santa Fe",
-      "alcaldia": "cuajimalpa-de-morelos",
-      "alcaldia_nombre": "Cuajimalpa de Morelos",
-      "alcaldia_tiene_pagina": true,
-      "estado_nombre": "Ciudad de México",
-      "sin_pagina": false,
-      "calle": "",
-      "cp": "05300",
-      "lat": 19.36,
-      "lng": -99.26,
-      "rec": 0,
-      "ban": 0,
-      "medios": 0,
-      "est": 36,
-      "m2c": 1085,
-      "m2t": 0,
-      "antig": 0,
-      "piso": "",
-      "estado_inm": "excelente",
-      "amenidades": [],
-      "badges": [
-        "exclusiva"
-      ],
-      "destacada": true,
-      "exclusiva": true,
-      "publicado": "2026-10-02",
-      "actualizado": "2026-10-02",
-      "foto_card": "https://www.giofilio.com/assets/img/propiedades/espacio-santa-fe-piso-18/01-oficina-interior-piso-18.jpg",
-      "precio_m2": 452,
       "estado": "disponible"
     },
     {
@@ -4072,10 +4028,6 @@
     }
   ],
   "calles": [
-    {
-      "calle": "",
-      "colonia": "Santa Fe"
-    },
     {
       "calle": "Alicama",
       "colonia": "Lomas de Chapultepec"

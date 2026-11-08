@@ -45,10 +45,13 @@
   (function heroSlider() {
     var media = $('[data-lp-hero]'); if (!media) return;
     var slides = $$('.lp-hero-slide', media), dots = $$('[data-lp-dot]'), cta = $('#lpSlideCta');
-    if (slides.length < 2) return;
+    var panelManaged = document.body.matches('[data-landing-id="GF-ESF-P18"]');
+    // Do not display withdrawn static photos while awaiting the saved gallery.
+    if (panelManaged) media.style.visibility = 'hidden';
     var i = 0, timer = null;
     var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     function go(n) {
+      if (!slides.length) return;
       i = (n + slides.length) % slides.length;
       slides.forEach(function (s, k) { s.classList.toggle('is-active', k === i); });
       dots.forEach(function (d, k) { d.classList.toggle('is-active', k === i); });
@@ -63,12 +66,37 @@
         cta.classList.remove('is-changing');
       }, 300);
     }
-    function start() { if (reduce || timer) return; timer = setInterval(function () { go(i + 1); }, 6000); }
+    function start() { if (reduce || timer || slides.length < 2 || (panelManaged && media.style.visibility === "hidden")) return; timer = setInterval(function () { go(i + 1); }, 6000); }
     function stop() { clearInterval(timer); timer = null; }
     var prev = $('[data-lp-prev]'), next = $('[data-lp-next]');
     if (prev) prev.addEventListener('click', function () { stop(); go(i - 1); });
     if (next) next.addEventListener('click', function () { stop(); go(i + 1); });
     dots.forEach(function (d) { d.addEventListener('click', function () { stop(); go(Number(d.dataset.lpDot)); }); });
+    document.addEventListener('gf:landing-photos', function (event) {
+      if (!panelManaged || !Array.isArray(event.detail)) return;
+      stop();
+      var photos = event.detail.slice(0, 4), dotsHost = $('.lp-hero-dots');
+      media.replaceChildren();
+      if (dotsHost) dotsHost.replaceChildren();
+      photos.forEach(function (src, index) {
+        var picture = document.createElement('picture'), img = document.createElement('img');
+        picture.className = 'lp-hero-slide' + (index === 0 ? ' is-active' : '');
+        picture.dataset.cta = 'Ver galería'; picture.dataset.href = '#galeria';
+        img.src = src; img.alt = 'Espacio Santa Fe — fotografía ' + (index + 1);
+        img.decoding = 'async'; picture.appendChild(img); media.appendChild(picture);
+        if (dotsHost) {
+          var dot = document.createElement('button'); dot.type = 'button';
+          dot.className = 'lp-hero-dot'; dot.dataset.lpDot = index;
+          dot.setAttribute('aria-label', 'Ir a la foto ' + (index + 1));
+          dot.addEventListener('click', function () { stop(); go(index); });
+          dotsHost.appendChild(dot);
+        }
+      });
+      slides = $$('.lp-hero-slide', media); dots = $$('[data-lp-dot]');
+      var navigation = $('.lp-hero-nav'); if (navigation) navigation.hidden = slides.length < 2;
+      media.style.visibility = 'visible';
+      i = 0; go(0); start();
+    });
     var hero = media.parentElement, x0 = null;
     hero.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
     hero.addEventListener('touchend', function (e) {
@@ -155,4 +183,33 @@
       io.observe(host);
     } else { load(); }
   }
+})();
+
+// One visible slide; panel photo changes appear without rebuilding the website.
+(function(){
+  'use strict';
+  var box=document.querySelector('.lp-compact-gallery');if(!box)return;
+  var track=box.querySelector('.lp-gallery-track'),prev=box.querySelector('[data-gallery-prev]'),next=box.querySelector('[data-gallery-next]'),counter=box.querySelector('[data-gallery-counter]');
+  var sources=(window.GF_GALLERY||[]).map(function(s){return new URL(s,location.origin+'/').href;});
+  var labels={};Array.from(track.querySelectorAll('figcaption')).forEach(function(el,i){labels[sources[i]]=el.textContent;});
+  function index(){return Math.round(track.scrollLeft/Math.max(1,track.clientWidth));}
+  function update(){var i=index();counter.textContent=(sources.length?i+1:0)+' / '+sources.length;prev.disabled=i<=0;next.disabled=i>=sources.length-1;}
+  function move(step){track.scrollBy({left:step*track.clientWidth,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
+  prev.addEventListener('click',function(){move(-1);});next.addEventListener('click',function(){move(1);});track.addEventListener('scroll',update,{passive:true});
+  track.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();move(e.key==='ArrowRight'?1:-1);}});
+  track.addEventListener('click',function(e){var b=e.target.closest('[data-gallery-image]');if(b&&window.gfOpenLightbox)window.gfOpenLightbox(sources,Number(b.dataset.galleryImage));});
+  window.addEventListener('resize',update);update();
+  if(!document.body.matches('[data-landing-id="GF-ESF-P18"]'))return;
+  fetch('/api/landing-gallery',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(data){
+    if(!Array.isArray(data.fotos))return;
+    document.dispatchEvent(new CustomEvent("gf:landing-photos",{detail:data.fotos}));
+    if(JSON.stringify(data.fotos)===JSON.stringify(sources))return;
+    sources=data.fotos;window.GF_GALLERY=sources;track.replaceChildren();
+    sources.forEach(function(src,i){
+      var figure=document.createElement('figure');figure.className='lp-gallery-item';
+      var button=document.createElement('button');button.type='button';button.dataset.galleryImage=i;button.setAttribute('aria-label','Ampliar foto '+(i+1));
+      var img=document.createElement('img');img.src=src;img.loading='lazy';img.alt=labels[src]||'Espacio Santa Fe — fotografía '+(i+1);button.appendChild(img);
+      var caption=document.createElement('figcaption');caption.textContent=img.alt;figure.append(button,caption);track.appendChild(figure);
+    });track.scrollLeft=0;update();
+  }).catch(function(){/* Keep the verified static gallery when the service is unavailable. */});
 })();
