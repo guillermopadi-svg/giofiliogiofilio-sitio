@@ -262,7 +262,7 @@
         '<a class="pcard-link" href="' + href + '" data-track-select="' + esc(p.id) + '" aria-label="Ver ' + esc(p.titulo) + '"></a>' +
         '<div class="pcard-media">' +
           '<img src="' + url(p.foto_card) + '" alt="' + esc(p.titulo) + ' — oficina corporativa en Santa Fe, CDMX" loading="lazy" decoding="async" width="640" height="480">' +
-          '<div class="pcard-badges"><span class="badge badge--renta">Renta</span></div>' +
+          '<div class="pcard-badges"><span class="badge badge--renta">Renta</span>' + (p.exclusiva ? '<span class="badge badge--exclusiva">Exclusiva</span>' : '') + '</div>' +
         '</div>' +
         '<div class="pcard-body">' +
           '<div class="pcard-price">' + '$' + Number(p.precio).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) + ' <span class="cur">MXN / mes</span></div>' +

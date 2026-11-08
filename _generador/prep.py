@@ -245,9 +245,10 @@ def normalize(images):
             art = "el" if p["tipo"] in ("departamento", "penthouse", "loft", "terreno", "desarrollo", "local-comercial") else "la"
             p["titulo_wa"] = f'{art} {p["tipo_label"].lower()} en {p["colonia_nombre"]}'
 
-        # badges derivados
-        badges = list(p.get("badges", []))
-        if p.get("exclusiva") and "exclusiva" not in badges:
+        # Política editorial: únicamente Espacio Santa Fe es exclusiva.
+        p["exclusiva"] = p["id"] == "GF-ESF-P18"
+        badges = [b for b in p.get("badges", []) if b != "exclusiva"]
+        if p["exclusiva"]:
             badges.append("exclusiva")
         p["badges"] = badges
 

@@ -20,8 +20,8 @@ for name in ('sitemap-blog.xml', 'robots.txt', 'llms.txt'):
 import build
 for prop in build.PROPS_ALL: build.build_property(prop)
 by_id = {p['id']: p for p in build.PROPS_ALL + build.LANDING_PROPS}
-card = re.compile(r'<article\b[^>]*\bclass="pcard[^" ]*"[^>]*\bdata-id="([^"]+)"[^>]*>.*?</article>', re.S)
-for folder in ('venta', 'renta', 'propiedades', 'zonas'):
+card = re.compile(r'<article\b[^>]*\bclass="pcard[^"]*"[^>]*\bdata-id="([^"]+)"[^>]*>.*?</article>', re.S)
+for folder in ('venta', 'renta', 'propiedades', 'zonas', 'comprar', 'casas', 'departamentos', 'desarrollos', 'inversion'):
     for page in (ROOT / folder).rglob('index.html'):
         relative = page.relative_to(ROOT).as_posix()
         if relative in build.LANDING_PATHS: continue

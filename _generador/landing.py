@@ -88,8 +88,8 @@ def shadow_prop(l):
         "calle": l["address"], "cp": l["postalCode"], "lat": l["latitude"], "lng": l["longitude"],
         "rec": 0, "ban": 0, "medios": 0, "est": l["parkingSpaces"],
         "m2c": l["surface"], "m2t": 0, "antig": 0, "piso": l["floor"], "privados": l["privateOffices"],
-        "estado_inm": "excelente", "amenidades": [], "badges": [],
-        "destacada": bool(l["featured"]), "exclusiva": False, "landing": True,
+        "estado_inm": "excelente", "amenidades": [], "badges": ["exclusiva"] if l["id"] == "GF-ESF-P18" else [],
+        "destacada": bool(l["featured"]), "exclusiva": l["id"] == "GF-ESF-P18", "landing": True,
         "publicado": l["publicado"], "actualizado": l["actualizado"],
         "foto_card": card_jpg, "foto_card_webp": card_webp, "sin_webp": False,
         "precio_m2": 336.59, "estado": "disponible", "wa_text": _wa_text(l),
@@ -215,7 +215,7 @@ def build_landing(l, write, K):
     <h1>{e(title)}</h1>
     <p class="lead lp-hero-sub">{e(l["subtitle"])}</p>
     <p class="lp-hero-meta">{e(surface)} m² <i>·</i> {l["parkingSpaces"]} estacionamientos <i>·</i> Piso {l["floor"]}</p>
-    <p class="lp-hero-op"><span class="badge badge--exclusiva">{e(op_label)}</span></p>
+    <p class="lp-hero-op"><span class="badge badge--renta">{e(op_label)}</span>{'<span class="badge badge--exclusiva">Exclusiva</span>' if l["id"] == "GF-ESF-P18" else ""}</p>
     <p class="lp-rent-total"><strong>${l["price"]:,.2f} MXN al mes</strong><br><small>IVA y mantenimiento incluidos</small>{("<br><small>" + e(l["rentalNotice"]) + "</small>") if l.get("rentalNotice") else ""}</p>
     <div class="lp-hero-cta">
       <a class="btn btn--gold-solid btn--lg" href="#agendar" data-schedule="{e(pid)}" data-lp="schedule_visit" data-lp-src="hero">Agendar visita</a>
