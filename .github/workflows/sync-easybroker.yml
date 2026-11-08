@@ -63,3 +63,8 @@ jobs:
             git commit -m "Sincronización automática de inventario (EasyBroker)"
             git push
           fi
+
+      - name: Comprobar publicación real en producción
+        if: github.ref == 'refs/heads/main'
+        working-directory: _generador
+        run: python3 verify_inventory_publication.py
