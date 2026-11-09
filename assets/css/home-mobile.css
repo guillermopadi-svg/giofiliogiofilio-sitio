@@ -54,8 +54,8 @@ body[data-page-type="home"] .carousel-head{gap:10px;margin-bottom:12px}
 #objetivos-home h3{font:600 17px Inter,sans-serif}
 #objetivos-home .objetivo-card p{font:400 12px/1.5 Inter,sans-serif;margin-bottom:12px}
 #objetivos-home .link-arrow{font:600 12px Inter,sans-serif}
-#zonas-home .grid{gap:12px}
-#zonas-home .zona-card{min-height:140px;aspect-ratio:2.4}
+#zonas-home .grid{gap:12px;grid-template-columns:minmax(0,1fr)}
+#zonas-home .zona-card{width:100%;min-width:0;min-height:140px;aspect-ratio:2.4}
 body[data-page-type="home"] .site-footer{padding-top:28px}
 }
 @media(max-width:700px){
