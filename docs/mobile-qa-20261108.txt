@@ -1,0 +1,29 @@
+QA móvil — 8 noviembre 2026 (CDMX)
+
+Navegador real, anchos 320, 360 y 390 px; comprobación de escritorio 1280 px.
+
+Corregido:
+- Inicio a 320 px desbordaba a 352 px por tarjetas de zonas con ancho mínimo
+  derivado de aspect-ratio y min-height. Grid minmax(0,1fr), tarjetas width:100%
+  y min-width:0. Verificado scrollWidth=320/390/1280 en los tres tamaños.
+- Tarjetas estáticas y fichas regeneradas usaban 5215544876074 mientras config.js,
+  contacto, menú y buscador usaban 5215539624239. Unificado el número vigente
+  en HTML y data_zonas.py para mantenerlo en las próximas sincronizaciones.
+
+Pruebas realizadas:
+- Abrir/cerrar menú móvil.
+- Buscar oficinas en renta desde inicio: 15 resultados y filtros conservados.
+- Filtro avanzada Exclusiva: una propiedad, GF-ESF-P18.
+- Galería Santa Fe: abrir, avanzar 1/15 a 2/15 y cerrar.
+- Galería EB-WQ9327: abrir, avanzar 1/31 a 2/31 y cerrar.
+- Santa Fe y contacto: envío vacío bloqueado; nombre, teléfono, correo y
+  consentimiento requeridos. Sin crear registros ni enviar mensajes.
+- Alta: envío sin fotos bloqueado con aviso explícito; CP 11550 resuelve
+  Polanco IV Sección tras cargar catálogo; sin errores de consola observados.
+- Sin fotos rotas cargadas en las páginas revisadas: inicio, catálogo, ambas
+  fichas, contacto, alta, blog y artículo mejor-inmobiliaria-comprar-casa-cdmx.
+- Catálogo, alta y artículo sin desbordamiento horizontal a 320 px.
+
+Alcance: navegador con viewport móvil, no dispositivo físico. Las fotos lazy
+fuera de pantalla no se cuentan como fallos. No se probó entrega real de leads,
+correos ni mensajes WhatsApp; corresponde a la revisión de integración/leads.
