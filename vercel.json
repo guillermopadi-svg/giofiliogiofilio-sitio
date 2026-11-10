@@ -4,6 +4,11 @@
   "cleanUrls": true,
   "redirects": [
     {
+      "source": "/propiedades/oficina-espacio-santa-fe-piso-18/",
+      "destination": "/renta/oficinas/",
+      "permanent": false
+    },
+    {
       "source": "/propiedad/local-comercial-roma-norte-ebwd4874/",
       "destination": "/propiedad/local-comercial-roma-norte-ebwa8714/",
       "permanent": true
