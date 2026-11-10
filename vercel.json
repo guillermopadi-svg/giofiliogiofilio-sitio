@@ -5,7 +5,7 @@
   "redirects": [
     {
       "source": "/propiedades/oficina-espacio-santa-fe-piso-18/",
-      "destination": "/renta/oficinas/",
+      "destination": "/propiedades/",
       "permanent": false
     },
     {
