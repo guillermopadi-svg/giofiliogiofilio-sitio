@@ -26,8 +26,8 @@ LANDINGS = [
         "subtitle": "Oficina corporativa Clase A+ en Santa Fe",
         "propertyType": "oficina",          # clave de data_props.TIPOS
         "operation": "renta",         # venta | renta | venta-renta
-        "featured": True,
-        "status": "disponible",             # disponible | publicado | oculto (oculto no se genera)
+        "featured": False,
+        "status": "oculto",             # disponible | publicado | oculto (oculto no se genera)
         "price": 489946.58,
         "baseRent": 365369.74,
         "maintenance": 66117.68,
